@@ -3,7 +3,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-$conn = new mysqli("localhost", "root", "root", "project1");
+$conn = new mysqli('tokaido.proxy.rlwy.net', 'root', 'mysql -h tokaido.proxy.rlwy.net -u root -p OLdaGruletpcPRSKSZkUOUrKaUWmDjri --port 57745 --protocol=TCP railway', 'railway', 57745);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }

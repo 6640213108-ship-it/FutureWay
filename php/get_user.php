@@ -5,13 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 header('Content-Type: application/json; charset=utf-8');
 
-$conn = new mysqli(
-    'tokaido.proxy.rlwy.net',
-    'root',
-    'OLdaGruletpcPRSKSZkUOUrKaUWmDjri',
-    'railway',
-    57745
-);
+$conn = new mysqli('tokaido.proxy.rlwy.net', 'root', 'OLdaGruletpcPRSKSZkUOUrKaUWmDjri', 'railway', 57745);
 $conn->set_charset("utf8");
 
 // ค่าเริ่มต้น

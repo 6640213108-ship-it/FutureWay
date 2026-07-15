@@ -1,0 +1,399 @@
+/* ========================================
+   FutureWay - Global Stylesheet
+   ใช้กับทุกหน้าในโปรเจกต์
+   ======================================== */
+
+/* โหลดฟอนต์จาก Google Fonts
+   - Sarabun  → ฟอนต์ทั่วไป (ข้อความ, ปุ่ม, input)
+   - Prompt   → ฟอนต์หัวข้อใหญ่ (ชื่อเว็บ FutureWay) */
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=Prompt:wght@600;700;800&display=swap');
+
+
+/* ========================================
+   CSS Variables — ตัวแปรสีและค่าต่างๆ
+   เปลี่ยนที่นี่ที่เดียว กระทบทุกหน้าเลย
+   ======================================== */
+:root {
+  /* -- สีหลัก -- */
+  --primary:       #7b2ff7;  /* ม่วงสด → ปุ่มหลัก, border */
+  --primary-dark:  #5a1bbf;  /* ม่วงเข้ม → ปุ่มตอน hover */
+  --primary-light: #b66fe9;  /* ม่วงอ่อน → ใช้ใน gradient พื้นหลัง */
+  --accent:        #6b0763;  /* ม่วงแดงเข้ม → ชื่อเว็บ, subtitle */
+
+  /* -- พื้นหลัง -- */
+  --bg-gradient: linear-gradient(135deg, #b66fe9 0%, #7b2ff7 50%, #5a1bbf 100%);
+  /* ไล่สีพื้นหลังทั้งหน้า จากซ้ายบน → ขวาล่าง */
+
+  /* -- สีขาวและเทา -- */
+  --white:      #ffffff;  /* สีขาวบริสุทธิ์ → พื้นกล่อง, ข้อความบนปุ่มม่วง */
+  --gray-light: #f5f5f5;  /* เทาอ่อนมาก → พื้นปุ่มตอน hover */
+  --gray:       #888888;  /* เทากลาง → ไอคอน, ข้อความเล็ก */
+  --gray-dark:  #4e4d4d;  /* เทาเข้ม → ข้อความ desc */
+  --border:     #dddddd;  /* เทาอ่อน → เส้นขอบ input */
+
+  /* -- สีสถานะ -- */
+  --error:   #d63031;  /* แดง → แจ้งเตือน error */
+  --success: #00b894;  /* เขียว → แจ้งเตือนสำเร็จ */
+
+  /* -- ขนาดมุมโค้ง (border-radius) -- */
+  --radius-sm: 8px;   /* เล็ก → input, select */
+  --radius-md: 12px;  /* กลาง → ปุ่ม */
+  --radius-lg: 16px;  /* ใหญ่ → กล่องหลัก (.box) */
+
+  /* -- เงา -- */
+  --shadow: 0 8px 32px rgba(123, 47, 247, 0.18);
+  /* เงาสีม่วงจาง → ทำให้กล่องดูลอยออกมา */
+
+  /* -- ความเร็ว animation -- */
+  --transition: 0.25s ease;  /* ใช้กับ hover ทุกที่ */
+}
+
+
+/* ========================================
+   Reset & Base — ล้างค่า default ของ Browser
+   ======================================== */
+
+/* ทำให้ทุก element คำนวณขนาดรวม padding+border ด้วย
+   ป้องกัน element เกินขนาดที่กำหนด */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;   /* ล้าง margin default */
+  padding: 0;  /* ล้าง padding default */
+}
+
+/* สไตล์พื้นฐานของ <body> ทุกหน้า */
+body {
+  font-family: 'Sarabun', sans-serif;  /* ฟอนต์เริ่มต้น */
+  font-size: 15px;                     /* ขนาดตัวอักษรพื้นฐาน */
+  min-height: 100vh;                   /* สูงเต็มหน้าจออย่างน้อย */
+  display: flex;                       /* ใช้ Flexbox จัดกล่องกลางหน้า */
+  justify-content: center;             /* จัดกึ่งกลางแนวนอน */
+  align-items: center;                 /* จัดกึ่งกลางแนวตั้ง */
+  background: var(--bg-gradient);      /* พื้นหลังไล่สีม่วง */
+  padding: 20px;                       /* เว้นขอบเผื่อหน้าจอเล็ก */
+}
+
+
+/* ========================================
+   Card / Box — กล่องขาวกลางหน้า
+   ใช้ใน: ทุกหน้า (index, login, register)
+   ======================================== */
+.box {
+  background: var(--white);        /* พื้นหลังสีขาว */
+  padding: 36px 32px;              /* ระยะห่างภายใน (บน-ล่าง ซ้าย-ขวา) */
+  width: 90%;                      /* กว้าง 90% ของหน้าจอ */
+  max-width: 380px;                /* แต่ไม่เกิน 380px */
+  border-radius: var(--radius-lg); /* มุมโค้ง 16px */
+  box-shadow: var(--shadow);       /* เงาสีม่วงจาง */
+  text-align: center;              /* ข้อความชิดกลาง */
+  transition: transform var(--transition); /* animation ตอน hover */
+}
+
+/* กล่องลอยขึ้นเล็กน้อยเมื่อเอาเมาส์ชี้ */
+.box:hover {
+  transform: translateY(-4px);
+}
+
+
+/* ========================================
+   Typography — ข้อความและหัวข้อ
+   ======================================== */
+
+/* ชื่อเว็บ "FutureWay" */
+.title {
+  font-family: 'Prompt', sans-serif;  /* ฟอนต์พิเศษสำหรับหัวข้อ */
+  font-size: 2rem;                    /* ขนาดใหญ่ */
+  font-weight: 800;                   /* หนามาก */
+  color: var(--accent);               /* สีม่วงแดงเข้ม */
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;             /* ตัวอักษรชิดกันนิดนึง ดูเรียบหรู */
+}
+
+/* หัวข้อรองใต้ชื่อเว็บ */
+.subtitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: left;   /* ชิดซ้าย (ต่างจาก .title ที่ center) */
+  margin: 0;
+  line-height: 1.4;   /* ระยะห่างระหว่างบรรทัด */
+}
+
+/* ข้อความอธิบายใต้ subtitle */
+.desc {
+  font-size: 0.875rem;
+  color: var(--gray-dark);
+  text-align: left;
+  margin: 4px 0 2px;
+}
+
+/* ข้อความเล็กสุด เช่น "กรุณากรอกข้อมูล..." */
+.note {
+  display: block;        /* บังคับขึ้นบรรทัดใหม่ */
+  font-size: 0.8rem;
+  color: var(--gray);
+  text-align: left;
+  margin-bottom: 16px;   /* เว้นระยะก่อนถึง form */
+}
+
+
+/* ========================================
+   Buttons — ปุ่มทุกแบบ
+   ======================================== */
+
+/* Base ปุ่ม — ทุกปุ่มต้องใส่ .btn ก่อน แล้วตามด้วย modifier */
+.btn {
+  display: inline-block;            /* แสดงผลแบบ block แต่ flow ตาม inline */
+  width: 100%;                      /* กว้างเต็มกล่อง */
+  padding: 12px 0;
+  border-radius: var(--radius-md);  /* มุมโค้ง 12px */
+  font-family: 'Sarabun', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;                 /* ตัวหนา */
+  cursor: pointer;                  /* เมาส์เป็นรูปมือ */
+  transition: all var(--transition);
+  text-align: center;
+  border: 2px solid transparent;   /* border โปร่งใส (modifier จะเปลี่ยนสี) */
+  text-decoration: none;            /* ลบเส้นใต้กรณีใช้กับ <a> */
+}
+
+/* ปุ่มม่วงทึบ → ปุ่มหลัก เช่น "เข้าสู่ระบบ" */
+.btn-purple {
+  background: var(--primary);   /* พื้นม่วง */
+  color: var(--white);          /* ตัวอักษรขาว */
+  border-color: var(--primary);
+}
+.btn-purple:hover {
+  background: var(--primary-dark);  /* ม่วงเข้มขึ้นตอน hover */
+  border-color: var(--primary-dark);
+}
+
+/* ปุ่มกรอบม่วง พื้นขาว → ปุ่มรอง เช่น "สมัครใช้งาน" */
+.btn-purple-outline {
+  background: var(--white);
+  color: var(--primary);        /* ตัวอักษรม่วง */
+  border-color: var(--primary); /* กรอบม่วง */
+}
+.btn-purple-outline:hover {
+  background: var(--gray-light);  /* พื้นเทาอ่อนตอน hover */
+}
+
+/* ปุ่มกรอบม่วงแบบ inline → ใช้กับ <a> ที่ไม่ต้องการ width: 100%
+   เช่น "กลับหน้าแรก", "มีบัญชีอยู่แล้ว" */
+.btn-purple-outline_t {
+  background: var(--white);
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-md);
+  padding: 12px 25px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;  /* ไม่กว้างเต็ม เหมาะกับ <a> */
+  transition: all var(--transition);
+}
+.btn-purple-outline_t:hover {
+  background: var(--gray-light);
+}
+
+
+/* ========================================
+   Input Box — ช่องกรอกข้อมูล
+   ใช้ใน: login.html, register.html
+   ======================================== */
+
+/* กล่องห่อ input ทุกช่อง (ต้องใช้ position: relative
+   เพื่อให้ไอคอนข้างในใช้ position: absolute ได้) */
+.input-box {
+  position: relative;
+  width: 100%;
+  margin-bottom: 12px;  /* เว้นระยะระหว่างช่องกรอก */
+}
+
+/* สไตล์รวมของ <input> และ <select> */
+.input-box input,
+.input-box select {
+  width: 100%;
+  padding: 11px 40px 11px 40px;  /* เว้นซ้าย-ขวา 40px สำหรับไอคอน */
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Sarabun', sans-serif;
+  font-size: 0.9rem;
+  outline: none;               /* ลบกรอบ default ของ browser */
+  background: var(--white);
+  color: #222;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  appearance: none;            /* ลบ style default ของ select (ลูกศร) */
+  -webkit-appearance: none;    /* รองรับ Safari */
+}
+
+/* สี placeholder ทุกช่อง */
+.input-box input::placeholder {
+  color: #bbb;
+}
+
+/* กรอบเข้มขึ้นเมื่อเอาเมาส์ชี้ */
+.input-box input:hover,
+.input-box select:hover {
+  border-color: #aaa;
+}
+
+/* กรอบม่วง + เงาจางเมื่อคลิกเข้าช่อง */
+.input-box input:focus,
+.input-box select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(123, 47, 247, 0.12);
+}
+
+/* ไอคอนรูปภาพ (.png) ด้านซ้ายของ input
+   เช่น รูป account_circle, mail */
+.icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);  /* จัดกึ่งกลางแนวตั้ง */
+  width: 18px;
+  height: 18px;
+  opacity: 0.5;                 /* จางลงให้ดูเป็น placeholder */
+  pointer-events: none;         /* คลิกทะลุไปที่ input ได้ */
+}
+
+/* ไอคอน Font Awesome ด้านซ้าย เช่น fa-lock */
+.icon-left {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+/* ไอคอนตา fa-eye ด้านขวา → กดเพื่อแสดง/ซ่อนรหัสผ่าน */
+.toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;   /* เมาส์เป็นรูปมือ (กดได้) */
+  color: var(--gray);
+  font-size: 14px;
+}
+
+
+/* ========================================
+   Social Buttons — ปุ่ม Google / Facebook
+   ใช้ใน: index.html, register.html
+   ======================================== */
+
+/* กล่องห่อปุ่ม social ให้อยู่แถวเดียวกัน */
+.social-buttons {
+  display: flex;          /* เรียงแนวนอน */
+  gap: 10px;              /* ระยะห่างระหว่างปุ่ม */
+  justify-content: center;
+  margin-top: 8px;
+}
+
+/* Base ปุ่ม social */
+.btn-social {
+  flex: 1;                /* ยืดเท่ากันทั้งสองปุ่ม */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;               /* ระยะห่างระหว่างไอคอนกับข้อความ */
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  cursor: pointer;
+  font-family: 'Sarabun', sans-serif;
+  font-weight: 700;
+  font-size: 0.875rem;
+  transition: all var(--transition);
+}
+
+/* ขนาดโลโก้ Google / Facebook */
+.btn-social img {
+  width: 18px;
+  height: 18px;
+}
+
+/* Google hover → พื้นเทาอ่อน */
+.google:hover {
+  background: var(--gray-light);
+  border-color: #aaa;
+}
+
+/* Facebook → ตัวอักษรสีน้ำเงิน */
+.facebook {
+  color: #1877f2;
+}
+/* Facebook hover → พื้นน้ำเงิน ตัวอักษรขาว */
+.facebook:hover {
+  background: #1877f2;
+  color: var(--white);
+  border-color: #1877f2;
+}
+
+
+/* ========================================
+   Divider — เส้นคั่น "หรือเข้าสู่ระบบด้วย"
+   ใช้ใน: index.html, register.html
+   ======================================== */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+  color: var(--gray);
+  font-size: 0.8rem;
+}
+/* เส้นซ้าย-ขวาของข้อความ divider */
+.divider::before,
+.divider::after {
+  content: '';       /* สร้าง element เปล่า */
+  flex: 1;           /* ยืดเต็มพื้นที่ที่เหลือ */
+  height: 1px;
+  background: var(--border);
+}
+
+
+/* ========================================
+   Btn Stack — กลุ่มปุ่มเรียงแนวตั้ง
+   ใช้ใน: index.html (ปุ่มเข้าสู่ระบบ + สมัคร)
+   ======================================== */
+.btn-stack {
+  display: flex;
+  flex-direction: column;  /* เรียงแนวตั้ง */
+  gap: 12px;               /* ระยะห่างระหว่างปุ่ม */
+  margin: 20px 0 16px;
+}
+
+
+/* ========================================
+   Form Footer — กลุ่มปุ่มล่างสุดของ form
+   ใช้ใน: login.html, register.html
+   ======================================== */
+.form-footer {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;  /* ปุ่มเรียงแนวตั้ง */
+  align-items: center;     /* จัดกึ่งกลาง */
+  gap: 12px;
+}
+
+
+/* ========================================
+   Responsive — ปรับขนาดตามหน้าจอ
+   ======================================== */
+
+/* หน้าจอเล็ก (มือถือ) ความกว้างน้อยกว่า 480px */
+@media (max-width: 480px) {
+  .box {
+    padding: 28px 20px;  /* ลด padding ให้พอดีจอ */
+  }
+  .title {
+    font-size: 1.7rem;   /* ลดขนาดชื่อเว็บ */
+  }
+}

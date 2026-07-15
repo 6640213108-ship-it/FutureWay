@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FutureWay - แบบทดสอบ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/quiz.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="back-header">
+    <a href="main.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    <span class="page-title">ค้นหาตัวเอง</span>
+  </header>
+
+  <!-- Step Progress Bar -->
+  <div class="step-bar">
+    <div class="step active" id="step1">
+      <div class="step-circle">1</div>
+      <span class="step-label">กรอกเกรด</span>
+    </div>
+    <div class="step-line" id="line1"></div>
+    <div class="step" id="step2">
+      <div class="step-circle">2</div>
+      <span class="step-label">แบบทดสอบ</span>
+    </div>
+  </div>
+
+  <!-- ===== SECTION 1: กรอกเกรด ===== -->
+  <div id="section-grade">
+    <div class="quiz-content">
+      <p class="quiz-section-title">📝 กรอกเกรดวิชาของคุณ</p>
+
+      <div class="grade-card">
+
+        <div class="grade-row">
+          <div class="grade-subject">
+            <div class="subject-icon math"><i class="fas fa-square-root-alt"></i></div>
+            <span class="subject-name">คณิตศาสตร์</span>
+          </div>
+          <input class="grade-input" type="number" id="g-math" min="0" max="4" step="0.01" placeholder="0.00">
+        </div>
+
+        <div class="grade-row">
+          <div class="grade-subject">
+            <div class="subject-icon sci"><i class="fas fa-flask"></i></div>
+            <span class="subject-name">วิทยาศาสตร์</span>
+          </div>
+          <input class="grade-input" type="number" id="g-sci" min="0" max="4" step="0.01" placeholder="0.00">
+        </div>
+
+        <div class="grade-row">
+          <div class="grade-subject">
+            <div class="subject-icon eng"><i class="fas fa-language"></i></div>
+            <span class="subject-name">ภาษาอังกฤษ</span>
+          </div>
+          <input class="grade-input" type="number" id="g-eng" min="0" max="4" step="0.01" placeholder="0.00">
+        </div>
+
+        <div class="grade-row">
+          <div class="grade-subject">
+            <div class="subject-icon thai"><i class="fas fa-book"></i></div>
+            <span class="subject-name">ภาษาไทย</span>
+          </div>
+          <input class="grade-input" type="number" id="g-thai" min="0" max="4" step="0.01" placeholder="0.00">
+        </div>
+
+        <div class="grade-row">
+          <div class="grade-subject">
+            <div class="subject-icon social"><i class="fas fa-globe-asia"></i></div>
+            <span class="subject-name">สังคมศึกษา</span>
+          </div>
+          <input class="grade-input" type="number" id="g-social" min="0" max="4" step="0.01" placeholder="0.00">
+        </div>
+
+        <div class="grade-row">
+          <div class="grade-subject">
+            <div class="subject-icon art"><i class="fas fa-paint-brush"></i></div>
+            <span class="subject-name">ศิลปะ</span>
+          </div>
+          <input class="grade-input" type="number" id="g-art" min="0" max="4" step="0.01" placeholder="0.00">
+        </div>
+
+      </div>
+
+      <p class="error-msg" id="grade-error">⚠️ กรุณากรอกเกรดให้ครบทุกวิชา (0.00 - 4.00)</p>
+    </div>
+
+    <div class="quiz-submit-wrap">
+      <button class="quiz-next-btn" onclick="goToMBTI()">ถัดไป → ทำแบบทดสอบ</button>
+    </div>
+  </div>
+
+  <!-- ===== SECTION 2: MBTI ===== -->
+  <div id="section-mbti" style="display:none;">
+    <div class="quiz-content">
+      <p class="quiz-section-title">🧠 แบบทดสอบบุคลิกภาพ MBTI</p>
+
+      <!-- มิติที่ 1: E/I -->
+      <div class="dimension-label">
+        <span class="dimension-badge">E / I</span>
+        <span class="dimension-title">พลังงานและสังคม</span>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 1 / 20</span>
+        <p class="mbti-q-text">หลังจากอยู่กับผู้คนเยอะๆ นานๆ คุณรู้สึกยังไง?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q1" value="E">
+            <div class="option-dot"></div>
+            <span class="option-text">มีพลังขึ้น อยากอยู่ต่อ</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q1" value="I">
+            <div class="option-dot"></div>
+            <span class="option-text">เหนื่อย อยากกลับไปอยู่คนเดียว</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 2 / 20</span>
+        <p class="mbti-q-text">เวลาว่างๆ คุณชอบทำอะไรมากกว่า?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q2" value="E">
+            <div class="option-dot"></div>
+            <span class="option-text">ออกไปเจอเพื่อน ทำกิจกรรมกับคนอื่น</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q2" value="I">
+            <div class="option-dot"></div>
+            <span class="option-text">อยู่บ้าน ทำสิ่งที่ชอบคนเดียว</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 3 / 20</span>
+        <p class="mbti-q-text">ในกลุ่มคุณมักจะเป็นคนแบบไหน?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q3" value="E">
+            <div class="option-dot"></div>
+            <span class="option-text">พูดเยอะ ชอบเริ่มบทสนทนา</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q3" value="I">
+            <div class="option-dot"></div>
+            <span class="option-text">ฟังมากกว่าพูด คิดก่อนพูด</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 4 / 20</span>
+        <p class="mbti-q-text">ชอบทำงานแบบไหน?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q4" value="E">
+            <div class="option-dot"></div>
+            <span class="option-text">ทำร่วมกับคนอื่น ระดมความคิด</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q4" value="I">
+            <div class="option-dot"></div>
+            <span class="option-text">ทำคนเดียวเงียบๆ มีสมาธิดีกว่า</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 5 / 20</span>
+        <p class="mbti-q-text">เวลาคิดเรื่องสำคัญ มักจะ?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q5" value="E">
+            <div class="option-dot"></div>
+            <span class="option-text">พูดออกมาดังๆ หรือปรึกษาคนอื่น</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q5" value="I">
+            <div class="option-dot"></div>
+            <span class="option-text">คิดในใจคนเดียวก่อนแล้วค่อยพูด</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- มิติที่ 2: S/N -->
+      <div class="dimension-label">
+        <span class="dimension-badge">S / N</span>
+        <span class="dimension-title">การรับข้อมูล</span>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 6 / 20</span>
+        <p class="mbti-q-text">ชอบเรียนรู้แบบไหนมากกว่า?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q6" value="S">
+            <div class="option-dot"></div>
+            <span class="option-text">ลงมือทำจากตัวอย่างจริง ทีละขั้นตอน</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q6" value="N">
+            <div class="option-dot"></div>
+            <span class="option-text">เข้าใจภาพรวมทฤษฎีก่อน แล้วคิดต่อเอง</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 7 / 20</span>
+        <p class="mbti-q-text">เวลาวางแผน มักจะโฟกัสที่อะไร?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q7" value="S">
+            <div class="option-dot"></div>
+            <span class="option-text">สิ่งที่ทำได้จริงในตอนนี้</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q7" value="N">
+            <div class="option-dot"></div>
+            <span class="option-text">จินตนาการภาพอนาคตที่เป็นไปได้</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 8 / 20</span>
+        <p class="mbti-q-text">ชอบงานแบบไหน?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q8" value="S">
+            <div class="option-dot"></div>
+            <span class="option-text">มีขั้นตอนชัดเจน ทำซ้ำได้ ผลลัพธ์แน่นอน</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q8" value="N">
+            <div class="option-dot"></div>
+            <span class="option-text">หลากหลาย ต้องคิดใหม่ ท้าทายตลอด</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 9 / 20</span>
+        <p class="mbti-q-text">เวลาอ่านหนังสือ สนใจอะไรมากกว่า?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q9" value="S">
+            <div class="option-dot"></div>
+            <span class="option-text">ข้อเท็จจริง ตัวเลข รายละเอียดที่ชัดเจน</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q9" value="N">
+            <div class="option-dot"></div>
+            <span class="option-text">แนวคิด ความหมาย ไอเดียใหม่ๆ</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 10 / 20</span>
+        <p class="mbti-q-text">มองตัวเองเป็นคนแบบไหน?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q10" value="S">
+            <div class="option-dot"></div>
+            <span class="option-text">ปฏิบัติจริง เน้นผลลัพธ์ที่จับต้องได้</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q10" value="N">
+            <div class="option-dot"></div>
+            <span class="option-text">มีจินตนาการ ชอบคิดนอกกรอบ</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- มิติที่ 3: T/F -->
+      <div class="dimension-label">
+        <span class="dimension-badge">T / F</span>
+        <span class="dimension-title">การตัดสินใจ</span>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 11 / 20</span>
+        <p class="mbti-q-text">ตัดสินใจโดยใช้อะไรเป็นหลัก?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q11" value="T">
+            <div class="option-dot"></div>
+            <span class="option-text">เหตุผล ข้อมูล ตรรกะ</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q11" value="F">
+            <div class="option-dot"></div>
+            <span class="option-text">ความรู้สึก ผลกระทบต่อคนรอบข้าง</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 12 / 20</span>
+        <p class="mbti-q-text">เวลาเพื่อนทำสิ่งผิดพลาด คุณจะ?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q12" value="T">
+            <div class="option-dot"></div>
+            <span class="option-text">บอกตรงๆ ให้รู้และแก้ไขได้เร็ว</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q12" value="F">
+            <div class="option-dot"></div>
+            <span class="option-text">เลือกคำพูดระวังไม่ให้เพื่อนเสียใจ</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 13 / 20</span>
+        <p class="mbti-q-text">สิ่งที่สำคัญกว่าในที่ทำงานคืออะไร?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q13" value="T">
+            <div class="option-dot"></div>
+            <span class="option-text">ความยุติธรรม ทุกคนได้รับเท่าเทียมกัน</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q13" value="F">
+            <div class="option-dot"></div>
+            <span class="option-text">ความกลมเกลียว ทุกคนมีความสุข</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 14 / 20</span>
+        <p class="mbti-q-text">เวลาวิจารณ์งานคนอื่น คุณมักจะ?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q14" value="T">
+            <div class="option-dot"></div>
+            <span class="option-text">พูดตรงๆ ตามข้อเท็จจริงที่เห็น</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q14" value="F">
+            <div class="option-dot"></div>
+            <span class="option-text">ระวังความรู้สึกคนฟังเป็นหลัก</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 15 / 20</span>
+        <p class="mbti-q-text">ถ้าต้องเลือก คุณจะเลือกอะไร?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q15" value="T">
+            <div class="option-dot"></div>
+            <span class="option-text">ทำสิ่งที่ถูกต้อง แม้คนอื่นไม่พอใจ</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q15" value="F">
+            <div class="option-dot"></div>
+            <span class="option-text">รักษาความสัมพันธ์และความรู้สึกคนอื่นไว้ก่อน</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- มิติที่ 4: J/P -->
+      <div class="dimension-label">
+        <span class="dimension-badge">J / P</span>
+        <span class="dimension-title">การใช้ชีวิต</span>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 16 / 20</span>
+        <p class="mbti-q-text">ชอบใช้ชีวิตแบบไหน?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q16" value="J">
+            <div class="option-dot"></div>
+            <span class="option-text">วางแผนล่วงหน้า มีตาราง ทุกอย่างเป็นระเบียบ</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q16" value="P">
+            <div class="option-dot"></div>
+            <span class="option-text">ยืดหยุ่น ปรับได้ตามสถานการณ์</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 17 / 20</span>
+        <p class="mbti-q-text">เวลาทำโปรเจกต์หรืองานส่ง?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q17" value="J">
+            <div class="option-dot"></div>
+            <span class="option-text">เริ่มเร็ว ทำตามแผน ส่งก่อน deadline</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q17" value="P">
+            <div class="option-dot"></div>
+            <span class="option-text">ทำดีที่สุดตอนใกล้ deadline พลังพุ่ง</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 18 / 20</span>
+        <p class="mbti-q-text">ถ้าแผนเปลี่ยนกะทันหัน รู้สึกยังไง?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q18" value="J">
+            <div class="option-dot"></div>
+            <span class="option-text">หงุดหน่ายนิดหน่อย อยากรู้แผนใหม่ทันที</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q18" value="P">
+            <div class="option-dot"></div>
+            <span class="option-text">โอเคเลย ชอบความตื่นเต้นแบบนี้</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 19 / 20</span>
+        <p class="mbti-q-text">โต๊ะทำงานหรือห้องของคุณเป็นแบบไหน?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q19" value="J">
+            <div class="option-dot"></div>
+            <span class="option-text">จัดเรียบร้อย ของทุกอย่างมีที่ของมัน</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q19" value="P">
+            <div class="option-dot"></div>
+            <span class="option-text">ดูรกนิดหน่อย แต่รู้ว่าของอยู่ไหน</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mbti-card">
+        <span class="mbti-q-number">ข้อที่ 20 / 20</span>
+        <p class="mbti-q-text">ชอบการตัดสินใจแบบไหน?</p>
+        <div class="mbti-options">
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q20" value="J">
+            <div class="option-dot"></div>
+            <span class="option-text">ตัดสินใจเร็ว ปิดประเด็น ไม่ค้างคา</span>
+          </label>
+          <label class="mbti-option" onclick="selectOption(this)">
+            <input type="radio" name="q20" value="P">
+            <div class="option-dot"></div>
+            <span class="option-text">เปิดตัวเลือกไว้ก่อน ยังไม่รีบตัดสิน</span>
+          </label>
+        </div>
+      </div>
+
+      <p class="error-msg" id="mbti-error">⚠️ กรุณาตอบทุกข้อให้ครบ 20 ข้อ</p>
+    </div>
+
+    <div class="quiz-submit-wrap">
+      <button class="quiz-submit-btn" onclick="submitQuiz()">
+        <i class="fas fa-paper-plane"></i> ดูผลลัพธ์
+      </button>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <a href="main.html" class="nav-item">
+      <i class="fas fa-home"></i>
+      <span>หน้าหลัก</span>
+    </a>
+    <a href="#" class="nav-item active">
+      <div class="icon-circle">
+        <i class="fas fa-chart-bar"></i>
+      </div>
+      <span>ประวัติผลลัพธ์</span>
+    </a>
+    <a href="chat.html" class="nav-item">
+      <i class="fas fa-comment-dots"></i>
+      <span>แชท</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+      <i class="fas fa-user-cog"></i>
+      <span>การตั้งค่า</span>
+    </a>
+  </nav>
+
+  <script>
+    // เก็บคำตอบ MBTI แยกต่างหาก (ไม่พึ่ง :checked)
+    const answers = {};
+
+    // เลือก option MBTI
+    function selectOption(label) {
+      setTimeout(() => {
+        const input = label.querySelector('input');
+        answers[input.name] = input.value;
+
+        document.querySelectorAll(`input[name="${input.name}"]`).forEach(r => {
+          r.closest('.mbti-option').classList.remove('selected');
+        });
+        label.classList.add('selected');
+
+        // ลบกรอบแดงออกเมื่อตอบแล้ว
+        const card = label.closest('.mbti-card');
+        if (card) card.style.border = '';
+      }, 0);
+    }
+
+    // ไปหน้า MBTI
+    function goToMBTI() {
+      const subjects = ['g-math','g-sci','g-eng','g-thai','g-social','g-art'];
+      let valid = true;
+
+      subjects.forEach(id => {
+        const el = document.getElementById(id);
+        const val = parseFloat(el.value);
+        if (el.value === '' || isNaN(val) || val < 0 || val > 4) {
+          el.classList.add('error');
+          valid = false;
+        } else {
+          el.classList.remove('error');
+        }
+      });
+
+      if (!valid) {
+        document.getElementById('grade-error').classList.add('show');
+        return;
+      }
+
+      document.getElementById('grade-error').classList.remove('show');
+      document.getElementById('section-grade').style.display = 'none';
+      document.getElementById('section-mbti').style.display = 'block';
+
+      // อัปเดต step bar
+      document.getElementById('step1').classList.remove('active');
+      document.getElementById('step1').classList.add('done');
+      document.getElementById('step1').querySelector('.step-circle').innerHTML = '<i class="fas fa-check" style="font-size:0.7rem"></i>';
+      document.getElementById('line1').classList.add('done');
+      document.getElementById('step2').classList.add('active');
+
+      window.scrollTo(0, 0);
+    }
+
+    // Submit ทั้งหมด
+    function submitQuiz() {
+      // เช็คว่าตอบครบ 20 ข้อ จาก answers object
+      const missing = [];
+      for (let i = 1; i <= 20; i++) {
+        const card = document.querySelectorAll('.mbti-card')[i - 1];
+        if (!answers[`q${i}`]) {
+          missing.push(i);
+          card.style.border = '2px solid #e74c3c';
+          card.style.borderRadius = '16px';
+        } else {
+          card.style.border = '';
+        }
+      }
+
+      if (missing.length > 0) {
+        const errEl = document.getElementById('mbti-error');
+        errEl.textContent = `⚠️ ยังไม่ได้ตอบข้อที่: ${missing.join(', ')}`;
+        errEl.classList.add('show');
+
+        // scroll ไปหาข้อแรกที่ขาด
+        const firstMissing = document.querySelectorAll('.mbti-card')[missing[0] - 1];
+        firstMissing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      document.getElementById('mbti-error').classList.remove('show');
+      document.querySelectorAll('.mbti-card').forEach(c => c.style.border = '');
+
+      // เก็บเกรด
+      const grades = {
+        math:   parseFloat(document.getElementById('g-math').value),
+        sci:    parseFloat(document.getElementById('g-sci').value),
+        eng:    parseFloat(document.getElementById('g-eng').value),
+        thai:   parseFloat(document.getElementById('g-thai').value),
+        social: parseFloat(document.getElementById('g-social').value),
+        art:    parseFloat(document.getElementById('g-art').value),
+      };
+
+      // คำนวณ MBTI จาก answers object
+      const dims = { E:0,I:0, S:0,N:0, T:0,F:0, J:0,P:0 };
+      for (let i = 1; i <= 20; i++) {
+        dims[answers[`q${i}`]]++;
+      }
+      const mbti =
+        (dims.E >= dims.I ? 'E' : 'I') +
+        (dims.S >= dims.N ? 'S' : 'N') +
+        (dims.T >= dims.F ? 'T' : 'F') +
+        (dims.J >= dims.P ? 'J' : 'P');
+
+      // เก็บลง sessionStorage ส่งต่อไปหน้า result
+      sessionStorage.setItem('grades', JSON.stringify(grades));
+      sessionStorage.setItem('mbti', mbti);
+
+      // → POST ไป PHP แล้วให้ PHP เรียก Python
+      const btn = document.querySelector('.quiz-submit-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังประมวลผล...';
+
+      fetch('php/save_quiz.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ grades, mbti })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          window.location.href = 'result.html?id=' + data.result_id;
+        } else {
+          console.error('PHP error:', data);
+          alert('เกิดข้อผิดพลาด: ' + (data.error || 'กรุณาลองใหม่'));
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-paper-plane"></i> ดูผลลัพธ์';
+        }
+      })
+      .catch((err) => {
+        console.error('Fetch error:', err);
+        alert('ไม่สามารถเชื่อมต่อได้: ' + err.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> ดูผลลัพธ์';
+      });
+    }
+  </script>
+
+</body>
+</html>

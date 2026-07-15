@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FutureWay - การตั้งค่า</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/profile.css">
+</head>
+<body>
+
+  <!-- Hero Section: พื้นหลังม่วง + รูปโปรไฟล์ + ชื่อ -->
+  <div class="hero">
+    <div class="hero-bg"></div>
+    <div class="profile-wrap">
+      <img src="images/account_circle_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" alt="Profile" class="profile-pic">
+    </div>
+    <div class="profile-info">
+      <h2 class="profile-name" id="profile-name">กำลังโหลด...</h2>
+      <p class="profile-email" id="profile-email"></p>
+    </div>
+  </div>
+
+  <!-- เมนูรายการ -->
+  <div class="menu-list">
+
+    <a href="edit_profile.html" class="menu-item">
+      <div class="menu-icon purple"><i class="fas fa-user"></i></div>
+      <div class="menu-text">
+        <span class="menu-title">Edit Profile</span>
+        <span class="menu-sub">Update name, Address, Mobile</span>
+      </div>
+      <i class="fas fa-chevron-right menu-arrow"></i>
+    </a>
+
+    <a href="change_password.html" class="menu-item">
+      <div class="menu-icon purple"><i class="fas fa-lock"></i></div>
+      <div class="menu-text">
+        <span class="menu-title">Change Password</span>
+        <span class="menu-sub">Update and change your password</span>
+      </div>
+      <i class="fas fa-chevron-right menu-arrow"></i>
+    </a>
+
+    <a href="#" class="menu-item">
+      <div class="menu-icon purple"><i class="fas fa-bell"></i></div>
+      <div class="menu-text">
+        <span class="menu-title">การแจ้งเตือน</span>
+        <span class="menu-sub">ตั้งค่าการแจ้งเตือนต่าง ๆ</span>
+      </div>
+      <i class="fas fa-chevron-right menu-arrow"></i>
+    </a>
+
+    <a href="#" class="menu-item">
+      <div class="menu-icon purple"><i class="fas fa-shield-alt"></i></div>
+      <div class="menu-text">
+        <span class="menu-title">ความเป็นส่วนตัว</span>
+        <span class="menu-sub">จัดการข้อมูลส่วนตัวของคุณ</span>
+      </div>
+      <i class="fas fa-chevron-right menu-arrow"></i>
+    </a>
+
+    <a href="php/logout.php" class="menu-item logout">
+      <div class="menu-icon red"><i class="fas fa-sign-out-alt"></i></div>
+      <div class="menu-text">
+        <span class="menu-title logout-text">Logout</span>
+      </div>
+      <i class="fas fa-chevron-right menu-arrow"></i>
+    </a>
+
+  </div>
+
+  <!-- Copyright -->
+  <p class="copyright">ลิขสิทธิ์ (Copyright © 2025), ส่งใต้โดย "นโยบายความเป็นส่วนตัว" หรือ "เกี่ยวกับเรา"</p>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <a href="main.html" class="nav-item">
+      <i class="fas fa-home"></i>
+      <span>หน้าหลัก</span>
+    </a>
+    <a href="History_Results.html" class="nav-item">
+      <i class="fas fa-chart-bar"></i>
+      <span>ประวัติผลลัพธ์</span>
+    </a>
+    <a href="chat.html" class="nav-item">
+      <i class="fas fa-comment-dots"></i>
+      <span>แชท</span>
+    </a>
+    <a href="profile.html" class="nav-item active">
+      <div class="icon-circle">
+        <i class="fas fa-user-cog"></i>
+      </div>
+      <span>การตั้งค่า</span>
+    </a>
+  </nav>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      fetch('php/get_user.php', { cache: 'no-store' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('profile-name').textContent = data.fullname;
+            document.getElementById('profile-email').textContent = data.email || '';
+          } else {
+            window.location.href = 'login.html';
+          }
+        })
+        .catch(() => {});
+    });
+  </script>
+
+</body>
+</html>

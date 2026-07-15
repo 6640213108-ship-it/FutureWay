@@ -1,0 +1,222 @@
+/* ========================================
+   FutureWay - chat.css
+   ใช้เฉพาะหน้า chat.html
+   ต้องโหลด main.css ก่อนไฟล์นี้เสมอ
+   ======================================== */
+
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+/* ========================================
+   Header
+   ======================================== */
+.chat-header {
+  background: linear-gradient(135deg, #7b2ff7 0%, #4a0080 100%);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.chat-header .page-title {
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+/* ========================================
+   Quick Chips บนสุด
+   ======================================== */
+.chip-bar-top {
+  background: linear-gradient(135deg, #7b2ff7 0%, #4a0080 100%);
+  padding: 0 14px 14px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+.chip-bar-top::-webkit-scrollbar { display: none; }
+
+/* ========================================
+   พื้นที่ข้อความแชท
+   ======================================== */
+.chat-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #f0f0f5;
+}
+
+/* ========================================
+   Bubble
+   ======================================== */
+
+/* Bubble ผู้ใช้ (ขวา) */
+.bubble-user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #9b30f0, #7b2ff7);
+  color: #fff;
+  border-radius: 18px 18px 4px 18px;
+  padding: 10px 14px;
+  max-width: 75%;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  box-shadow: 0 3px 10px rgba(123,47,247,0.3);
+}
+
+/* Bubble AI (ซ้าย) */
+.bubble-ai {
+  align-self: flex-start;
+  background: #fff;
+  color: #222;
+  border-radius: 18px 18px 18px 4px;
+  padding: 10px 14px;
+  max-width: 80%;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.bubble-ai .ai-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #9b59b6, #7b2ff7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.bubble-ai .ai-icon i {
+  color: #fff;
+  font-size: 0.75rem;
+}
+.bubble-ai .ai-text { flex: 1; }
+
+/* ========================================
+   Typing Indicator
+   ======================================== */
+.typing-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 0;
+}
+.typing-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #aaa;
+  animation: blink 1.2s infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+  40%            { opacity: 1;   transform: scale(1); }
+}
+
+/* ========================================
+   Quick Chips ล่าง
+   ======================================== */
+.chip-bar-bottom {
+  padding: 10px 14px 6px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: #f0f0f5;
+  flex-shrink: 0;
+}
+.chip-bar-bottom::-webkit-scrollbar { display: none; }
+
+.chip {
+  white-space: nowrap;
+  background: #fff;
+  border: 1.5px solid rgba(123,47,247,0.3);
+  color: #7b2ff7;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-family: 'Kanit', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+.chip:hover,
+.chip.active {
+  background: #7b2ff7;
+  color: #fff;
+}
+
+/* ========================================
+   Input Bar
+   ======================================== */
+.chat-input-bar {
+  padding: 10px 14px 14px;
+  background: #f0f0f5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.chat-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 26px;
+  padding: 8px 16px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  border: 1.5px solid rgba(123,47,247,0.15);
+  gap: 8px;
+}
+.chat-input-wrap input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: 'Kanit', sans-serif;
+  font-size: 0.88rem;
+  color: #222;
+  background: transparent;
+}
+.chat-input-wrap input::placeholder { color: #bbb; }
+
+.send-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #9b30f0, #7b2ff7);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(123,47,247,0.4);
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+.send-btn:hover { opacity: 0.85; }
+.send-btn i { color: #fff; font-size: 1rem; }
+
+/* ========================================
+   Bottom Nav override
+   ======================================== */
+.bottom-nav {
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: 0 -3px 16px rgba(0,0,0,0.1);
+}

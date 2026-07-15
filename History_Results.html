@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FutureWay - รายละเอียดสาขา</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/detel.css">
+  
+</head>
+<body>
+
+  <!-- Header ปุ่มย้อนกลับ -->
+  <header class="back-header">
+    <a href="main.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    <span class="page-title">รายละเอียดสาขา</span>
+  </header>
+
+  <!-- เนื้อหา -->
+  <div class="detail-content">
+
+    <!-- ส่วนที่ 1: ข้อมูลสาขา (ดึงจาก DB ทีหลัง) -->
+    <div>
+      <h2 class="section-title" id="branch-name">ชื่อสาขา</h2>
+      <div class="detail-box">
+        <p id="branch-desc">รายละเอียดของสาขาวิชานี้</p>
+
+        <p class="sub-title">ตัวอย่างวิชาที่สำคัญ:</p>
+        <ul id="branch-subjects">
+          <li>วิชาที่ 1</li>
+          <li>วิชาที่ 2</li>
+          <li>วิชาที่ 3</li>
+        </ul>
+
+        <p class="sub-title">อาชีพที่รองรับ:</p>
+        <ul id="branch-careers">
+          <li>อาชีพที่ 1</li>
+          <li>อาชีพที่ 2</li>
+          <li>อาชีพที่ 3</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ส่วนที่ 2: มหาวิทยาลัยที่แนะนำ (ดึงจาก DB ทีหลัง) -->
+    <div>
+      <h2 class="section-title">มหาลัยที่แนะนำ</h2>
+      <div id="uni-list" style="display:flex; flex-direction:column; gap:12px;">
+
+        <div class="uni-card">
+          <span class="uni-name">ชื่อมหาวิทยาลัย</span>
+          <span class="uni-desc">ข้อมูลและค่าใช้จ่ายของมหาวิทยาลัย</span>
+          <a href="#" class="uni-more-btn">รายละเอียดเพิ่มเติม</a>
+        </div>
+
+        <div class="uni-card">
+          <span class="uni-name">ชื่อมหาวิทยาลัย</span>
+          <span class="uni-desc">ข้อมูลและค่าใช้จ่ายของมหาวิทยาลัย</span>
+          <a href="#" class="uni-more-btn">รายละเอียดเพิ่มเติม</a>
+        </div>
+
+        <div class="uni-card">
+          <span class="uni-name">ชื่อมหาวิทยาลัย</span>
+          <span class="uni-desc">ข้อมูลและค่าใช้จ่ายของมหาวิทยาลัย</span>
+          <a href="#" class="uni-more-btn">รายละเอียดเพิ่มเติม</a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <a href="main.html" class="nav-item">
+      <i class="fas fa-home"></i>
+      <span>หน้าหลัก</span>
+    </a>
+    <a href="#" class="nav-item active">
+      <div class="icon-circle">
+        <i class="fas fa-chart-bar"></i>
+      </div>
+      <span>ประวัติผลลัพธ์</span>
+    </a>
+    <a href="chat.html" class="nav-item">
+      <i class="fas fa-comment-dots"></i>
+      <span>แชท</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+      <i class="fas fa-user-cog"></i>
+      <span>การตั้งค่า</span>
+    </a>
+  </nav>
+
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FutureWay - สมัครสมาชิก</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+  <div class="box">
+    <h1 class="title">FutureWay</h1>
+    <h2 class="subtitle">ยินดีต้อนรับสมาชิกใหม่</h2>
+    <p class="desc">เรารู้สึกยินดีที่ได้คุณมาที่นี่</p>
+    <small class="note">กรุณากรอกข้อมูลเพื่อเริ่มต้นการใช้งาน</small>
+
+    <form action="php/save.php" method="post">
+
+      <div class="input-box">
+        <img src="images/account_circle_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" class="icon" alt="">
+        <input type="text" name="user" placeholder="ชื่อผู้ใช้" required>
+      </div>
+
+      <div class="input-box">
+        <img src="images/account_box_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" class="icon" alt="">
+        <input type="text" name="fristname" placeholder="ชื่อ" required>
+      </div>
+
+      <div class="input-box">
+        <img src="images/account_box_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" class="icon" alt="">
+        <input type="text" name="lastneme" placeholder="นามสกุล" required>
+      </div>
+
+      <div class="input-box">
+        <img src="images/mail_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" class="icon" alt="">
+        <input type="email" name="email" placeholder="อีเมล" required>
+      </div>
+
+      <div class="input-box">
+        <i class="fa-solid fa-lock icon-left"></i>
+        <input type="password" name="password1" id="password1" placeholder="รหัสผ่าน" required>
+        <i class="fa-solid fa-eye toggle" onclick="togglePassword('password1', this)"></i>
+      </div>
+
+      <div class="input-box">
+        <i class="fa-solid fa-lock icon-left"></i>
+        <input type="password" name="password2" id="password2" placeholder="ยืนยันรหัสผ่าน" required>
+        <i class="fa-solid fa-eye toggle" onclick="togglePassword('password2', this)"></i>
+      </div>
+
+      <div class="input-box">
+        <select name="gender" required>
+          <option value="">เลือกเพศ</option>
+          <option value="ชาย">ชาย</option>
+          <option value="หญิง">หญิง</option>
+          <option value="อื่นๆ">อื่นๆ</option>
+        </select>
+      </div>
+
+      <div class="form-footer">
+        <button type="submit" class="btn btn-purple">สมัครสมาชิก</button>
+        <a href="login.html" class="btn-purple-outline_t">มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</a>
+      </div>
+
+    </form>
+
+    <div class="divider">หรือสมัครด้วย</div>
+
+    <div class="social-buttons">
+      <button class="btn-social google">
+        <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" alt="Google"> Google
+      </button>
+      <button class="btn-social facebook">
+        <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook"> Facebook
+      </button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    function togglePassword(inputId, icon) {
+      const input = document.getElementById(inputId);
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.replace("fa-eye", "fa-eye-slash");
+      } else {
+        input.type = "password";
+        icon.classList.replace("fa-eye-slash", "fa-eye");
+      }
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+
+    if (status === 'success') {
+      Swal.fire({
+        title: 'สมัครสมาชิกสำเร็จ!',
+        text: 'ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว',
+        icon: 'success',
+        confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
+        confirmButtonColor: '#7b2ff7',
+        allowOutsideClick: false
+      }).then((result) => {
+        if (result.isConfirmed) window.location.href = 'login.html';
+      });
+    } else if (status === 'duplicate') {
+      Swal.fire({
+        title: 'สมัครไม่สำเร็จ!',
+        text: 'ชื่อผู้ใช้หรืออีเมลนี้มีผู้ใช้งานแล้ว กรุณาลองใหม่อีกครั้ง',
+        icon: 'error',
+        confirmButtonText: 'ตกลง',
+        confirmButtonColor: '#d63031'
+      });
+    } else if (status === 'password_mismatch') {
+      Swal.fire({
+        title: 'รหัสผ่านไม่ตรงกัน',
+        text: 'กรุณากรอกรหัสผ่านให้ตรงกันทั้งสองช่อง',
+        icon: 'warning',
+        confirmButtonColor: '#7b2ff7'
+      });
+    }
+
+    window.history.replaceState({}, document.title, window.location.pathname);
+  </script>
+
+</body>
+</html>

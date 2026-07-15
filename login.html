@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FutureWay - เข้าสู่ระบบ</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+  <div class="box">
+    <h1 class="title">FutureWay</h1>
+    <h2 class="subtitle">ยินดีต้อนรับ</h2>
+    <p class="desc">เรารู้สึกยินดีที่ได้คุณมาที่นี่</p>
+    <small class="note">กรุณากรอกข้อมูลเพื่อเริ่มต้นการใช้งาน</small>
+
+    <form action="php/login.php" method="post">
+
+      <div class="input-box">
+        <img src="images/account_circle_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" class="icon" alt="">
+        <input type="text" name="user" placeholder="ชื่อผู้ใช้" required>
+      </div>
+
+      <div class="input-box">
+        <i class="fa-solid fa-lock icon-left"></i>
+        <input type="password" name="password" id="password1" placeholder="รหัสผ่าน" required>
+        <i class="fa-solid fa-eye toggle" onclick="togglePassword('password1', this)"></i>
+      </div>
+
+      <div class="form-footer">
+        <button type="submit" class="btn btn-purple">เข้าสู่ระบบ</button>
+        <a href="register.html" class="btn btn-purple-outline">ยังไม่มีบัญชี? สมัครเลย</a>
+        <a href="index.html" class="btn-purple-outline_t">กลับหน้าแรก</a>
+      </div>
+ 
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    function togglePassword(inputId, icon) {
+      const input = document.getElementById(inputId);
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.replace("fa-eye", "fa-eye-slash");
+      } else {
+        input.type = "password";
+        icon.classList.replace("fa-eye-slash", "fa-eye");
+      }
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+
+if (status === 'success') {
+  Swal.fire({
+    title: 'เข้าสู่ระบบสำเร็จ!',
+    text: 'กำลังเข้าสู่หน้าหลัก...',
+    icon: 'success',
+    timer: 1500,
+    showConfirmButton: false,
+    willClose: () => { window.location.href = 'main.html'; }
+  });
+
+} else if (status === 'wrong_password') {
+  Swal.fire({
+    title: 'เข้าสู่ระบบไม่สำเร็จ',
+    text: 'รหัสผ่านไม่ถูกต้อง',
+    icon: 'error',
+    confirmButtonColor: '#d63031'
+  });
+} else if (status === 'user_not_found') {
+  Swal.fire({
+    title: 'เข้าสู่ระบบไม่สำเร็จ',
+    text: 'ไม่พบชื่อผู้ใช้นี้ในระบบ',
+    icon: 'error',
+    confirmButtonColor: '#d63031'
+  });
+} else if (status === 'empty') {
+  Swal.fire({
+    title: 'กรุณากรอกข้อมูลให้ครบ',
+    icon: 'warning',
+    confirmButtonColor: '#7b2ff7'
+  });
+}
+
+
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    
+  </script>
+ 
+  
+  
+
+</body>
+</html>

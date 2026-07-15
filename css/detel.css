@@ -1,0 +1,125 @@
+/* ========================================
+   Detail Page — ใช้ใน detail.html
+   ======================================== */
+
+/* Header มีปุ่มย้อนกลับ */
+.back-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #7b2ff7 0%, #4a0080 100%);
+}
+.back-btn {
+  color: var(--white);
+  font-size: 1.1rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.back-header .page-title {
+  color: var(--white);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+/* กล่องเนื้อหาหลัก */
+.detail-content {
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* หัวข้อ section สีม่วง */
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2.5px solid rgba(123,47,247,0.15);
+}
+
+/* กล่องขาวสำหรับเนื้อหา */
+.detail-box {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.08);
+}
+
+/* ข้อความเนื้อหาทั่วไป */
+.detail-box p {
+  font-size: 0.88rem;
+  color: #333;
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+.detail-box p:last-child { margin-bottom: 0; }
+
+/* หัวข้อย่อยในกล่อง */
+.detail-box .sub-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 10px 0 4px;
+}
+
+/* bullet list */
+.detail-box ul {
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.detail-box ul li {
+  font-size: 0.85rem;
+  color: #444;
+  line-height: 1.6;
+}
+
+/* การ์ดมหาวิทยาลัย */
+.uni-card {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.uni-name {
+  font-size: 0.97rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+.uni-desc {
+  font-size: 0.82rem;
+  color: var(--gray);
+  line-height: 1.5;
+}
+.uni-more-btn {
+  align-self: flex-start;
+  margin-top: 6px;
+  background: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: 20px;
+  padding: 7px 18px;
+  font-family: 'Kanit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background var(--transition);
+}
+.uni-more-btn:hover { background: var(--primary-dark); }

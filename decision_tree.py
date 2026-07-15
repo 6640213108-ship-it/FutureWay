@@ -23,11 +23,11 @@ import mysql.connector
 # ตั้งค่าเชื่อมต่อ Database
 # ========================================
 DB_CONFIG = {
-    'host':     'localhost',
-    'port':     3306,          # MAMP default port
+    'host':     'tokaido.proxy.rlwy.net',
+    'port':     57745,
     'user':     'root',
-    'password': 'root',        # MAMP default password
-    'database': 'project1'     # ← ต้องตรงกับ DB ที่ PHP ใช้ (project1)
+    'password': 'OLdaGruletpcPRSKSZkUOUrKaUWmDjri',
+    'database': 'railway'      # ต้องตรงกับ DB ที่ไฟล์ PHP ทุกไฟล์ใช้ (railway)
 }
 
 # ========================================

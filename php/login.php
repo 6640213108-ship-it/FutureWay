@@ -7,7 +7,13 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     header("Location: ../login.html");
     exit();
 }
-$conn = new mysqli('tokaido.proxy.rlwy.net', 'root', 'mysql -h tokaido.proxy.rlwy.net -u root -p OLdaGruletpcPRSKSZkUOUrKaUWmDjri --port 57745 --protocol=TCP railway', 'railway', 57745);
+$conn = new mysqli(
+    'tokaido.proxy.rlwy.net',
+    'root',
+    'OLdaGruletpcPRSKSZkUOUrKaUWmDjri',
+    'railway',
+    57745
+);
 
 if ($conn->connect_error) {
     die("เชื่อมต่อ DB ไม่ได้: " . $conn->connect_error);

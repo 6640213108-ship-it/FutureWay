@@ -18,9 +18,13 @@ if (!$resultId) {
     exit;
 }
 
-$conn = new mysqli('tokaido.proxy.rlwy.net', 'root', 'mysql -h tokaido.proxy.rlwy.net -u root -p OLdaGruletpcPRSKSZkUOUrKaUWmDjri --port 57745 --protocol=TCP railway', 'railway', 57745);
-// MySQL รันที่ port 3306 (default ของ XAMPP/Laragon/MySQL ทั่วไป)
-
+$conn = new mysqli(
+    'tokaido.proxy.rlwy.net',
+    'root',
+    'OLdaGruletpcPRSKSZkUOUrKaUWmDjri',
+    'railway',
+    57745
+);
 if ($conn->connect_error) {
     echo json_encode(['success' => false, 'error' => 'DB connection failed']);
     exit;

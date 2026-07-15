@@ -1,3 +1,7 @@
 {
-  "require": {}
+  "require": {
+    "ext-mysqli": "*",
+    "ext-pdo": "*",
+    "ext-pdo_mysql": "*"
+  }
 }

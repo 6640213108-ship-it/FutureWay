@@ -7,6 +7,7 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     header("Location: ../login.html");
     exit();
 }
+
 try {
     $conn = new PDO(
         "mysql:host=tokaido.proxy.rlwy.net;port=57745;dbname=railway",
@@ -16,13 +17,8 @@ try {
 
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    echo "Connected successfully";
 } catch (PDOException $e) {
     die("Connection failed: " . $e->getMessage());
-}
-
-if ($conn->connect_error) {
-    die("เชื่อมต่อ DB ไม่ได้: " . $conn->connect_error);
 }
 
 $username = isset($_POST['user']) ? trim($_POST['user']) : '';
@@ -33,34 +29,33 @@ if (empty($username) || empty($password)) {
     exit();
 }
 
-$sql  = "SELECT * FROM users WHERE username = ?";
+$sql = "SELECT * FROM users WHERE username = ?";
 $stmt = $conn->prepare($sql);
+$stmt->execute([$username]);
 
-if (!$stmt) {
-    die("SQL Error: " . $conn->error);
-}
+$row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-$stmt->bind_param("s", $username);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
+if ($row) {
 
     if (password_verify($password, $row['password'])) {
-        // ✅ set ทั้ง username และ user_id
+
         $_SESSION['username'] = $row['username'];
-        $_SESSION['user_id']  = $row['id'];        // ← เพิ่มบรรทัดนี้
+        $_SESSION['user_id'] = $row['id'];
+
         header("Location: ../login.html?status=success");
         exit();
+
     } else {
+
         header("Location: ../login.html?status=wrong_password");
         exit();
+
     }
+
 } else {
+
     header("Location: ../login.html?status=user_not_found");
     exit();
-}
 
-$conn->close();
+}
 ?>

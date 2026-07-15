@@ -5,8 +5,13 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 header('Content-Type: application/json; charset=utf-8');
 
-$conn = new mysqli('tokaido.proxy.rlwy.net', 'root', 'mysql -h tokaido.proxy.rlwy.net -u root -p REDACTED_DB_PASSWORD --port 57745 --protocol=TCP railway', 'railway', 57745);
-
+$conn = new mysqli(
+    'tokaido.proxy.rlwy.net',
+    'root',
+    'REDACTED_DB_PASSWORD',
+    'railway',
+    57745
+);
 $conn->set_charset("utf8");
 
 // ค่าเริ่มต้น

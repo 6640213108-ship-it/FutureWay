@@ -7,13 +7,19 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     header("Location: ../login.html");
     exit();
 }
-$conn = new mysqli(
-    'tokaido.proxy.rlwy.net',
-    'root',
-    'OLdaGruletpcPRSKSZkUOUrKaUWmDjri',
-    'railway',
-    57745
-);
+try {
+    $conn = new PDO(
+        "mysql:host=tokaido.proxy.rlwy.net;port=57745;dbname=railway",
+        "root",
+        "OLdaGruletpcPRSKSZkUOUrKaUWmDjri"
+    );
+
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    echo "Connected successfully";
+} catch (PDOException $e) {
+    die("Connection failed: " . $e->getMessage());
+}
 
 if ($conn->connect_error) {
     die("เชื่อมต่อ DB ไม่ได้: " . $conn->connect_error);

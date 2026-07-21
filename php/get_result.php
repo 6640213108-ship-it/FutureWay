@@ -23,9 +23,9 @@ require_once __DIR__ . '/db_config.php';
 try {
     $conn = getDbConnection();
 } catch (Exception $e) {
-    die($e->getMessage());
+    echo json_encode(['success' => false, 'error' => 'DB connection failed: ' . $e->getMessage()]);
+    exit;
 }
-$conn->set_charset('utf8mb4');
 
 // ดึงข้อมูล quiz_result
 $stmt = $conn->prepare("

@@ -12,9 +12,8 @@ require_once __DIR__ . '/db_config.php';
 try {
     $conn = getDbConnection();
 } catch (Exception $e) {
-    die($e->getMessage());
+    die('DB connection failed: ' . $e->getMessage());
 }
-$conn->set_charset('utf8mb4');
 
 $result = $conn->query("SELECT * FROM mbti_questions ORDER BY category, question_no ASC");
 $questions = [];

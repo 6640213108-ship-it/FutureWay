@@ -32,15 +32,15 @@ try {
 
     // รับ JSON จาก quiz.html
     $input = json_decode(file_get_contents('php://input'), true);
-    if (!$input || !isset($input['grades']) || !isset($input['mbti'])) {
+    if (!$input || !isset($input['grades']) || !isset($input['answers']) || !is_array($input['answers'])) {
         echo json_encode(['success' => false, 'error' => 'ข้อมูลไม่ครบ']);
         exit;
     }
 
-    $grades = $input['grades'];
-    $mbti   = $input['mbti'];
+    $grades  = $input['grades'];
+    $answers = $input['answers'];
 
-    // ตรวจสอบว่ามี key ของเกรดครบ และ mbti มีความยาว 4 ตัวอักษร
+    // ตรวจสอบว่ามี key ของเกรดครบ และมีคำตอบอย่างน้อย 1 ข้อ
     $requiredSubjects = ['math', 'sci', 'eng', 'thai', 'social', 'art'];
     foreach ($requiredSubjects as $subj) {
         if (!isset($grades[$subj])) {
@@ -48,9 +48,15 @@ try {
             exit;
         }
     }
-    if (!is_string($mbti) || strlen($mbti) !== 4) {
-        echo json_encode(['success' => false, 'error' => 'รูปแบบ MBTI ไม่ถูกต้อง']);
+    if (count($answers) === 0) {
+        echo json_encode(['success' => false, 'error' => 'ไม่พบคำตอบแบบทดสอบ']);
         exit;
+    }
+    foreach ($answers as $a) {
+        if (!isset($a['question_id']) || !isset($a['selected'])) {
+            echo json_encode(['success' => false, 'error' => 'รูปแบบคำตอบไม่ถูกต้อง']);
+            exit;
+        }
     }
 
     // ========================================
@@ -81,46 +87,12 @@ try {
     }
 
     // ========================================
-    // Step 1: บันทึกเกรด + MBTI ลง DB ก่อน
-    // ========================================
-    $stmt = $conn->prepare("
-        INSERT INTO quiz_results 
-            (user_id, grade_math, grade_sci, grade_eng, grade_thai, grade_social, grade_art,
-             mbti_type, mbti_e_i, mbti_s_n, mbti_t_f, mbti_j_p)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ");
-    if (!$stmt) {
-        throw new Exception('Prepare (INSERT quiz_results) ล้มเหลว: ' . $conn->error);
-    }
-
-    // แยก string offset ออกมาเป็นตัวแปรก่อน เพราะ PHP 8+ ห้าม reference string offset ตรงๆ ใน bind_param
-    $mbtiEI = $mbti[0];
-    $mbtiSN = $mbti[1];
-    $mbtiTF = $mbti[2];
-    $mbtiJP = $mbti[3];
-
-    $stmt->bind_param(
-        'iddddddsssss',
-        $userId,
-        $grades['math'], $grades['sci'], $grades['eng'],
-        $grades['thai'], $grades['social'], $grades['art'],
-        $mbti,
-        $mbtiEI, $mbtiSN, $mbtiTF, $mbtiJP
-    );
-
-    if (!$stmt->execute()) {
-        throw new Exception('บันทึกข้อมูลไม่สำเร็จ: ' . $stmt->error);
-    }
-
-    $resultId = $stmt->insert_id;
-    $stmt->close();
-
-    // ========================================
-    // Step 2: เรียก Python Decision Tree
+    // Step 1: เรียก Python Decision Tree ก่อน
+    // (mbti ยังไม่รู้ค่า จนกว่า python จะคำนวณจาก answers ให้)
     // ========================================
     $pythonInput = json_encode([
-        'grades' => $grades,
-        'mbti'   => $mbti
+        'grades'  => $grades,
+        'answers' => $answers
     ]);
 
     require_once __DIR__ . '/python_config.php';
@@ -167,6 +139,9 @@ try {
     } elseif (empty($pyResult['top3'])) {
         // python รันสำเร็จ เชื่อม DB ได้ปกติ แต่ query ตาราง branches ไม่เจอแถวที่ is_active = 1
         $errMsg = 'ไม่พบข้อมูลสาขาในระบบ (ตาราง branches อาจว่าง หรือไม่มีแถวที่ is_active = 1)';
+    } elseif (!isset($pyResult['mbti']) || !is_string($pyResult['mbti']) || strlen($pyResult['mbti']) !== 4) {
+        // python รันได้แต่คำนวณ mbti จาก answers ไม่สำเร็จ (เช่น question_id ไม่ตรงกับ DB เลยสักข้อ)
+        $errMsg = 'ไม่สามารถคำนวณผล MBTI จากคำตอบที่ส่งมาได้';
     } else {
         $errMsg = null;
     }
@@ -186,34 +161,58 @@ try {
     }
 
     // ========================================
-    // Step 3: อัปเดตผลลัพธ์ลง DB
+    // Step 2: บันทึกผลลัพธ์ทั้งหมดลง DB ในครั้งเดียว
+    // (เกรด + mbti ที่ python คำนวณได้ + คณะที่แนะนำอันดับ 1)
     // ========================================
+    $mbti = $pyResult['mbti'];
+
+    // แยก string offset ออกมาเป็นตัวแปรก่อน เพราะ PHP 8+ ห้าม reference string offset ตรงๆ ใน bind_param
+    $mbtiEI = $mbti[0];
+    $mbtiSN = $mbti[1];
+    $mbtiTF = $mbti[2];
+    $mbtiJP = $mbti[3];
+
     $top1       = $pyResult['top3'][0];
     $branchId   = $top1['id']    ?? null;
     $branchName = $top1['name']  ?? null;
     $score      = $top1['score'] ?? null;
 
-    $stmt2 = $conn->prepare("
-        UPDATE quiz_results 
-        SET branch_id = ?, branch_name = ?, score = ?
-        WHERE id = ?
+    $stmt = $conn->prepare("
+        INSERT INTO quiz_results 
+            (user_id, grade_math, grade_sci, grade_eng, grade_thai, grade_social, grade_art,
+             mbti_type, mbti_e_i, mbti_s_n, mbti_t_f, mbti_j_p,
+             branch_id, branch_name, score)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
-    if (!$stmt2) {
-        throw new Exception('Prepare (UPDATE quiz_results) ล้มเหลว: ' . $conn->error);
+    if (!$stmt) {
+        throw new Exception('Prepare (INSERT quiz_results) ล้มเหลว: ' . $conn->error);
     }
-    $stmt2->bind_param('isdi', $branchId, $branchName, $score, $resultId);
-    if (!$stmt2->execute()) {
-        throw new Exception('อัปเดตผลลัพธ์ไม่สำเร็จ: ' . $stmt2->error);
+
+    $stmt->bind_param(
+        'iddddddsssssisd',
+        $userId,
+        $grades['math'], $grades['sci'], $grades['eng'],
+        $grades['thai'], $grades['social'], $grades['art'],
+        $mbti,
+        $mbtiEI, $mbtiSN, $mbtiTF, $mbtiJP,
+        $branchId, $branchName, $score
+    );
+
+    if (!$stmt->execute()) {
+        throw new Exception('บันทึกข้อมูลไม่สำเร็จ: ' . $stmt->error);
     }
-    $stmt2->close();
+
+    $resultId = $stmt->insert_id;
+    $stmt->close();
     $conn->close();
 
     // ========================================
-    // Step 4: ส่ง result_id กลับให้ quiz.html
+    // Step 3: ส่ง result_id และ mbti กลับให้ quiz.html
     // ========================================
     echo json_encode([
         'success'   => true,
-        'result_id' => $resultId
+        'result_id' => $resultId,
+        'mbti'      => $mbti
     ]);
 
 } catch (Throwable $e) {

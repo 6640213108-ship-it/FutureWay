@@ -276,8 +276,16 @@
       }
 
       const missing = [];
+      const cardEls = document.querySelectorAll('.mbti-card');
+
+      if (cardEls.length !== totalQuestions) {
+        console.warn('จำนวนการ์ดที่ render (' + cardEls.length + ') ไม่ตรงกับจำนวนคำถามที่โหลดมา (' + totalQuestions + ')');
+      }
+
       for (let i = 1; i <= totalQuestions; i++) {
-        const card = document.querySelectorAll('.mbti-card')[i - 1];
+        const card = cardEls[i - 1];
+        if (!card) continue; // กันพังถ้าการ์ดหายไปจาก DOM
+
         if (!answers[`q${i}`]) {
           missing.push(i);
           card.style.border = '2px solid #e74c3c';
@@ -292,8 +300,10 @@
         errEl.textContent = `⚠️ ยังไม่ได้ตอบข้อที่: ${missing.join(', ')}`;
         errEl.classList.add('show');
 
-        const firstMissing = document.querySelectorAll('.mbti-card')[missing[0] - 1];
-        firstMissing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const firstMissing = cardEls[missing[0] - 1];
+        if (firstMissing) {
+          firstMissing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
         return;
       }
 

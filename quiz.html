@@ -138,9 +138,11 @@
   </nav>
 
   <script>
-    // เก็บคำตอบ MBTI แยกต่างหาก (ไม่พึ่ง :checked)
+    // เก็บคำตอบ MBTI แยกต่างหาก (ไม่พึ่ง :checked) — เก็บเป็น 'A' หรือ 'B' ไม่ใช่ trait
+    // เพราะการคำนวณ MBTI จริงจะทำที่ฝั่ง backend (python) แทน เพื่อความปลอดภัย/สอดคล้องกัน
     const answers = {};
-    let totalQuestions = 0; // จะถูกตั้งค่าหลังโหลดคำถามจาก DB สำเร็จ
+    let totalQuestions = 0;  // จะถูกตั้งค่าหลังโหลดคำถามจาก DB สำเร็จ
+    let questionIds = [];    // เก็บ id จริงของคำถามในตาราง questions เรียงตามลำดับที่แสดง (index 0 = ข้อ 1)
 
     // กัน HTML injection จากข้อความที่มาจาก DB
     function escapeHtml(str) {
@@ -171,11 +173,13 @@
         };
 
         totalQuestions = data.questions.length;
+        questionIds = [];
         let lastCategory = null;
         let html = '';
 
         data.questions.forEach((q, index) => {
           const qNum = index + 1;
+          questionIds.push(q.id);
 
           if (q.category !== lastCategory) {
             const catCode = q.category || '';
@@ -193,12 +197,12 @@
               <p class="mbti-q-text">${escapeHtml(q.question_text)}</p>
               <div class="mbti-options">
                 <label class="mbti-option" onclick="selectOption(this)">
-                  <input type="radio" name="q${qNum}" value="${escapeHtml(q.option_a_trait)}">
+                  <input type="radio" name="q${qNum}" value="A">
                   <div class="option-dot"></div>
                   <span class="option-text">${escapeHtml(q.option_a_text)}</span>
                 </label>
                 <label class="mbti-option" onclick="selectOption(this)">
-                  <input type="radio" name="q${qNum}" value="${escapeHtml(q.option_b_trait)}">
+                  <input type="radio" name="q${qNum}" value="B">
                   <div class="option-dot"></div>
                   <span class="option-text">${escapeHtml(q.option_b_text)}</span>
                 </label>
@@ -319,18 +323,18 @@
         art:    parseFloat(document.getElementById('g-art').value),
       };
 
-      const dims = { E:0,I:0, S:0,N:0, T:0,F:0, J:0,P:0 };
+      // ส่งคำตอบดิบ (question_id + selected 'A'/'B') ไปให้ backend คำนวณ MBTI เอง
+      // แทนที่จะคำนวณเสร็จแล้วส่งแค่ผลลัพธ์ — กันผู้ใช้แก้ค่าจาก dev console
+      // และให้ตรงกับ logic การนับคะแนนที่ decision_tree.py ใช้อยู่จุดเดียว
+      const answersPayload = [];
       for (let i = 1; i <= totalQuestions; i++) {
-        dims[answers[`q${i}`]]++;
+        answersPayload.push({
+          question_id: questionIds[i - 1],
+          selected:    answers[`q${i}`]
+        });
       }
-      const mbti =
-        (dims.E >= dims.I ? 'E' : 'I') +
-        (dims.S >= dims.N ? 'S' : 'N') +
-        (dims.T >= dims.F ? 'T' : 'F') +
-        (dims.J >= dims.P ? 'J' : 'P');
 
       sessionStorage.setItem('grades', JSON.stringify(grades));
-      sessionStorage.setItem('mbti', mbti);
 
       const btn = document.querySelector('.quiz-submit-btn');
       btn.disabled = true;
@@ -340,11 +344,15 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ grades, mbti })
+        body: JSON.stringify({ grades, answers: answersPayload })
       })
       .then(r => r.json())
       .then(data => {
         if (data.success) {
+          // ถ้า backend ส่ง mbti ที่คำนวณได้กลับมาด้วย เก็บไว้ใช้ต่อในหน้า result
+          if (data.mbti) {
+            sessionStorage.setItem('mbti', data.mbti);
+          }
           window.location.href = 'result.html?id=' + data.result_id;
         } else {
           console.error('PHP error:', data);

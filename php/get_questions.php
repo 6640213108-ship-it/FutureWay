@@ -16,11 +16,11 @@ try {
     }
     $conn->set_charset('utf8mb4');
 
-    $sql = "SELECT id, question_no, dimension, dimension_title,
-                   question_text, option_a_text, option_a_value,
-                   option_b_text, option_b_value
+    $sql = "SELECT id, category, question_no,
+                   question_text, option_a_text, option_a_trait,
+                   option_b_text, option_b_trait
             FROM mbti_questions
-            ORDER BY question_no ASC";
+            ORDER BY category, question_no ASC";
 
     $result = $conn->query($sql);
     if (!$result) {

@@ -35,13 +35,13 @@ DB_CONFIG = {
 # ========================================
 def get_mbti_questions():
     """
-    ดึงคำถาม MBTI ทั้งหมดจากตาราง questions
+    ดึงคำถาม MBTI ทั้งหมดจากตาราง mbti_questions
     โครงสร้างตาราง: id, category (EI/SN/TF/JP), question_no, question_text,
                     option_a_text, option_a_trait, option_b_text, option_b_trait
     """
     conn   = mysql.connector.connect(**DB_CONFIG)
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM questions ORDER BY category, question_no")
+    cursor.execute("SELECT * FROM mbti_questions ORDER BY category, question_no")
     questions = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -55,7 +55,7 @@ def resolve_mbti_from_answers(answers):
 
     answers: list of dict เช่น
         [{'question_id': 1, 'selected': 'A'}, {'question_id': 2, 'selected': 'B'}, ...]
-        - question_id ต้องตรงกับ id ในตาราง questions
+        - question_id ต้องตรงกับ id ในตาราง mbti_questions
         - selected คือ 'A' หรือ 'B' (ข้อที่ผู้ใช้เลือก)
 
     คืนค่า: {

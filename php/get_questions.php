@@ -6,16 +6,11 @@
 
 session_start();
 header('Content-Type: application/json; charset=utf-8');
-mysqli_report(MYSQLI_REPORT_OFF);
 
 require_once __DIR__ . '/db_config.php';
 
 try {
     $conn = getDbConnection();
-} catch (Exception $e) {
-    die($e->getMessage());
-}
-    $conn->set_charset('utf8mb4');
 
     $sql = "SELECT id, category, question_no,
                    question_text, option_a_text, option_a_trait,

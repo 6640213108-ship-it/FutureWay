@@ -12,10 +12,6 @@ session_start();
 
 header('Content-Type: application/json; charset=utf-8');
 
-// ปิด mysqli exception mode -> ให้เช็ค error เองผ่าน connect_error/errno แทน
-// (ถ้าไม่ปิด PHP 8.1+ จะ throw exception ตอน connect ไม่ได้ ทำให้ script ตายแบบไม่มี output)
-mysqli_report(MYSQLI_REPORT_OFF);
-
 // ========================================
 // ครอบทุกอย่างด้วย try-catch เพื่อรับประกันว่า
 // ไม่ว่าจะพังตรงไหน จะได้ JSON กลับไปเสมอ ไม่ใช่ response ว่างๆ
@@ -60,15 +56,8 @@ try {
     // ========================================
     // เชื่อมต่อ Database
     // ========================================
-    // MySQL รันที่ port 3306 (default ของ XAMPP/Laragon/MySQL ทั่วไป)
-require_once __DIR__ . '/db_config.php';
-
-try {
-    $conn = getDbConnection();
-} catch (Exception $e) {
-    die($e->getMessage());
-}
-    $conn->set_charset('utf8mb4');
+    require_once __DIR__ . '/db_config.php';
+    $conn = getDbConnection(); // ถ้า connect ไม่ได้ exception จะถูกจับโดย catch (Throwable $e) ท้ายไฟล์
 
     // ดึง user_id
     if (isset($_SESSION['user_id'])) {
@@ -171,8 +160,6 @@ try {
         $errMsg = 'Python ส่งค่ากลับมาไม่ใช่ JSON ที่ถูกต้อง (' . json_last_error_msg() . ')';
     } elseif (!$pyResult) {
         // stdout ว่างเปล่าจริงๆ -> python ไม่ถูกเรียก หรือ crash ตั้งแต่ต้นไฟล์
-        // (เช่น import mysql.connector ไม่ได้ เพราะยังไม่ได้ pip install mysql-connector-python
-        //  ให้ python ตัวที่ตรงกับ $pythonPath)
         $errMsg = 'ไม่ได้รับ output จาก Python เลย (ตรวจสอบ python path และว่าลง mysql-connector-python แล้วหรือยัง)';
     } elseif (isset($pyResult['error'])) {
         // python รันได้ แต่ error ระหว่างทาง (เช่น DB connect ไม่ได้)

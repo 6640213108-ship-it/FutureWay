@@ -7,6 +7,7 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     header("Location: ../login.html");
     exit();
 }
+
 require_once __DIR__ . '/db_config.php';
 
 try {
@@ -40,7 +41,7 @@ if ($result->num_rows > 0) {
     if (password_verify($password, $row['password'])) {
         // ✅ set ทั้ง username และ user_id
         $_SESSION['username'] = $row['username'];
-        $_SESSION['user_id']  = $row['id'];        // ← เพิ่มบรรทัดนี้
+        $_SESSION['user_id']  = $row['id'];
         header("Location: ../login.html?status=success");
         exit();
     } else {

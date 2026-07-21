@@ -8,7 +8,7 @@ require_once __DIR__ . '/db_config.php';
 try {
     $conn = getDbConnection();
 } catch (Exception $e) {
-    die($e->getMessage());
+    die("Connection failed: " . $e->getMessage());
 }
 
 $username  = isset($_POST['user'])       ? trim($_POST['user'])       : '';

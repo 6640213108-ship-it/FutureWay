@@ -162,20 +162,29 @@
           return;
         }
 
+        // ชื่อไทยของแต่ละหมวดคำถาม (category ในตารางเก็บเป็นโค้ด เช่น EI, SN, TF, JP)
+        const categoryTitles = {
+          EI: 'พลังงาน (Extrovert / Introvert)',
+          SN: 'การรับข้อมูล (Sensing / Intuition)',
+          TF: 'การตัดสินใจ (Thinking / Feeling)',
+          JP: 'การใช้ชีวิต (Judging / Perceiving)'
+        };
+
         totalQuestions = data.questions.length;
-        let lastDimension = null;
+        let lastCategory = null;
         let html = '';
 
         data.questions.forEach((q, index) => {
           const qNum = index + 1;
 
-          if (q.dimension !== lastDimension) {
+          if (q.category !== lastCategory) {
+            const catCode = q.category || '';
             html += `
               <div class="dimension-label">
-                <span class="dimension-badge">${escapeHtml(q.dimension.charAt(0))} / ${escapeHtml(q.dimension.charAt(1))}</span>
-                <span class="dimension-title">${escapeHtml(q.dimension_title)}</span>
+                <span class="dimension-badge">${escapeHtml(catCode.charAt(0))} / ${escapeHtml(catCode.charAt(1))}</span>
+                <span class="dimension-title">${escapeHtml(categoryTitles[catCode] || catCode)}</span>
               </div>`;
-            lastDimension = q.dimension;
+            lastCategory = q.category;
           }
 
           html += `
@@ -184,12 +193,12 @@
               <p class="mbti-q-text">${escapeHtml(q.question_text)}</p>
               <div class="mbti-options">
                 <label class="mbti-option" onclick="selectOption(this)">
-                  <input type="radio" name="q${qNum}" value="${escapeHtml(q.option_a_value)}">
+                  <input type="radio" name="q${qNum}" value="${escapeHtml(q.option_a_trait)}">
                   <div class="option-dot"></div>
                   <span class="option-text">${escapeHtml(q.option_a_text)}</span>
                 </label>
                 <label class="mbti-option" onclick="selectOption(this)">
-                  <input type="radio" name="q${qNum}" value="${escapeHtml(q.option_b_value)}">
+                  <input type="radio" name="q${qNum}" value="${escapeHtml(q.option_b_trait)}">
                   <div class="option-dot"></div>
                   <span class="option-text">${escapeHtml(q.option_b_text)}</span>
                 </label>

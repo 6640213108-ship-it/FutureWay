@@ -23,8 +23,8 @@ import mysql.connector
 # ตั้งค่าเชื่อมต่อ Database
 # ========================================
 DB_CONFIG = {
-    'host':     'tokaido.proxy.rlwy.net',
-    'port':     57745,
+    'host':     'mysql.railway.internal',
+    'port':     3306,
     'user':     'root',
     'password': 'OLdaGruletpcPRSKSZkUOUrKaUWmDjri',
     'database': 'railway'      # ต้องตรงกับ DB ที่ไฟล์ PHP ทุกไฟล์ใช้ (railway)

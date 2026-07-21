@@ -124,6 +124,7 @@ body {
   font-weight: 700;
   cursor: pointer;
   width: 100%;
+  text-align: center;   /* ← เพิ่มบรรทัดนี้ */
   transition: background var(--transition), color var(--transition);
 }
 .test-btn:hover {

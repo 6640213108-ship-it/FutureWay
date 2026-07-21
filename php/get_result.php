@@ -18,7 +18,7 @@ if (!$resultId) {
     exit;
 }
 
-$conn = new mysqli('tokaido.proxy.rlwy.net', 'root', 'REDACTED_DB_PASSWORD', 'railway', 23637);
+$conn = new mysqli('mysql.railway.internal', 'root', 'REDACTED_DB_PASSWORD', 'railway', 3306);
 if ($conn->connect_error) {
     echo json_encode(['success' => false, 'error' => 'DB connection failed']);
     exit;

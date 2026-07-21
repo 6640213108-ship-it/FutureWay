@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-$conn = new mysqli('tokaido.proxy.rlwy.net', 'root', 'REDACTED_DB_PASSWORD', 'railway', 23637);
+$conn = new mysqli('mysql.railway.internal', 'root', 'REDACTED_DB_PASSWORD', 'railway', 3306);
 if ($conn->connect_error) {
     die('DB connection failed');
 }

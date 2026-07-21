@@ -61,7 +61,7 @@ try {
     // เชื่อมต่อ Database
     // ========================================
     // MySQL รันที่ port 3306 (default ของ XAMPP/Laragon/MySQL ทั่วไป)
-$conn = new mysqli('tokaido.proxy.rlwy.net', 'root', 'REDACTED_DB_PASSWORD', 'railway', 23637);
+$conn = new mysqli('mysql.railway.internal', 'root', 'REDACTED_DB_PASSWORD', 'railway', 3306);
     if ($conn->connect_error) {
         echo json_encode(['success' => false, 'error' => 'DB: ' . $conn->connect_error]);
         exit;

@@ -3,7 +3,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-$conn = new mysqli('tokaido.proxy.rlwy.net', 'root', 'OLdaGruletpcPRSKSZkUOUrKaUWmDjri', 'railway', 23637);
+$conn = new mysqli('mysql.railway.internal', 'root', 'OLdaGruletpcPRSKSZkUOUrKaUWmDjri', 'railway', 3306);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }

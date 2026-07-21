@@ -9,7 +9,7 @@ header('Content-Type: application/json; charset=utf-8');
 mysqli_report(MYSQLI_REPORT_OFF);
 
 try {
-    $conn = new mysqli('tokaido.proxy.rlwy.net', 'root', 'OLdaGruletpcPRSKSZkUOUrKaUWmDjri', 'railway', 57745);
+    $conn = new mysqli('mysql.railway.internal', 'root', 'OLdaGruletpcPRSKSZkUOUrKaUWmDjri', 'railway', 3306);
     if ($conn->connect_error) {
         echo json_encode(['success' => false, 'error' => 'DB: ' . $conn->connect_error]);
         exit;

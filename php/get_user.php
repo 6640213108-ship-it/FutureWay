@@ -5,7 +5,13 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 header('Content-Type: application/json; charset=utf-8');
 
-$conn = new mysqli('mysql.railway.internal', 'root', 'OLdaGruletpcPRSKSZkUOUrKaUWmDjri', 'railway', 3306);
+require_once __DIR__ . '/db_config.php';
+
+try {
+    $conn = getDbConnection();
+} catch (Exception $e) {
+    die($e->getMessage());
+}
 $conn->set_charset("utf8");
 
 // ค่าเริ่มต้น

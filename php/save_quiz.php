@@ -61,11 +61,13 @@ try {
     // เชื่อมต่อ Database
     // ========================================
     // MySQL รันที่ port 3306 (default ของ XAMPP/Laragon/MySQL ทั่วไป)
-$conn = new mysqli('mysql.railway.internal', 'root', 'OLdaGruletpcPRSKSZkUOUrKaUWmDjri', 'railway', 3306);
-    if ($conn->connect_error) {
-        echo json_encode(['success' => false, 'error' => 'DB: ' . $conn->connect_error]);
-        exit;
-    }
+require_once __DIR__ . '/db_config.php';
+
+try {
+    $conn = getDbConnection();
+} catch (Exception $e) {
+    die($e->getMessage());
+}
     $conn->set_charset('utf8mb4');
 
     // ดึง user_id

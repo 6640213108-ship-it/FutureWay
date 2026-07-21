@@ -7,10 +7,12 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     header("Location: ../login.html");
     exit();
 }
-$conn = new mysqli('mysql.railway.internal', 'root', 'OLdaGruletpcPRSKSZkUOUrKaUWmDjri', 'railway', 3306);
+require_once __DIR__ . '/db_config.php';
 
-if ($conn->connect_error) {
-    die("เชื่อมต่อ DB ไม่ได้: " . $conn->connect_error);
+try {
+    $conn = getDbConnection();
+} catch (Exception $e) {
+    die($e->getMessage());
 }
 
 $username = isset($_POST['user']) ? trim($_POST['user']) : '';

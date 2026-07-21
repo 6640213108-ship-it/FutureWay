@@ -7,9 +7,12 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-$conn = new mysqli('mysql.railway.internal', 'root', 'OLdaGruletpcPRSKSZkUOUrKaUWmDjri', 'railway', 3306);
-if ($conn->connect_error) {
-    die('DB connection failed');
+require_once __DIR__ . '/db_config.php';
+
+try {
+    $conn = getDbConnection();
+} catch (Exception $e) {
+    die($e->getMessage());
 }
 $conn->set_charset('utf8mb4');
 
@@ -191,7 +194,7 @@ function submitQuiz() {
     document.querySelector('.step.active').classList.remove('active');
     document.getElementById('loadingBox').style.display = 'block';
 
-    fetch('save_result.php', {
+    fetch('save_quiz.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

@@ -18,10 +18,12 @@ if (!$resultId) {
     exit;
 }
 
-$conn = new mysqli('mysql.railway.internal', 'root', 'OLdaGruletpcPRSKSZkUOUrKaUWmDjri', 'railway', 3306);
-if ($conn->connect_error) {
-    echo json_encode(['success' => false, 'error' => 'DB connection failed']);
-    exit;
+require_once __DIR__ . '/db_config.php';
+
+try {
+    $conn = getDbConnection();
+} catch (Exception $e) {
+    die($e->getMessage());
 }
 $conn->set_charset('utf8mb4');
 

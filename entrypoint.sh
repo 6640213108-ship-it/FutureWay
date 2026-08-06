@@ -19,6 +19,10 @@ sed -i "s/^Listen .*/Listen ${PORT:-80}/" /etc/apache2/ports.conf
 # เช่นเดียวกัน match เฉพาะ pattern ทั้งก้อน *:PORT> กันไม่ให้ไป match ทับค่าที่แก้ไปแล้ว
 sed -i "s/<VirtualHost \*:[0-9]*>/<VirtualHost *:${PORT:-80}>/" /etc/apache2/sites-available/000-default.conf
 
+# image php:8.3-apache ตั้ง AllowOverride None ไว้เป็นค่าเริ่มต้น
+# ทำให้ .htaccess ถูกเมินทั้งไฟล์ ต้องเปิดให้อ่านก่อน กฎใน .htaccess ถึงจะมีผลจริง
+sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+
 echo "=== ports.conf now ==="
 cat /etc/apache2/ports.conf
 echo "=== 000-default.conf VirtualHost line ==="

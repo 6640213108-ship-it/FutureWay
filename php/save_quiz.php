@@ -177,33 +177,129 @@ try {
     $branchName = $top1['name']  ?? null;
     $score      = $top1['score'] ?? null;
 
-    $stmt = $conn->prepare("
-        INSERT INTO quiz_results 
-            (user_id, grade_math, grade_sci, grade_eng, grade_thai, grade_social, grade_art,
-             mbti_type, mbti_e_i, mbti_s_n, mbti_t_f, mbti_j_p,
-             branch_id, branch_name, score)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ");
-    if (!$stmt) {
-        throw new Exception('Prepare (INSERT quiz_results) ล้มเหลว: ' . $conn->error);
+    // ค่าสรุปของรอบนี้ที่ python คำนวณมาแล้ว เก็บไว้ด้วยจะได้ไม่ต้องคำนวณซ้ำตอนเปิดดูผล
+    $avgGrade     = $pyResult['avg_grade'] ?? null;
+    $mbtiDetail   = isset($pyResult['mbti_detail'])
+        ? json_encode($pyResult['mbti_detail'], JSON_UNESCAPED_UNICODE)
+        : null;
+    $answersTotal = count($answers);
+
+    // เก็บทั้ง 3 ตารางให้เป็นก้อนเดียวกัน ถ้าพังกลางทางต้องไม่เหลือแถวค้าง
+    $conn->begin_transaction();
+
+    try {
+        $stmt = $conn->prepare("
+            INSERT INTO quiz_results
+                (user_id, grade_math, grade_sci, grade_eng, grade_thai, grade_social, grade_art,
+                 avg_grade,
+                 mbti_type, mbti_e_i, mbti_s_n, mbti_t_f, mbti_j_p,
+                 mbti_detail, answers_total,
+                 branch_id, branch_name, score)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        if (!$stmt) {
+            throw new Exception('Prepare (INSERT quiz_results) ล้มเหลว: ' . $conn->error);
+        }
+
+        // i=user_id, d×7=เกรด6วิชา+avg, s×6=mbti_type+4มิติ+mbti_detail,
+        // i=answers_total, i=branch_id, s=branch_name, d=score  (รวม 18 ค่า)
+        $stmt->bind_param(
+            'idddddddssssssiisd',
+            $userId,
+            $grades['math'], $grades['sci'], $grades['eng'],
+            $grades['thai'], $grades['social'], $grades['art'],
+            $avgGrade,
+            $mbti,
+            $mbtiEI, $mbtiSN, $mbtiTF, $mbtiJP,
+            $mbtiDetail, $answersTotal,
+            $branchId, $branchName, $score
+        );
+
+        if (!$stmt->execute()) {
+            throw new Exception('บันทึกข้อมูลไม่สำเร็จ: ' . $stmt->error);
+        }
+
+        $resultId = $stmt->insert_id;
+        $stmt->close();
+
+        // ----------------------------------------
+        // เก็บสาขาที่แนะนำครบทั้ง 3 อันดับเป็น snapshot ของรอบนี้
+        // (เดิมเก็บแค่อันดับ 1 แล้วไปคำนวณอันดับ 2-3 ใหม่ตอนเปิดหน้า result
+        //  ทำให้ประวัติเก่าเปลี่ยนผลตามข้อมูลตาราง branches ที่แก้ทีหลัง)
+        // ----------------------------------------
+        $stmtB = $conn->prepare("
+            INSERT INTO quiz_result_branches
+                (result_id, rank_no, branch_id, branch_name, faculty, description, score, note)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        if (!$stmtB) {
+            throw new Exception('Prepare (INSERT quiz_result_branches) ล้มเหลว: ' . $conn->error);
+        }
+
+        foreach (array_slice($pyResult['top3'], 0, 3) as $i => $b) {
+            $rankNo  = $i + 1;
+            $bId     = $b['id']          ?? null;
+            $bName   = $b['name']        ?? '';
+            $bFac    = $b['faculty']     ?? null;
+            $bDesc   = $b['description'] ?? null;
+            $bScore  = $b['score']       ?? 0;
+            $bNote   = $b['note']        ?? null;
+
+            $stmtB->bind_param('iiisssds', $resultId, $rankNo, $bId, $bName, $bFac, $bDesc, $bScore, $bNote);
+            if (!$stmtB->execute()) {
+                throw new Exception('บันทึกสาขาที่แนะนำไม่สำเร็จ: ' . $stmtB->error);
+            }
+        }
+        $stmtB->close();
+
+        // ----------------------------------------
+        // เก็บคำตอบรายข้อ พร้อมมิติ (EI/SN/TF/JP) และตัวอักษรที่ได้จากตัวเลือกนั้น
+        // ดึง meta ของคำถามมาครั้งเดียวแล้ว map เอา ไม่ query ทีละข้อ
+        // ----------------------------------------
+        $qMeta = [];
+        if ($qRes = $conn->query("SELECT id, question_no, category, option_a_trait, option_b_trait FROM mbti_questions")) {
+            while ($qRow = $qRes->fetch_assoc()) {
+                $qMeta[(string)$qRow['id']] = $qRow;
+            }
+            $qRes->free();
+        }
+
+        $stmtA = $conn->prepare("
+            INSERT INTO quiz_answers
+                (result_id, question_id, question_no, category, selected, trait)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        if (!$stmtA) {
+            throw new Exception('Prepare (INSERT quiz_answers) ล้มเหลว: ' . $conn->error);
+        }
+
+        foreach ($answers as $a) {
+            $qId   = (int)$a['question_id'];
+            $sel   = strtoupper(substr(trim((string)$a['selected']), 0, 1));
+            $meta  = $qMeta[(string)$qId] ?? null;
+
+            $qNo   = $meta ? (int)$meta['question_no'] : null;
+            $cat   = $meta ? strtoupper(trim((string)$meta['category'])) : null;
+            $trait = null;
+            if ($meta) {
+                $rawTrait = ($sel === 'A') ? $meta['option_a_trait'] : $meta['option_b_trait'];
+                $trait    = strtoupper(substr(trim((string)$rawTrait), 0, 1)) ?: null;
+            }
+
+            $stmtA->bind_param('iiisss', $resultId, $qId, $qNo, $cat, $sel, $trait);
+            if (!$stmtA->execute()) {
+                throw new Exception('บันทึกคำตอบไม่สำเร็จ: ' . $stmtA->error);
+            }
+        }
+        $stmtA->close();
+
+        $conn->commit();
+
+    } catch (Throwable $e) {
+        $conn->rollback();
+        throw $e;
     }
 
-    $stmt->bind_param(
-        'iddddddsssssisd',
-        $userId,
-        $grades['math'], $grades['sci'], $grades['eng'],
-        $grades['thai'], $grades['social'], $grades['art'],
-        $mbti,
-        $mbtiEI, $mbtiSN, $mbtiTF, $mbtiJP,
-        $branchId, $branchName, $score
-    );
-
-    if (!$stmt->execute()) {
-        throw new Exception('บันทึกข้อมูลไม่สำเร็จ: ' . $stmt->error);
-    }
-
-    $resultId = $stmt->insert_id;
-    $stmt->close();
     $conn->close();
 
     // ========================================

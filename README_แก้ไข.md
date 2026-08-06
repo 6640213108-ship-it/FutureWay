@@ -29,3 +29,53 @@ git push
 ```
 
 อย่าลืมแก้ `profile.html` เอา `<link rel="stylesheet" href="css/profile.css">` ออกด้วย เพราะ `css/main.css` มีสไตล์ครบอยู่แล้ว
+
+---
+
+# เก็บผลลัพธ์ของแต่ละรอบที่ทำแบบทดสอบ (migration 002)
+
+## ปัญหาเดิม
+ตาราง `quiz_results` เก็บแค่ **MBTI + สาขาอันดับ 1** ส่วนอันดับ 2-3 ถูกคำนวณใหม่ทุกครั้งที่เปิดหน้า `result.html`
+ถ้าไปแก้ข้อมูลตาราง `branches` ทีหลัง **ประวัติเก่าจะแสดงผลเปลี่ยนไป** ไม่ตรงกับที่ผู้ใช้เคยเห็น
+และคำตอบรายข้อ (ตอบ A/B ข้อไหนบ้าง) ไม่ได้ถูกเก็บเลย
+
+## สิ่งที่เพิ่ม
+| ไฟล์ | สิ่งที่ทำ |
+|---|---|
+| `sql/002_result_details.sql` | **ไฟล์ใหม่** — เพิ่มคอลัมน์ `avg_grade`, `mbti_detail`, `answers_total` ใน `quiz_results` + สร้างตาราง `quiz_result_branches` และ `quiz_answers` |
+| `php/migrate.php` | **ไฟล์ใหม่** — ตัวรัน migration ผ่านเว็บ (เพราะ `mysql.railway.internal` เรียกได้จากใน container เท่านั้น) |
+| `php/save_quiz.php` | บันทึกผลลัพธ์เป็น snapshot ครบทั้ง 3 ตารางในหนึ่ง transaction |
+| `php/get_result.php` | อ่านสาขาที่แนะนำจาก snapshot แทนการรัน `decision_tree.py` ซ้ำ (แถวเก่าก่อน migration ยัง fallback ไปรัน python เหมือนเดิม) |
+| `entrypoint.sh` | เปิด `AllowOverride All` — ของเดิม image ตั้ง `AllowOverride None` ทำให้ `.htaccess` ถูกเมินทั้งไฟล์ |
+| `.htaccess` | ห้ามเปิดไฟล์ `.sql` ผ่านเว็บ |
+
+## โครงสร้างที่ได้
+```
+quiz_results            1 แถว = 1 รอบที่ทำแบบทดสอบ (เกรด, MBTI, เกรดเฉลี่ย, คะแนนราย 4 มิติ)
+  └─ quiz_result_branches   3 แถวต่อรอบ = สาขาที่แนะนำอันดับ 1-3 พร้อมคะแนน
+  └─ quiz_answers           N แถวต่อรอบ = ตอบข้อไหน เลือก A/B ได้ตัวอักษรอะไร
+```
+ทั้งสองตารางลูกผูก FK `ON DELETE CASCADE` — ลบผลลัพธ์รอบไหน ข้อมูลลูกหายตามอัตโนมัติ
+
+## วิธีรัน migration บน Railway (เลือกทางใดทางหนึ่ง)
+
+**ทาง A — Railway Data tab (ง่ายสุด ไม่ต้อง deploy)**
+เปิด service **MySQL** → แท็บ **Data** → **Query** → วางคำสั่งจาก `sql/002_result_details.sql` ทีละคำสั่ง
+
+**ทาง B — `php/migrate.php`**
+1. Railway → service เว็บ → **Variables** → เพิ่ม `MIGRATE_TOKEN` = ข้อความลับที่เดายาก
+2. `git push` แล้วรอ deploy เสร็จ
+3. เปิด `https://<app>.up.railway.app/php/migrate.php?token=<MIGRATE_TOKEN>`
+4. ได้ JSON `"success": true` แปลว่าผ่าน — **แล้วลบ `MIGRATE_TOKEN` ทิ้ง** (หรือลบไฟล์ออกจาก repo)
+
+**ทาง C — mysql client ที่เครื่องตัวเอง**
+ใช้ค่าจาก `MYSQL_PUBLIC_URL` ในแท็บ Variables (เป็น public proxy host คนละตัวกับ `mysql.railway.internal` ที่ต่อได้เฉพาะจากใน Railway)
+```bash
+mysql -h <proxy-host> -P <proxy-port> -u root -p railway < sql/002_result_details.sql
+```
+
+รันซ้ำได้ปลอดภัยทุกทาง — คำสั่งที่ทำไปแล้วจะถูกข้าม ไม่ทับข้อมูลเดิม
+
+## ⚠️ เรื่องที่ควรแก้ต่อ (คนละเรื่องกับ migration นี้)
+`decision_tree.py:25` และ `php/db_config.php:13` ยัง hardcode รหัสผ่าน MySQL ไว้ในโค้ด ซึ่งอยู่ใน git history ไปแล้ว
+ควร **rotate รหัสผ่านบน Railway** แล้วให้ทั้งสองไฟล์อ่านจาก environment variable อย่างเดียว ไม่ต้องมี fallback

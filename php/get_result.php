@@ -44,7 +44,6 @@ if (!$result) {
     exit;
 }
 
-// ดึง top 3 สาขาโดยรัน Python อีกครั้ง (เพื่อแสดงผลครบ)
 $grades = [
     'math'   => $result['grade_math'],
     'sci'    => $result['grade_sci'],
@@ -55,40 +54,102 @@ $grades = [
 ];
 $mbti = $result['mbti_type'];
 
-$pythonInput = json_encode(['grades' => $grades, 'mbti' => $mbti]);
-require_once __DIR__ . '/python_config.php';
-try {
-    $pythonPath = getPythonPath();
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-    exit;
+// ========================================
+// อ่านสาขาที่แนะนำจาก snapshot ที่บันทึกไว้ตอนทำแบบทดสอบรอบนั้น
+// -> ผลที่ผู้ใช้เห็นย้อนหลังตรงกับตอนทำจริงเสมอ ถึงจะแก้ข้อมูล branches ทีหลัง
+//    และไม่ต้องรัน python ซ้ำทุกครั้งที่เปิดหน้านี้
+// ========================================
+$top3  = [];
+$stmtB = $conn->prepare("
+    SELECT rank_no, branch_id, branch_name, faculty, description, score, note
+    FROM quiz_result_branches
+    WHERE result_id = ?
+    ORDER BY rank_no ASC
+");
+if ($stmtB) {
+    $stmtB->bind_param('i', $resultId);
+    $stmtB->execute();
+    $resB = $stmtB->get_result();
+    while ($row = $resB->fetch_assoc()) {
+        $top3[] = [
+            'id'          => $row['branch_id'] !== null ? (int)$row['branch_id'] : null,
+            'name'        => $row['branch_name'],
+            'faculty'     => $row['faculty'],
+            'description' => $row['description'],
+            'score'       => (float)$row['score'],
+            'note'        => $row['note'],
+        ];
+    }
+    $stmtB->close();
 }
-$scriptPath  = dirname(__DIR__) . '/decision_tree.py';
 
-$descriptors = [
-    0 => ['pipe', 'r'],
-    1 => ['pipe', 'w'],
-    2 => ['pipe', 'w'],
-];
+// ========================================
+// Fallback: ผลลัพธ์เก่าที่บันทึกไว้ก่อน migration 002 ยังไม่มี snapshot
+// จึงต้องคำนวณใหม่ด้วย python เหมือนเดิม
+// ========================================
+if (!$top3) {
+    $pythonInput = json_encode(['grades' => $grades, 'mbti' => $mbti]);
+    require_once __DIR__ . '/python_config.php';
+    try {
+        $pythonPath = getPythonPath();
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        exit;
+    }
+    $scriptPath  = dirname(__DIR__) . '/decision_tree.py';
 
-$process = proc_open('"' . $pythonPath . '" "' . $scriptPath . '"', $descriptors, $pipes);
-fwrite($pipes[0], $pythonInput);
-fclose($pipes[0]);
-$pythonOutput = stream_get_contents($pipes[1]);
-fclose($pipes[1]);
-fclose($pipes[2]);
-proc_close($process);
+    $descriptors = [
+        0 => ['pipe', 'r'],
+        1 => ['pipe', 'w'],
+        2 => ['pipe', 'w'],
+    ];
 
-$pyResult = json_decode($pythonOutput, true);
+    $process = proc_open('"' . $pythonPath . '" "' . $scriptPath . '"', $descriptors, $pipes);
+    fwrite($pipes[0], $pythonInput);
+    fclose($pipes[0]);
+    $pythonOutput = stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    proc_close($process);
+
+    $pyResult = json_decode($pythonOutput, true);
+    $top3     = $pyResult['top3'] ?? [];
+}
+
+// ดึงคำตอบรายข้อของรอบนี้ (ถ้ามีบันทึกไว้)
+$answers = [];
+$stmtA   = $conn->prepare("
+    SELECT question_id, question_no, category, selected, trait
+    FROM quiz_answers
+    WHERE result_id = ?
+    ORDER BY id ASC
+");
+if ($stmtA) {
+    $stmtA->bind_param('i', $resultId);
+    $stmtA->execute();
+    $resA = $stmtA->get_result();
+    while ($row = $resA->fetch_assoc()) {
+        $answers[] = $row;
+    }
+    $stmtA->close();
+}
 
 $conn->close();
 
+// avg_grade ใช้ค่าที่บันทึกไว้ก่อน ถ้าเป็นแถวเก่าที่ยังไม่มีค่อยคำนวณเอง
+$avgGrade = isset($result['avg_grade']) && $result['avg_grade'] !== null
+    ? (float)$result['avg_grade']
+    : round(array_sum($grades) / count($grades), 2);
+
 echo json_encode([
-    'success'    => true,
-    'mbti'       => $mbti,
-    'avg_grade'  => round(array_sum($grades) / count($grades), 2),
-    'grades'     => $grades,
-    'top3'       => $pyResult['top3'] ?? [],
-    'created_at' => $result['created_at'],
-]);
+    'success'     => true,
+    'result_id'   => $resultId,
+    'mbti'        => $mbti,
+    'mbti_detail' => isset($result['mbti_detail']) ? json_decode($result['mbti_detail'], true) : null,
+    'avg_grade'   => $avgGrade,
+    'grades'      => $grades,
+    'top3'        => $top3,
+    'answers'     => $answers,
+    'created_at'  => $result['created_at'],
+], JSON_UNESCAPED_UNICODE);
 ?>

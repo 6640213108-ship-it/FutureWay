@@ -3,81 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FutureWay - รายละเอียดสาขา</title>
+  <title>FutureWay - ประวัติผลลัพธ์</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/detel.css">
-  
+  <link rel="stylesheet" href="css/history.css">
 </head>
 <body>
 
-  <!-- Header ปุ่มย้อนกลับ -->
   <header class="back-header">
     <a href="main.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
-    <span class="page-title">รายละเอียดสาขา</span>
+    <span class="page-title">ประวัติผลลัพธ์</span>
   </header>
 
-  <!-- เนื้อหา -->
-  <div class="detail-content">
-
-    <!-- ส่วนที่ 1: ข้อมูลสาขา (ดึงจาก DB ทีหลัง) -->
-    <div>
-      <h2 class="section-title" id="branch-name">ชื่อสาขา</h2>
-      <div class="detail-box">
-        <p id="branch-desc">รายละเอียดของสาขาวิชานี้</p>
-
-        <p class="sub-title">ตัวอย่างวิชาที่สำคัญ:</p>
-        <ul id="branch-subjects">
-          <li>วิชาที่ 1</li>
-          <li>วิชาที่ 2</li>
-          <li>วิชาที่ 3</li>
-        </ul>
-
-        <p class="sub-title">อาชีพที่รองรับ:</p>
-        <ul id="branch-careers">
-          <li>อาชีพที่ 1</li>
-          <li>อาชีพที่ 2</li>
-          <li>อาชีพที่ 3</li>
-        </ul>
-      </div>
+  <div class="history-content">
+    <div class="history-intro">
+      <h2>ผลการทำแบบทดสอบของคุณ</h2>
+      <span class="count" id="count-text"></span>
     </div>
 
-    <!-- ส่วนที่ 2: มหาวิทยาลัยที่แนะนำ (ดึงจาก DB ทีหลัง) -->
-    <div>
-      <h2 class="section-title">มหาลัยที่แนะนำ</h2>
-      <div id="uni-list" style="display:flex; flex-direction:column; gap:12px;">
-
-        <div class="uni-card">
-          <span class="uni-name">ชื่อมหาวิทยาลัย</span>
-          <span class="uni-desc">ข้อมูลและค่าใช้จ่ายของมหาวิทยาลัย</span>
-          <a href="#" class="uni-more-btn">รายละเอียดเพิ่มเติม</a>
-        </div>
-
-        <div class="uni-card">
-          <span class="uni-name">ชื่อมหาวิทยาลัย</span>
-          <span class="uni-desc">ข้อมูลและค่าใช้จ่ายของมหาวิทยาลัย</span>
-          <a href="#" class="uni-more-btn">รายละเอียดเพิ่มเติม</a>
-        </div>
-
-        <div class="uni-card">
-          <span class="uni-name">ชื่อมหาวิทยาลัย</span>
-          <span class="uni-desc">ข้อมูลและค่าใช้จ่ายของมหาวิทยาลัย</span>
-          <a href="#" class="uni-more-btn">รายละเอียดเพิ่มเติม</a>
-        </div>
-
-      </div>
+    <div id="history-list">
+      <div class="history-state"><i class="fas fa-spinner fa-spin"></i>กำลังโหลด...</div>
     </div>
-
   </div>
 
-  <!-- Bottom Navigation -->
   <nav class="bottom-nav">
     <a href="main.html" class="nav-item">
       <i class="fas fa-home"></i>
       <span>หน้าหลัก</span>
     </a>
-    <a href="#" class="nav-item active">
+    <a href="History_Results.html" class="nav-item active">
       <div class="icon-circle">
         <i class="fas fa-chart-bar"></i>
       </div>
@@ -92,6 +47,124 @@
       <span>การตั้งค่า</span>
     </a>
   </nav>
+
+  <script>
+    // แสดง 3 รอบล่าสุด — ตัวเลขนี้ส่งไปให้ get_history.php ตัดข้อมูลตั้งแต่ฝั่ง DB
+    // ไม่ได้ดึงมาทั้งหมดแล้วค่อยตัดที่หน้าเว็บ
+    const ROUNDS = 3;
+
+    // ชื่อเรียกบุคลิกแต่ละแบบ ใช้แสดงคู่กับรหัส MBTI ให้อ่านเข้าใจง่ายขึ้น
+    const MBTI_NAME = {
+      ISTJ: 'ผู้ตรวจสอบ',  ISFJ: 'ผู้ปกป้อง',   INFJ: 'ผู้แนะนำ',    INTJ: 'นักวางแผน',
+      ISTP: 'นักช่างเทคนิค', ISFP: 'นักผจญภัย',  INFP: 'ผู้ไกล่เกลี่ย', INTP: 'นักตรรกะ',
+      ESTP: 'ผู้ประกอบการ', ESFP: 'ผู้สร้างสีสัน', ENFP: 'นักรณรงค์',   ENTP: 'นักโต้วาที',
+      ESTJ: 'ผู้บริหาร',    ESFJ: 'ผู้ดูแล',     ENFJ: 'ผู้นำทาง',    ENTJ: 'ผู้บัญชาการ',
+    };
+
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+
+    const fmtDate = (s) => {
+      if (!s) return '';
+      const d = new Date(String(s).replace(' ', 'T'));
+      if (isNaN(d)) return esc(s);
+      return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
+           + ' · ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+    };
+
+    const setState = (html, cls = '') => {
+      document.getElementById('history-list').innerHTML =
+        `<div class="history-state ${cls}">${html}</div>`;
+    };
+
+    fetch(`php/get_history.php?limit=${ROUNDS}`, { credentials: 'include', cache: 'no-store' })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) {
+          setState('<i class="fas fa-triangle-exclamation"></i>' + esc(data.error || 'โหลดข้อมูลไม่สำเร็จ'), 'error');
+          return;
+        }
+        if (!data.history.length) {
+          setState(
+            '<i class="fas fa-clipboard-list"></i>ยังไม่เคยทำแบบทดสอบ' +
+            '<br><a href="quiz.html" class="go-quiz">เริ่มทำแบบทดสอบ</a>'
+          );
+          document.getElementById('count-text').textContent = '';
+          return;
+        }
+        render(data);
+      })
+      .catch(err => setState('<i class="fas fa-plug-circle-xmark"></i>เชื่อมต่อไม่ได้: ' + esc(err.message), 'error'));
+
+    function render(data) {
+      const total = data.total_rounds;
+      document.getElementById('count-text').textContent =
+        total > data.history.length
+          ? `แสดง ${data.history.length} รอบล่าสุด จากทั้งหมด ${total} รอบ`
+          : `ทำมาแล้ว ${total} รอบ`;
+
+      document.getElementById('history-list').innerHTML = data.history.map((h, i) => {
+        // ถ้าเป็นผลรอบเก่าที่บันทึกไว้ก่อนระบบเก็บครบ 3 อันดับ
+        // ยังพอแสดงอันดับ 1 จาก branch_name/score ที่เก็บไว้ใน quiz_results ได้
+        const ranks = h.top3.length
+          ? h.top3
+          : (h.branch_name ? [{ rank: 1, name: h.branch_name, faculty: h.faculty, score: h.score ?? 0 }] : []);
+
+        const roundNo = total - i;   // นับจากรอบล่าสุดถอยหลัง
+
+        return `
+          <div class="round-card">
+            <div class="round-head">
+              <span class="round-label">รอบที่ ${roundNo}</span>
+              ${i === 0 ? '<span class="latest-tag">ล่าสุด</span>' : ''}
+              <span class="round-date">${fmtDate(h.created_at)}</span>
+            </div>
+            <div class="round-body">
+
+              <div class="round-summary">
+                <div class="mbti-box">
+                  <div class="code">${esc(h.mbti_type)}</div>
+                  <div class="cap">${esc(MBTI_NAME[h.mbti_type] || 'บุคลิกภาพ')}</div>
+                </div>
+                <div class="summary-text">
+                  เกรดเฉลี่ยที่กรอก <strong>${Number(h.avg_grade).toFixed(2)}</strong><br>
+                  ${ranks.length
+                    ? `สาขาที่เหมาะที่สุดคือ <strong>${esc(ranks[0].name)}</strong>`
+                    : '<span style="color:#999">ไม่มีข้อมูลสาขาที่แนะนำ</span>'}
+                </div>
+              </div>
+
+              ${ranks.length ? `
+                <h4>สาขาที่แนะนำ${h.top3.length ? ' 3 อันดับ' : ''}</h4>
+                ${ranks.map(b => `
+                  <div class="rank-item">
+                    <span class="rank-num n${b.rank}">${b.rank}</span>
+                    <div class="rank-body">
+                      <div class="rname">${esc(b.name)}</div>
+                      <div class="rfac">${esc(b.faculty) || ''}</div>
+                      <div class="bar-bg"><div class="bar-fill" data-score="${b.score}"></div></div>
+                    </div>
+                    <span class="rank-score">${b.score}%</span>
+                  </div>`).join('')}
+                ${!h.top3.length ? '<p class="rfac" style="margin-top:6px">ผลรอบนี้บันทึกไว้ก่อนระบบเก็บครบ 3 อันดับ</p>' : ''}
+              ` : ''}
+
+              <a href="result.html?id=${h.id}" class="full-link">
+                ดูผลลัพธ์เต็มของรอบนี้ <i class="fas fa-chevron-right" style="font-size:.75rem"></i>
+              </a>
+            </div>
+          </div>`;
+      }).join('');
+
+      // ให้แถบคะแนนวิ่งหลัง render เสร็จ ไม่งั้น transition ไม่ทำงาน
+      setTimeout(() => {
+        document.querySelectorAll('.bar-fill').forEach(el => {
+          el.style.width = el.dataset.score + '%';
+        });
+      }, 60);
+    }
+  </script>
 
 </body>
 </html>

@@ -1,0 +1,290 @@
+/* ========================================
+   FutureWay - admin.css
+   ใช้เฉพาะหน้า admin.html
+   ไฟล์นี้ standalone ไม่ต้องโหลด main.css
+   ======================================== */
+
+:root {
+  --primary:      #7b2ff7;
+  --primary-dark: #4a0080;
+  --white:        #ffffff;
+  --gray:         #888888;
+  --gray-light:   #f5f5f5;
+  --border:       #e5e5ec;
+  --danger:       #d93025;
+  --transition:   0.2s ease;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Kanit', sans-serif;
+  background: #f0f0f5;
+  min-height: 100vh;
+  color: #222;
+}
+
+/* ---- Header ---- */
+.admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #7b2ff7 0%, #4a0080 100%);
+  color: var(--white);
+}
+
+.admin-header .back-btn {
+  color: var(--white);
+  font-size: 1.1rem;
+  text-decoration: none;
+  opacity: 0.9;
+  transition: opacity var(--transition);
+}
+.admin-header .back-btn:hover { opacity: 1; }
+
+.admin-header .title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.admin-header .who {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+/* ---- Layout ---- */
+.admin-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 16px 60px;
+}
+
+/* ---- Stat tiles ---- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-tile {
+  background: var(--white);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.stat-tile .label {
+  font-size: 0.8rem;
+  color: var(--gray);
+  margin-bottom: 6px;
+}
+
+.stat-tile .value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  line-height: 1.2;
+}
+
+.stat-tile .sub {
+  font-size: 0.78rem;
+  color: var(--gray);
+  margin-top: 4px;
+}
+
+/* ---- Filter bar ---- */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: var(--white);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.filter-bar input,
+.filter-bar select {
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--white);
+  color: #222;
+}
+.filter-bar input { flex: 1; min-width: 200px; }
+.filter-bar input:focus,
+.filter-bar select:focus { outline: 2px solid rgba(123,47,247,0.35); border-color: var(--primary); }
+
+.filter-bar button {
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 9px 20px;
+  border: none;
+  border-radius: 9px;
+  background: var(--primary);
+  color: var(--white);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.filter-bar button:hover { background: var(--primary-dark); }
+
+/* ---- Table ---- */
+.table-card {
+  background: var(--white);
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+.table-scroll { overflow-x: auto; }
+
+table.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  min-width: 760px;
+}
+
+.admin-table thead th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--gray);
+  background: var(--gray-light);
+  padding: 12px 14px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.admin-table tbody tr.row-main { cursor: pointer; transition: background var(--transition); }
+.admin-table tbody tr.row-main:hover { background: #faf7ff; }
+
+.name-cell { font-weight: 500; }
+.name-cell small { display: block; font-weight: 400; color: var(--gray); font-size: 0.76rem; }
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: #ede4ff;
+  color: var(--primary-dark);
+  white-space: nowrap;
+}
+
+.badge.gender { background: #e4f0ff; color: #14509c; }
+
+.score-pill {
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.muted { color: var(--gray); }
+
+/* ---- แถวรายละเอียดที่กางออกมา ---- */
+.detail-row > td {
+  background: #faf9ff;
+  padding: 16px 20px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.detail-block h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gray);
+  margin-bottom: 8px;
+}
+
+.rank-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 0.86rem;
+}
+
+.rank-no {
+  flex: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--white);
+  font-size: 0.75rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.rank-no.n2 { background: #9d6bfb; }
+.rank-no.n3 { background: #c0a5fc; }
+
+.rank-line .grow { flex: 1; }
+.rank-line .fac  { color: var(--gray); font-size: 0.78rem; }
+
+.grade-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.grade-chips span {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+
+/* ---- สถานะ / pagination ---- */
+.state-box {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--gray);
+}
+.state-box.error { color: var(--danger); }
+.state-box i { font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.5; }
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px;
+}
+
+.pager button {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 7px 16px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--white);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.pager button:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+.pager button:disabled { opacity: 0.4; cursor: default; }
+.pager .info { font-size: 0.85rem; color: var(--gray); }
+
+@media (max-width: 600px) {
+  .admin-wrap { padding: 14px 10px 40px; }
+  .stat-tile .value { font-size: 1.35rem; }
+}

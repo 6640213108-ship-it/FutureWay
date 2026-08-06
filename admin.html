@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FutureWay - ผู้ดูแลระบบ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <header class="admin-header">
+    <a href="main.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    <span class="title"><i class="fas fa-user-shield"></i> ผลการทำแบบทดสอบทั้งหมด</span>
+    <span class="who" id="who"></span>
+  </header>
+
+  <div class="admin-wrap">
+
+    <!-- สถิติรวม -->
+    <div class="stat-grid" id="stat-grid"></div>
+
+    <!-- ตัวกรอง -->
+    <form class="filter-bar" id="filter-form" autocomplete="off">
+      <input type="search" id="f-q" placeholder="ค้นหาชื่อ นามสกุล username หรืออีเมล">
+      <select id="f-gender"><option value="">ทุกเพศ</option></select>
+      <select id="f-mbti"><option value="">ทุกผล MBTI</option></select>
+      <button type="submit"><i class="fas fa-search"></i> ค้นหา</button>
+    </form>
+
+    <!-- ตาราง -->
+    <div class="table-card">
+      <div class="table-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ผู้ใช้</th>
+              <th>เพศ</th>
+              <th>MBTI</th>
+              <th>สาขาที่แนะนำอันดับ 1</th>
+              <th>คะแนน</th>
+              <th>เกรดเฉลี่ย</th>
+              <th>วันที่ทำ</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="8"><div class="state-box"><i class="fas fa-spinner fa-spin"></i>กำลังโหลด...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pager" id="pager" hidden>
+        <button type="button" id="prev"><i class="fas fa-chevron-left"></i> ก่อนหน้า</button>
+        <span class="info" id="pager-info"></span>
+        <button type="button" id="next">ถัดไป <i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let page = 1;
+    let totalPages = 1;
+    let filtersLoaded = false;
+
+    // กันข้อมูลจากผู้ใช้ (ชื่อ อีเมล ชื่อสาขา) ยิง HTML เข้ามาตอน render
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+
+    const fmtDate = (s) => {
+      if (!s) return '-';
+      const d = new Date(String(s).replace(' ', 'T'));
+      if (isNaN(d)) return esc(s);
+      return d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })
+           + ' ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const showState = (html, isError = false) => {
+      document.getElementById('tbody').innerHTML =
+        `<tr><td colspan="8"><div class="state-box${isError ? ' error' : ''}">${html}</div></td></tr>`;
+      document.getElementById('pager').hidden = true;
+    };
+
+    function load() {
+      const params = new URLSearchParams({
+        page,
+        q:      document.getElementById('f-q').value.trim(),
+        gender: document.getElementById('f-gender').value,
+        mbti:   document.getElementById('f-mbti').value,
+      });
+
+      showState('<i class="fas fa-spinner fa-spin"></i>กำลังโหลด...');
+
+      fetch('php/get_admin_results.php?' + params, { credentials: 'include', cache: 'no-store' })
+        .then(async (r) => {
+          const data = await r.json().catch(() => null);
+          if (r.status === 401) {
+            showState('<i class="fas fa-right-to-bracket"></i>กรุณาเข้าสู่ระบบก่อน<br><a href="login.html">ไปหน้าเข้าสู่ระบบ</a>', true);
+            return null;
+          }
+          if (r.status === 403) {
+            showState('<i class="fas fa-ban"></i>' + esc(data?.error || 'ไม่มีสิทธิ์เข้าถึงหน้านี้'), true);
+            return null;
+          }
+          if (!data || !data.success) {
+            showState('<i class="fas fa-triangle-exclamation"></i>' + esc(data?.error || 'โหลดข้อมูลไม่สำเร็จ'), true);
+            return null;
+          }
+          return data;
+        })
+        .then((data) => { if (data) render(data); })
+        .catch((err) => showState('<i class="fas fa-plug-circle-xmark"></i>เชื่อมต่อไม่ได้: ' + esc(err.message), true));
+    }
+
+    function render(data) {
+      renderStats(data.stats);
+      if (!filtersLoaded) { renderFilters(data.filters); filtersLoaded = true; }
+
+      totalPages = Math.max(1, data.total_pages);
+      const tbody = document.getElementById('tbody');
+
+      if (!data.results.length) {
+        showState('<i class="fas fa-inbox"></i>ยังไม่มีผลการทำแบบทดสอบที่ตรงกับเงื่อนไข');
+        return;
+      }
+
+      tbody.innerHTML = data.results.map(r => `
+        <tr class="row-main" data-id="${r.result_id}">
+          <td class="name-cell">
+            ${esc(r.fullname) || '<span class="muted">ไม่ระบุชื่อ</span>'}
+            <small>${esc(r.username)}${r.email ? ' · ' + esc(r.email) : ''}</small>
+          </td>
+          <td><span class="badge gender">${esc(r.gender) || '-'}</span></td>
+          <td><span class="badge">${esc(r.mbti)}</span></td>
+          <td>${r.top_branch ? esc(r.top_branch) : '<span class="muted">ไม่มีข้อมูล</span>'}</td>
+          <td class="score-pill">${r.top_score !== null ? r.top_score + '%' : '<span class="muted">-</span>'}</td>
+          <td>${r.avg_grade != null ? Number(r.avg_grade).toFixed(2) : '-'}</td>
+          <td class="muted">${fmtDate(r.created_at)}</td>
+          <td><i class="fas fa-chevron-down muted"></i></td>
+        </tr>
+        <tr class="detail-row" id="d-${r.result_id}" hidden>
+          <td colspan="8">
+            <div class="detail-grid">
+              <div class="detail-block">
+                <h4>สาขาที่แนะนำ</h4>
+                ${r.top3.length ? r.top3.map(b => `
+                  <div class="rank-line">
+                    <span class="rank-no n${b.rank}">${b.rank}</span>
+                    <span class="grow">${esc(b.name)}<br><span class="fac">${esc(b.faculty) || ''}</span></span>
+                    <span class="score-pill">${b.score}%</span>
+                  </div>`).join('')
+                : '<p class="muted" style="font-size:.85rem">ผลลัพธ์รอบนี้บันทึกไว้ก่อนระบบเก็บครบ 3 อันดับ</p>'}
+              </div>
+              <div class="detail-block">
+                <h4>เกรดที่กรอก</h4>
+                <div class="grade-chips">
+                  <span>คณิต: ${Number(r.grades.math).toFixed(2)}</span>
+                  <span>วิทย์: ${Number(r.grades.sci).toFixed(2)}</span>
+                  <span>อังกฤษ: ${Number(r.grades.eng).toFixed(2)}</span>
+                  <span>ไทย: ${Number(r.grades.thai).toFixed(2)}</span>
+                  <span>สังคม: ${Number(r.grades.social).toFixed(2)}</span>
+                  <span>ศิลปะ: ${Number(r.grades.art).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>`).join('');
+
+      tbody.querySelectorAll('tr.row-main').forEach(tr => {
+        tr.addEventListener('click', () => {
+          const d    = document.getElementById('d-' + tr.dataset.id);
+          const icon = tr.querySelector('td:last-child i');
+          d.hidden = !d.hidden;
+          icon.className = d.hidden ? 'fas fa-chevron-down muted' : 'fas fa-chevron-up muted';
+        });
+      });
+
+      const pager = document.getElementById('pager');
+      pager.hidden = false;
+      document.getElementById('pager-info').textContent =
+        `หน้า ${data.page} / ${totalPages} · ทั้งหมด ${data.total} รายการ`;
+      document.getElementById('prev').disabled = data.page <= 1;
+      document.getElementById('next').disabled = data.page >= totalPages;
+    }
+
+    function renderStats(s) {
+      const genderText = s.by_gender.length
+        ? s.by_gender.map(g => `${esc(g.gender) || 'ไม่ระบุ'} ${g.count}`).join(' · ')
+        : '-';
+      const topMbti   = s.top_mbti[0];
+      const topBranch = s.top_branch[0];
+
+      document.getElementById('stat-grid').innerHTML = `
+        <div class="stat-tile">
+          <div class="label">จำนวนครั้งที่ทำแบบทดสอบ</div>
+          <div class="value">${s.total_attempts}</div>
+          <div class="sub">${genderText}</div>
+        </div>
+        <div class="stat-tile">
+          <div class="label">ผู้ใช้ที่เคยทำแบบทดสอบ</div>
+          <div class="value">${s.total_users}</div>
+          <div class="sub">คน</div>
+        </div>
+        <div class="stat-tile">
+          <div class="label">MBTI ที่พบบ่อยที่สุด</div>
+          <div class="value">${topMbti ? esc(topMbti.mbti) : '-'}</div>
+          <div class="sub">${topMbti ? topMbti.count + ' ครั้ง' : 'ยังไม่มีข้อมูล'}</div>
+        </div>
+        <div class="stat-tile">
+          <div class="label">สาขาที่ถูกแนะนำบ่อยที่สุด</div>
+          <div class="value" style="font-size:1.05rem">${topBranch ? esc(topBranch.name) : '-'}</div>
+          <div class="sub">${topBranch ? topBranch.count + ' ครั้ง' : 'ยังไม่มีข้อมูล'}</div>
+        </div>`;
+    }
+
+    function renderFilters(f) {
+      const gsel = document.getElementById('f-gender');
+      f.genders.forEach(g => gsel.insertAdjacentHTML('beforeend', `<option value="${esc(g)}">${esc(g)}</option>`));
+      const msel = document.getElementById('f-mbti');
+      f.mbti.forEach(m => msel.insertAdjacentHTML('beforeend', `<option value="${esc(m)}">${esc(m)}</option>`));
+    }
+
+    document.getElementById('filter-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      page = 1;
+      load();
+    });
+    document.getElementById('f-gender').addEventListener('change', () => { page = 1; load(); });
+    document.getElementById('f-mbti').addEventListener('change',   () => { page = 1; load(); });
+    document.getElementById('prev').addEventListener('click', () => { if (page > 1)          { page--; load(); window.scrollTo(0, 0); } });
+    document.getElementById('next').addEventListener('click', () => { if (page < totalPages) { page++; load(); window.scrollTo(0, 0); } });
+
+    // แสดงชื่อผู้ใช้ที่ login อยู่บน header
+    fetch('php/get_user.php', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(d => { if (d.success) document.getElementById('who').textContent = d.fullname; })
+      .catch(() => {});
+
+    load();
+  </script>
+
+</body>
+</html>

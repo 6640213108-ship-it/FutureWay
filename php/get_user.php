@@ -14,10 +14,13 @@ try {
     exit;
 }
 
+require_once __DIR__ . '/admin_config.php';
+
 // ค่าเริ่มต้น
 $response = [
     "success" => false,
     "fullname" => "",
+    "is_admin" => isAdmin(),   // ให้หน้าเว็บรู้ว่าควรโชว์เมนูผู้ดูแลระบบไหม
     "reason" => "ไม่ได้ล็อกอิน"
 ];
 

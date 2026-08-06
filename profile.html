@@ -62,18 +62,11 @@
       <i class="fas fa-chevron-right menu-arrow"></i>
     </a>
 
-    <!-- เมนูผู้ดูแลระบบ — ซ่อนไว้ก่อน เปิดให้เห็นเฉพาะบัญชีที่อยู่ใน ADMIN_USERS
-         (ตัว endpoint ฝั่ง server ตรวจสิทธิ์ซ้ำอยู่แล้ว การซ่อนนี้แค่ทำให้เมนูสะอาด) -->
-    <a href="admin.html" class="menu-item" id="admin-menu" hidden>
-      <div class="menu-icon purple"><i class="fas fa-user-shield"></i></div>
-      <div class="menu-text">
-        <span class="menu-title">ผู้ดูแลระบบ</span>
-        <span class="menu-sub">ดูผลการทำแบบทดสอบของผู้ใช้ทุกคน</span>
-      </div>
-      <i class="fas fa-chevron-right menu-arrow"></i>
-    </a>
+    <!-- เมนูผู้ดูแลระบบจะถูก "สร้างขึ้นมาแทรกตรงนี้" ด้วย JS เฉพาะตอนที่เป็นแอดมินจริงเท่านั้น
+         ไม่วางไว้ใน HTML แล้วซ่อนด้วย CSS เพราะกฎ display ของ .menu-item ทับ attribute hidden
+         และถ้า CSS ถูก cache ไว้ เมนูจะโผล่ให้ทุกคนเห็นทันที -->
 
-    <a href="php/logout.php" class="menu-item logout">
+    <a href="php/logout.php" class="menu-item logout" id="logout-item">
       <div class="menu-icon red"><i class="fas fa-sign-out-alt"></i></div>
       <div class="menu-text">
         <span class="menu-title logout-text">Logout</span>
@@ -116,8 +109,18 @@
           if (data.success) {
             document.getElementById('profile-name').textContent = data.fullname;
             document.getElementById('profile-email').textContent = data.email || '';
-            if (data.is_admin) {
-              document.getElementById('admin-menu').hidden = false;
+            // สร้างเมนูผู้ดูแลระบบเฉพาะตอนเป็นแอดมิน แล้วแทรกไว้เหนือปุ่ม Logout
+            // ถ้าไม่ใช่แอดมิน element นี้จะไม่มีอยู่ใน DOM เลย ไม่ว่า CSS จะเป็นยังไง
+            if (data.is_admin === true) {
+              document.getElementById('logout-item').insertAdjacentHTML('beforebegin', `
+                <a href="admin.html" class="menu-item">
+                  <div class="menu-icon purple"><i class="fas fa-user-shield"></i></div>
+                  <div class="menu-text">
+                    <span class="menu-title">ผู้ดูแลระบบ</span>
+                    <span class="menu-sub">ดูผลการทำแบบทดสอบของผู้ใช้ทุกคน</span>
+                  </div>
+                  <i class="fas fa-chevron-right menu-arrow"></i>
+                </a>`);
             }
           } else {
             window.location.href = 'login.html';

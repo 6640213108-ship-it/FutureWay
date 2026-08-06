@@ -160,7 +160,7 @@ table.admin-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.88rem;
-  min-width: 760px;
+  min-width: 980px;   /* กว้างพอสำหรับสาขาแนะนำ 3 คอลัมน์ ถ้าจอแคบกว่านี้จะ scroll แนวนอน */
 }
 
 .admin-table thead th {
@@ -202,6 +202,18 @@ table.admin-table {
 .score-pill {
   font-weight: 600;
   color: var(--primary-dark);
+}
+
+/* ช่องสาขาที่แนะนำในตาราง — ชื่อสาขาบน คะแนนล่าง */
+.branch-cell {
+  line-height: 1.35;
+  min-width: 140px;
+}
+.branch-cell small {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--primary);
 }
 
 .muted { color: var(--gray); }

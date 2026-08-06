@@ -46,15 +46,16 @@
               <th>ผู้ใช้</th>
               <th>เพศ</th>
               <th>MBTI</th>
-              <th>สาขาที่แนะนำอันดับ 1</th>
-              <th>คะแนน</th>
+              <th>อันดับ 1</th>
+              <th>อันดับ 2</th>
+              <th>อันดับ 3</th>
               <th>เกรดเฉลี่ย</th>
               <th>วันที่ทำ</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="tbody">
-            <tr><td colspan="8"><div class="state-box"><i class="fas fa-spinner fa-spin"></i>กำลังโหลด...</div></td></tr>
+            <tr><td colspan="9"><div class="state-box"><i class="fas fa-spinner fa-spin"></i>กำลังโหลด...</div></td></tr>
           </tbody>
         </table>
       </div>
@@ -85,10 +86,28 @@
            + ' ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
     };
 
+    const COLS = 9;   // จำนวนคอลัมน์ในตาราง ใช้กับ colspan
+
     const showState = (html, isError = false) => {
       document.getElementById('tbody').innerHTML =
-        `<tr><td colspan="8"><div class="state-box${isError ? ' error' : ''}">${html}</div></td></tr>`;
+        `<tr><td colspan="${COLS}"><div class="state-box${isError ? ' error' : ''}">${html}</div></td></tr>`;
       document.getElementById('pager').hidden = true;
+    };
+
+    /**
+     * ช่องแสดงสาขาที่แนะนำอันดับที่ n พร้อมคะแนน
+     * แถวเก่าก่อน migration 002 ไม่มี snapshot ครบ 3 อันดับ -> ยังพอแสดงอันดับ 1
+     * จาก branch_name/score ที่เก็บไว้ในตาราง quiz_results ได้
+     */
+    const rankCell = (r, n) => {
+      const b = r.top3.find(x => x.rank === n);
+      if (b) {
+        return `<div class="branch-cell">${esc(b.name)}<small>${b.score}%</small></div>`;
+      }
+      if (n === 1 && r.top_branch) {
+        return `<div class="branch-cell">${esc(r.top_branch)}<small>${r.top_score !== null ? r.top_score + '%' : ''}</small></div>`;
+      }
+      return '<span class="muted">-</span>';
     };
 
     /**
@@ -164,17 +183,18 @@
           </td>
           <td><span class="badge gender">${esc(r.gender) || '-'}</span></td>
           <td><span class="badge">${esc(r.mbti)}</span></td>
-          <td>${r.top_branch ? esc(r.top_branch) : '<span class="muted">ไม่มีข้อมูล</span>'}</td>
-          <td class="score-pill">${r.top_score !== null ? r.top_score + '%' : '<span class="muted">-</span>'}</td>
+          <td>${rankCell(r, 1)}</td>
+          <td>${rankCell(r, 2)}</td>
+          <td>${rankCell(r, 3)}</td>
           <td>${r.avg_grade != null ? Number(r.avg_grade).toFixed(2) : '-'}</td>
           <td class="muted">${fmtDate(r.created_at)}</td>
           <td><i class="fas fa-chevron-down muted"></i></td>
         </tr>
         <tr class="detail-row" id="d-${r.result_id}" hidden>
-          <td colspan="8">
+          <td colspan="${COLS}">
             <div class="detail-grid">
               <div class="detail-block">
-                <h4>สาขาที่แนะนำ</h4>
+                <h4>สาขาที่แนะนำ (พร้อมคณะ)</h4>
                 ${r.top3.length ? r.top3.map(b => `
                   <div class="rank-line">
                     <span class="rank-no n${b.rank}">${b.rank}</span>

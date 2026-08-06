@@ -73,24 +73,19 @@
   <script>
     const history = [];
 
-    const SYSTEM_PROMPT = `คุณคือผู้ช่วยแนะนำสาขาการเรียนและมหาวิทยาลัยในประเทศไทย ชื่อ "FutureWay AI"
-ตอบเป็นภาษาไทยเสมอ ตอบกระชับ ชัดเจน เป็นมิตร
-ช่วยแนะนำสาขาวิชา มหาวิทยาลัย อาชีพ และค่าใช้จ่ายที่เกี่ยวข้อง
-ถ้าผู้ใช้ถามเรื่องอื่นที่ไม่เกี่ยวข้อง ให้แนะนำกลับมาที่หัวข้อการศึกษาอย่างสุภาพ`;
-
     async function sendMessage() {
       const input = document.getElementById('chat-input');
       const text = input.value.trim();
       if (!text) return;
       input.value = '';
       appendMessage('user', text);
-      await callAI(text);
+      await callAI();
     }
 
     function sendChip(btn) {
       const text = btn.textContent.trim();
       appendMessage('user', text);
-      callAI(text);
+      callAI();
     }
 
     function appendMessage(role, text) {
@@ -104,7 +99,8 @@
         div.className = 'bubble-ai';
         div.innerHTML = `
           <div class="ai-icon"><i class="fas fa-robot"></i></div>
-          <div class="ai-text">${text}</div>`;
+          <div class="ai-text"></div>`;
+        div.querySelector('.ai-text').textContent = text; // กัน HTML injection จากคำตอบ AI
         history.push({ role: 'assistant', content: text });
       }
       body.appendChild(div);
@@ -132,29 +128,25 @@
       if (el) el.remove();
     }
 
-    async function callAI(userText) {
+    // เรียกผ่าน php/chat.php (backend) แทนการยิงตรงไปที่ Anthropic API จาก browser
+    // เพราะฝั่ง client ไม่ควรถือ API key เด็ดขาด
+    async function callAI() {
       showTyping();
       try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
+        const response = await fetch('php/chat.php', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': 'YOUR_API_KEY_HERE',      // ← ใส่ API Key ตรงนี้
-            'anthropic-version': '2023-06-01'
-          },
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 1000,
-            system: SYSTEM_PROMPT,
             messages: history.filter(m => m.role === 'user' || m.role === 'assistant')
           })
         });
         const data = await response.json();
         removeTyping();
-        if (data.content && data.content[0]) {
-          appendMessage('assistant', data.content[0].text);
+        if (data.success) {
+          appendMessage('assistant', data.text);
         } else {
-          appendMessage('assistant', 'ขออภัยครับ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+          appendMessage('assistant', 'ขออภัยครับ เกิดข้อผิดพลาด: ' + (data.error || 'ไม่ทราบสาเหตุ'));
         }
       } catch (err) {
         removeTyping();

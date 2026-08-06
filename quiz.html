@@ -179,7 +179,7 @@
 
         data.questions.forEach((q, index) => {
           const qNum = index + 1;
-          questionIds.push(q.id);
+          questionIds.push(Number(q.id));   // บังคับเป็นตัวเลข กัน id หลุดไปเป็น string
 
           if (q.category !== lastCategory) {
             const catCode = q.category || '';

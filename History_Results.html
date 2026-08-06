@@ -3,27 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FutureWay - ประวัติผลลัพธ์</title>
+  <title>FutureWay - รายละเอียดสาขา</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/detel.css">
+  
 </head>
 <body>
 
   <!-- Header ปุ่มย้อนกลับ -->
   <header class="back-header">
     <a href="main.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
-    <span class="page-title">ประวัติผลลัพธ์</span>
+    <span class="page-title">รายละเอียดสาขา</span>
   </header>
 
   <!-- เนื้อหา -->
   <div class="detail-content">
 
-    <h2 class="section-title">ผลการทำแบบทดสอบที่ผ่านมา</h2>
+    <!-- ส่วนที่ 1: ข้อมูลสาขา (ดึงจาก DB ทีหลัง) -->
+    <div>
+      <h2 class="section-title" id="branch-name">ชื่อสาขา</h2>
+      <div class="detail-box">
+        <p id="branch-desc">รายละเอียดของสาขาวิชานี้</p>
 
-    <div id="history-list" style="display:flex; flex-direction:column; gap:12px;">
-      <p style="text-align:center; color:var(--gray); padding:20px;">กำลังโหลด...</p>
+        <p class="sub-title">ตัวอย่างวิชาที่สำคัญ:</p>
+        <ul id="branch-subjects">
+          <li>วิชาที่ 1</li>
+          <li>วิชาที่ 2</li>
+          <li>วิชาที่ 3</li>
+        </ul>
+
+        <p class="sub-title">อาชีพที่รองรับ:</p>
+        <ul id="branch-careers">
+          <li>อาชีพที่ 1</li>
+          <li>อาชีพที่ 2</li>
+          <li>อาชีพที่ 3</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ส่วนที่ 2: มหาวิทยาลัยที่แนะนำ (ดึงจาก DB ทีหลัง) -->
+    <div>
+      <h2 class="section-title">มหาลัยที่แนะนำ</h2>
+      <div id="uni-list" style="display:flex; flex-direction:column; gap:12px;">
+
+        <div class="uni-card">
+          <span class="uni-name">ชื่อมหาวิทยาลัย</span>
+          <span class="uni-desc">ข้อมูลและค่าใช้จ่ายของมหาวิทยาลัย</span>
+          <a href="#" class="uni-more-btn">รายละเอียดเพิ่มเติม</a>
+        </div>
+
+        <div class="uni-card">
+          <span class="uni-name">ชื่อมหาวิทยาลัย</span>
+          <span class="uni-desc">ข้อมูลและค่าใช้จ่ายของมหาวิทยาลัย</span>
+          <a href="#" class="uni-more-btn">รายละเอียดเพิ่มเติม</a>
+        </div>
+
+        <div class="uni-card">
+          <span class="uni-name">ชื่อมหาวิทยาลัย</span>
+          <span class="uni-desc">ข้อมูลและค่าใช้จ่ายของมหาวิทยาลัย</span>
+          <a href="#" class="uni-more-btn">รายละเอียดเพิ่มเติม</a>
+        </div>
+
+      </div>
     </div>
 
   </div>
@@ -49,67 +92,6 @@
       <span>การตั้งค่า</span>
     </a>
   </nav>
-
-  <script>
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str ?? '';
-      return div.innerHTML;
-    }
-
-    function formatDate(isoStr) {
-      const d = new Date(isoStr);
-      if (isNaN(d)) return isoStr;
-      return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) +
-             ' ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-    }
-
-    async function loadHistory() {
-      const listEl = document.getElementById('history-list');
-      try {
-        const res = await fetch('php/get_history.php', { credentials: 'include', cache: 'no-store' });
-        const data = await res.json();
-
-        if (!data.success) {
-          if (data.error && data.error.includes('เข้าสู่ระบบ')) {
-            window.location.href = 'login.html';
-            return;
-          }
-          listEl.innerHTML = `<p style="text-align:center; color:var(--red); padding:20px;">⚠️ ${escapeHtml(data.error || 'เกิดข้อผิดพลาด')}</p>`;
-          return;
-        }
-
-        if (data.history.length === 0) {
-          listEl.innerHTML = `
-            <p style="text-align:center; color:var(--gray); padding:30px 10px;">
-              ยังไม่มีประวัติการทำแบบทดสอบ<br>
-              <a href="quiz.html" style="color:var(--primary); font-weight:700;">เริ่มทำแบบทดสอบเลย</a>
-            </p>`;
-          return;
-        }
-
-        listEl.innerHTML = data.history.map(item => `
-          <a href="result.html?id=${item.id}" class="uni-card" style="text-decoration:none; color:inherit;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span class="uni-name">${escapeHtml(item.branch_name || 'ยังไม่ระบุสาขา')}</span>
-              <span style="background:rgba(123,47,247,0.1); color:var(--primary); font-weight:700; font-size:0.78rem; padding:3px 10px; border-radius:20px;">
-                ${escapeHtml(item.mbti_type)}
-              </span>
-            </div>
-            <span class="uni-desc">${escapeHtml(item.faculty || '')}</span>
-            <span class="uni-desc" style="font-size:0.72rem;">
-              ${item.score !== null ? 'ความเหมาะสม ' + item.score + '% • ' : ''}${formatDate(item.created_at)}
-            </span>
-          </a>
-        `).join('');
-
-      } catch (err) {
-        listEl.innerHTML = `<p style="text-align:center; color:var(--red); padding:20px;">⚠️ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</p>`;
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', loadHistory);
-  </script>
 
 </body>
 </html>

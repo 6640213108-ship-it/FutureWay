@@ -45,6 +45,19 @@
       color: rgba(255,255,255,0.8);
       font-size: 0.82rem;
     }
+    .mbti-name {
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .mbti-desc {
+      color: rgba(255,255,255,0.85);
+      font-size: 0.8rem;
+      line-height: 1.6;
+      max-width: 340px;
+      margin: 0 auto 10px;
+    }
 
     .result-content {
       padding: 16px 14px;
@@ -178,6 +191,8 @@
     <div class="result-hero">
       <p class="result-hero-label">บุคลิกภาพของคุณคือ</p>
       <div class="mbti-badge" id="mbti-display">—</div>
+      <p class="mbti-name" id="mbti-name"></p>
+      <p class="mbti-desc" id="mbti-desc"></p>
       <p class="result-hero-sub" id="avg-grade-display"></p>
     </div>
 
@@ -252,6 +267,27 @@
       { cls: 'bronze', label: '🥉' },
     ];
 
+    // ชื่อและคำอธิบายบุคลิกภาพครบทั้ง 16 แบบ
+    // ใช้แสดงผลตามรหัส MBTI ที่ backend คำนวณได้จริง ไม่ได้ fix ค่าไว้
+    const MBTI_INFO = {
+      ISTJ: { name: 'นักตรวจสอบ (The Inspector)',    desc: 'จริงจัง รับผิดชอบสูง ชอบทำงานตามระบบและข้อเท็จจริง เชื่อถือได้เสมอ' },
+      ISFJ: { name: 'ผู้ปกป้อง (The Protector)',      desc: 'ใจดี ใส่ใจรายละเอียด ชอบดูแลคนรอบข้างและทำงานเบื้องหลังอย่างตั้งใจ' },
+      INFJ: { name: 'ผู้แนะนำ (The Advocate)',        desc: 'มีอุดมการณ์ เข้าใจความรู้สึกคนอื่นลึกซึ้ง มองการณ์ไกลและอยากสร้างสิ่งที่มีความหมาย' },
+      INTJ: { name: 'นักวางแผน (The Architect)',      desc: 'คิดเป็นระบบ วางแผนระยะยาวเก่ง ชอบแก้ปัญหาที่ซับซ้อนด้วยเหตุผล' },
+      ISTP: { name: 'นักแก้ปัญหา (The Virtuoso)',     desc: 'ลงมือทำมากกว่าพูด ชอบเครื่องมือและกลไก แก้ปัญหาเฉพาะหน้าได้ดี' },
+      ISFP: { name: 'นักสร้างสรรค์ (The Adventurer)', desc: 'อ่อนโยน มีสุนทรียะ ชอบงานที่ได้ใช้ความรู้สึกและความคิดสร้างสรรค์' },
+      INFP: { name: 'นักไกล่เกลี่ย (The Mediator)',   desc: 'ยึดมั่นในคุณค่าของตัวเอง จินตนาการสูง อยากทำสิ่งที่ช่วยเหลือผู้อื่น' },
+      INTP: { name: 'นักคิด (The Thinker)',           desc: 'ช่างสงสัย ชอบวิเคราะห์ทฤษฎีและหาคำตอบของสิ่งที่ยังไม่มีใครอธิบายได้' },
+      ESTP: { name: 'นักลงมือทำ (The Entrepreneur)',  desc: 'กล้าเสี่ยง ตัดสินใจไว ชอบสถานการณ์ที่ท้าทายและเห็นผลทันที' },
+      ESFP: { name: 'ผู้สร้างสีสัน (The Entertainer)',desc: 'สนุกสนาน เข้ากับคนง่าย ชอบงานที่ได้พบปะผู้คนและมีชีวิตชีวา' },
+      ENFP: { name: 'นักรณรงค์ (The Campaigner)',     desc: 'กระตือรือร้น มีไอเดียใหม่ตลอดเวลา ชอบแรงบันดาลใจและอิสระในการทำงาน' },
+      ENTP: { name: 'นักโต้วาที (The Debater)',       desc: 'ช่างตั้งคำถาม คิดนอกกรอบ ชอบถกเถียงเพื่อหาแนวทางที่ดีกว่าเดิม' },
+      ESTJ: { name: 'ผู้บริหาร (The Executive)',      desc: 'เด็ดขาด มีระเบียบ บริหารจัดการเก่ง ชอบทำให้ทุกอย่างเป็นไปตามแผน' },
+      ESFJ: { name: 'ผู้ดูแล (The Consul)',           desc: 'อบอุ่น มีน้ำใจ ทำงานเป็นทีมได้ดี ใส่ใจความรู้สึกของคนรอบข้าง' },
+      ENFJ: { name: 'ผู้นำทาง (The Protagonist)',     desc: 'มีเสน่ห์ในการสื่อสาร ชอบผลักดันและพัฒนาศักยภาพของผู้อื่น' },
+      ENTJ: { name: 'ผู้บัญชาการ (The Commander)',    desc: 'มีภาวะผู้นำสูง กล้าตัดสินใจ มองเป้าหมายใหญ่และพาทีมไปให้ถึง' },
+    };
+
     // ดึง result_id จาก URL
     const params   = new URLSearchParams(window.location.search);
     const resultId = params.get('id');
@@ -272,8 +308,18 @@
     }
 
     function renderResult(data) {
-      // MBTI
-      document.getElementById('mbti-display').textContent     = data.mbti;
+      // MBTI — ใช้ค่าที่คำนวณได้จริงจาก backend เท่านั้น
+      const mbti = String(data.mbti || '').trim().toUpperCase();
+
+      if (mbti.length !== 4 || !MBTI_INFO[mbti]) {
+        showError('ผลบุคลิกภาพไม่ถูกต้อง (' + (mbti || 'ไม่มีค่า') + ') กรุณาทำแบบทดสอบใหม่');
+        return;
+      }
+
+      const info = MBTI_INFO[mbti];
+      document.getElementById('mbti-display').textContent = mbti;
+      document.getElementById('mbti-name').textContent    = info.name;
+      document.getElementById('mbti-desc').textContent    = info.desc;
       document.getElementById('avg-grade-display').textContent =
         `เกรดเฉลี่ย ${data.avg_grade} | วิเคราะห์จาก 6 วิชาหลัก`;
 

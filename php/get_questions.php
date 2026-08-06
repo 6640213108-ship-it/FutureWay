@@ -24,8 +24,14 @@ try {
         exit;
     }
 
+    // $conn->query() คืนค่าทุกคอลัมน์เป็น string -> ต้อง cast id/question_no
+    // เป็น int เอง ไม่งั้น JS จะส่ง question_id เป็น "1" (string) กลับมา
+    // แล้วฝั่ง Python จับคู่กับคำถามไม่ได้ (คะแนน MBTI เป็น 0 ทุกมิติ)
     $questions = [];
     while ($row = $result->fetch_assoc()) {
+        $row['id']          = (int)$row['id'];
+        $row['question_no'] = (int)$row['question_no'];
+        $row['category']    = strtoupper(trim($row['category']));
         $questions[] = $row;
     }
     $conn->close();

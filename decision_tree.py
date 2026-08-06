@@ -64,7 +64,11 @@ def resolve_mbti_from_answers(answers):
     }
     """
     questions = get_mbti_questions()
-    q_map = {q['id']: q for q in questions}
+
+    # key ของ map ต้องเป็น str เสมอ เพราะ id ที่ส่งมาจากหน้าเว็บอาจเป็น "1" (string)
+    # ได้ ถ้า PHP ดึงด้วย $conn->query() ซึ่งคืนทุกคอลัมน์เป็น string
+    # ถ้า key ฝั่งนี้เป็น int จะ .get() ไม่เจอสักข้อ -> คะแนนเป็น 0 ทุกมิติ -> ได้ INFP เสมอ
+    q_map = {str(q['id']): q for q in questions}
 
     # นับคะแนนแยกตามมิติ
     tally = {
@@ -74,23 +78,35 @@ def resolve_mbti_from_answers(answers):
         'JP': {'J': 0, 'P': 0},
     }
 
+    matched = 0   # จำนวนคำตอบที่นับเข้าคะแนนได้จริง
+
     for ans in answers:
-        q = q_map.get(ans['question_id'])
+        q = q_map.get(str(ans.get('question_id')).strip())
         if not q:
             continue  # ข้ามคำถามที่ไม่พบในฐานข้อมูล
 
-        category = q['category']            # 'EI' / 'SN' / 'TF' / 'JP'
-        selected = str(ans['selected']).strip().upper()   # 'A' หรือ 'B'
+        category = str(q.get('category') or '').strip().upper()   # 'EI'/'SN'/'TF'/'JP'
+        selected = str(ans.get('selected') or '').strip().upper() # 'A' หรือ 'B'
+
+        if category not in tally:
+            continue
 
         if selected == 'A':
-            trait = q['option_a_trait']
+            trait = str(q.get('option_a_trait') or '').strip().upper()
+            fallback = category[0]
         elif selected == 'B':
-            trait = q['option_b_trait']
+            trait = str(q.get('option_b_trait') or '').strip().upper()
+            fallback = category[1]
         else:
             continue
 
-        if category in tally and trait in tally[category]:
-            tally[category][trait] += 1
+        # เผื่อ DB เก็บ trait เป็นคำเต็ม ('Introvert') หรือเว้นว่างไว้
+        trait = trait[:1] if trait else ''
+        if trait not in tally[category]:
+            trait = fallback   # A = ตัวอักษรตัวแรกของมิติ, B = ตัวที่สอง
+
+        tally[category][trait] += 1
+        matched += 1
 
     # ทางแยกตัดสินใจ (Decision Tree) ของแต่ละมิติ: เลือกตัวอักษรที่ได้คะแนนมากกว่า
     # ถ้าคะแนนเท่ากันพอดี (tie) จะ default ไปทางฝั่งขวาของมิตินั้น (I, N, F, P)
@@ -111,8 +127,10 @@ def resolve_mbti_from_answers(answers):
         mbti_code += result_letter
 
     return {
-        'mbti':   mbti_code,
-        'detail': tally
+        'mbti':    mbti_code,
+        'detail':  tally,
+        'matched': matched,
+        'total':   len(answers)
     }
 
 
@@ -242,6 +260,18 @@ if __name__ == '__main__':
             # โหมดใหม่: รับคำตอบดิบ [{'question_id':1,'selected':'A'}, ...]
             # แล้วคำนวณรหัส MBTI เองด้วย Decision Tree (หัวข้อที่ 3)
             mbti_result = resolve_mbti_from_answers(data['answers'])
+
+            # ถ้าไม่มีคำตอบข้อไหนนับเข้าคะแนนได้เลย แปลว่า question_id ที่ส่งมา
+            # ไม่ตรงกับตาราง mbti_questions -> ต้องแจ้ง error ไม่ใช่ปล่อยให้ tie-break
+            # คืนค่า INFP ออกไปเงียบๆ เหมือนเป็นผลลัพธ์จริง
+            if mbti_result['matched'] == 0:
+                print(json.dumps({
+                    'error': 'ไม่สามารถจับคู่คำตอบกับคำถามในฐานข้อมูลได้ '
+                             '(question_id ที่ส่งมาไม่ตรงกับตาราง mbti_questions)',
+                    'sent_ids': [a.get('question_id') for a in data['answers']]
+                }, ensure_ascii=False))
+                sys.exit(0)
+
             mbti        = mbti_result['mbti']
             mbti_detail = mbti_result['detail']
         else:

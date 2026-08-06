@@ -218,6 +218,29 @@ table.admin-table {
 
 .muted { color: var(--gray); }
 
+/* ---- ช่องปุ่มท้ายแถว ---- */
+.action-cell {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.del-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.92rem;
+  color: #c9c9d2;
+  padding: 6px 8px;
+  border-radius: 8px;
+  margin-right: 4px;
+  transition: all var(--transition);
+}
+.del-btn:hover:not(:disabled) {
+  color: var(--danger);
+  background: #fdeceb;
+}
+.del-btn:disabled { opacity: 0.5; cursor: default; }
+
 /* ---- แถวรายละเอียดที่กางออกมา ---- */
 .detail-row > td {
   background: #faf9ff;

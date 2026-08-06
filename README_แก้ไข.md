@@ -88,6 +88,7 @@ mysql -h <proxy-host> -P <proxy-port> -u root -p railway < sql/002_result_detail
 | `css/admin.css` | **ไฟล์ใหม่** — สไตล์ของหน้านี้ (standalone ไม่ต้องโหลด main.css) |
 | `php/admin_config.php` | **ไฟล์ใหม่** — กำหนดว่าใครเป็นแอดมิน + ด่านตรวจสิทธิ์ |
 | `php/get_admin_results.php` | **ไฟล์ใหม่** — API ดึงข้อมูลให้ `admin.html` |
+| `php/delete_result.php` | **ไฟล์ใหม่** — ลบผลการทำแบบทดสอบรายรอบ (แอดมินเท่านั้น) |
 | `php/get_user.php` | เพิ่ม `is_admin` ใน response |
 | `profile.html` | เพิ่มเมนู "ผู้ดูแลระบบ" ที่โผล่เฉพาะบัญชีแอดมิน |
 
@@ -108,7 +109,21 @@ ADMIN_USERS = topza
 - ยังไม่ login → **401**
 - login แล้วแต่ไม่ใช่แอดมิน → **403**
 
-การซ่อนเมนูใน `profile.html` เป็นแค่เรื่องความสะอาดของ UI ไม่ใช่การป้องกัน — ต่อให้พิมพ์ `admin.html` ตรงๆ ก็ไม่เห็นข้อมูล เพราะด่านจริงอยู่ฝั่ง server
+เมนูผู้ดูแลระบบใน `profile.html` **ไม่ได้เขียนไว้ใน HTML** แต่ถูกสร้างด้วย JS เฉพาะตอน `is_admin === true`
+ที่ไม่ใช้วิธีวางไว้แล้วซ่อนด้วย CSS เพราะ `.menu-item { display: flex }` ใน `main.css` ทับ attribute `hidden`
+และถ้า CSS ถูก browser cache ไว้ เมนูจะโผล่ให้ทุกคนเห็นทันที — การไม่สร้าง element เลยจึงชัวร์กว่า
+
+ถึงอย่างนั้นด่านจริงยังอยู่ฝั่ง server เสมอ ต่อให้พิมพ์ `admin.html` ตรงๆ หรือยิง API เองก็ได้แค่ 403
+
+## การลบผลลัพธ์
+ปุ่มถังขยะท้ายแถวในตาราง → ยืนยันก่อน 1 ครั้ง (บอกชื่อผู้ใช้ + วันที่ที่จะลบ) → ลบถาวร
+
+`php/delete_result.php` รับเฉพาะ **POST + body เป็น JSON** ไม่รับ GET เพราะถ้าเปิดให้ลบผ่าน GET
+แค่หลอกให้แอดมินโหลดหน้าที่ฝัง `<img src=".../delete_result.php?id=1">` ข้อมูลก็หายแล้ว
+ส่วนการบังคับ `Content-Type: application/json` กันฟอร์มจากเว็บอื่นยิงข้ามโดเมนเข้ามา
+
+ลบแถวใน `quiz_results` แถวเดียว — คำตอบรายข้อและสาขาที่แนะนำของรอบนั้นหายตามเอง
+เพราะตารางลูกผูก FK `ON DELETE CASCADE` ไว้ และทุกครั้งที่ลบจะเขียน log ไว้ใน Railway ว่าแอดมินคนไหนลบผลของใคร
 
 ## ⚠️ เรื่องที่ควรแก้ต่อ (คนละเรื่องกับ migration นี้)
 `decision_tree.py:25` และ `php/db_config.php:13` ยัง hardcode รหัสผ่าน MySQL ไว้ในโค้ด ซึ่งอยู่ใน git history ไปแล้ว

@@ -188,7 +188,15 @@
           <td>${rankCell(r, 3)}</td>
           <td>${r.avg_grade != null ? Number(r.avg_grade).toFixed(2) : '-'}</td>
           <td class="muted">${fmtDate(r.created_at)}</td>
-          <td><i class="fas fa-chevron-down muted"></i></td>
+          <td class="action-cell">
+            <button type="button" class="del-btn" title="ลบผลลัพธ์รอบนี้"
+                    data-id="${r.result_id}"
+                    data-who="${esc(r.fullname) || esc(r.username)}"
+                    data-when="${fmtDate(r.created_at)}">
+              <i class="fas fa-trash-can"></i>
+            </button>
+            <i class="fas fa-chevron-down muted chev"></i>
+          </td>
         </tr>
         <tr class="detail-row" id="d-${r.result_id}" hidden>
           <td colspan="${COLS}">
@@ -221,9 +229,18 @@
       tbody.querySelectorAll('tr.row-main').forEach(tr => {
         tr.addEventListener('click', () => {
           const d    = document.getElementById('d-' + tr.dataset.id);
-          const icon = tr.querySelector('td:last-child i');
+          const icon = tr.querySelector('.chev');
           d.hidden = !d.hidden;
-          icon.className = d.hidden ? 'fas fa-chevron-down muted' : 'fas fa-chevron-up muted';
+          icon.className = d.hidden ? 'fas fa-chevron-down muted chev' : 'fas fa-chevron-up muted chev';
+        });
+      });
+
+      // ปุ่มลบอยู่ในแถวที่คลิกแล้วกางรายละเอียด ต้อง stopPropagation
+      // ไม่งั้นกดลบทีนึงรายละเอียดจะกางขึ้นมาด้วยทุกครั้ง
+      tbody.querySelectorAll('.del-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteResult(btn, data.results.length);
         });
       });
 
@@ -233,6 +250,45 @@
         `หน้า ${data.page} / ${totalPages} · ทั้งหมด ${data.total} รายการ`;
       document.getElementById('prev').disabled = data.page <= 1;
       document.getElementById('next').disabled = data.page >= totalPages;
+    }
+
+    /**
+     * ลบผลลัพธ์ 1 รอบ
+     * ข้อมูลในตาราง quiz_result_branches / quiz_answers ของรอบนั้นหายตามเอง
+     * เพราะผูก FK ON DELETE CASCADE ไว้ ฝั่งนี้จึงสั่งลบแค่แถวเดียว
+     */
+    function deleteResult(btn, rowsOnPage) {
+      const id   = btn.dataset.id;
+      const who  = btn.dataset.who;
+      const when = btn.dataset.when;
+
+      if (!confirm(`ลบผลการทำแบบทดสอบของ "${who}"\nเมื่อ ${when} ใช่หรือไม่?\n\nข้อมูลคำตอบและสาขาที่แนะนำของรอบนี้จะถูกลบไปด้วย และกู้คืนไม่ได้`)) {
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+      fetch('php/delete_result.php', {
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body:        JSON.stringify({ result_id: Number(id) })
+      })
+        .then(async (r) => {
+          const data = await r.json().catch(() => null);
+          if (!r.ok || !data || !data.success) {
+            throw new Error(data?.error || 'ลบไม่สำเร็จ (HTTP ' + r.status + ')');
+          }
+          // ถ้าลบรายการสุดท้ายของหน้า ให้ถอยไปหน้าก่อนหน้า จะได้ไม่ค้างอยู่หน้าว่าง
+          if (rowsOnPage === 1 && page > 1) { page--; }
+          load();
+        })
+        .catch((err) => {
+          alert('ลบไม่สำเร็จ: ' + err.message);
+          btn.disabled  = false;
+          btn.innerHTML = '<i class="fas fa-trash-can"></i>';
+        });
     }
 
     function renderStats(s) {

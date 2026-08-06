@@ -23,6 +23,10 @@
   padding: 0;
 }
 
+/* attribute hidden แพ้กฎ display: flex/grid ที่ประกาศไว้ในไฟล์นี้ (เช่น .menu-item)
+   ต้องบังคับทับ ไม่งั้นของที่สั่งซ่อนไว้จะยังโผล่ เช่นเมนูผู้ดูแลระบบใน profile.html */
+[hidden] { display: none !important; }
+
 body {
   font-family: 'Kanit', sans-serif;
   background: #f0f0f5;

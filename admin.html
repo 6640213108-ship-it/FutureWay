@@ -18,6 +18,14 @@
 
   <div class="admin-wrap">
 
+    <!-- การ์ดกันคนที่ไม่ใช่แอดมิน — โผล่แทนหน้าทั้งหมด ไม่ให้เห็นแม้แต่โครงตาราง -->
+    <div class="denied-card" id="denied" hidden>
+      <i class="fas fa-lock"></i>
+      <h2 id="denied-title">ไม่มีสิทธิ์เข้าถึง</h2>
+      <p id="denied-msg"></p>
+      <a href="main.html" class="denied-btn"><i class="fas fa-arrow-left"></i> กลับหน้าหลัก</a>
+    </div>
+
     <!-- สถิติรวม -->
     <div class="stat-grid" id="stat-grid"></div>
 
@@ -83,6 +91,28 @@
       document.getElementById('pager').hidden = true;
     };
 
+    /**
+     * ไม่ใช่แอดมิน -> ซ่อนทั้งหน้า เหลือแค่การ์ดแจ้งเตือน
+     * ไม่ให้เห็นแม้แต่หัวตารางหรือช่องค้นหา เพราะโครงหน้าเองก็บอกใบ้ว่าระบบเก็บอะไรไว้บ้าง
+     */
+    function showDenied(msg, needLogin = false) {
+      ['stat-grid', 'filter-form'].forEach(id => document.getElementById(id).hidden = true);
+      document.querySelector('.table-card').hidden = true;
+      document.getElementById('who').textContent = '';
+
+      const card = document.getElementById('denied');
+      document.getElementById('denied-title').textContent = needLogin ? 'กรุณาเข้าสู่ระบบ' : 'ไม่มีสิทธิ์เข้าถึง';
+      document.getElementById('denied-msg').textContent   = msg;
+
+      const btn = card.querySelector('.denied-btn');
+      btn.setAttribute('href', needLogin ? 'login.html' : 'main.html');
+      btn.innerHTML = needLogin
+        ? '<i class="fas fa-right-to-bracket"></i> ไปหน้าเข้าสู่ระบบ'
+        : '<i class="fas fa-arrow-left"></i> กลับหน้าหลัก';
+
+      card.hidden = false;
+    }
+
     function load() {
       const params = new URLSearchParams({
         page,
@@ -97,11 +127,11 @@
         .then(async (r) => {
           const data = await r.json().catch(() => null);
           if (r.status === 401) {
-            showState('<i class="fas fa-right-to-bracket"></i>กรุณาเข้าสู่ระบบก่อน<br><a href="login.html">ไปหน้าเข้าสู่ระบบ</a>', true);
+            showDenied('ต้องเข้าสู่ระบบก่อนจึงจะดูหน้านี้ได้', true);
             return null;
           }
           if (r.status === 403) {
-            showState('<i class="fas fa-ban"></i>' + esc(data?.error || 'ไม่มีสิทธิ์เข้าถึงหน้านี้'), true);
+            showDenied(data?.error || 'หน้านี้สำหรับผู้ดูแลระบบเท่านั้น');
             return null;
           }
           if (!data || !data.success) {

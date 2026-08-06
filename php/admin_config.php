@@ -54,10 +54,17 @@ function requireAdminJson(): void {
     }
 
     if (!isAdmin()) {
+        // แยกสองกรณีให้ชัด ไม่งั้นตอนตั้งค่าพลาดจะไล่หาสาเหตุไม่เจอ
+        // (บอกแค่ username ของตัวเอง ไม่เผยรายชื่อแอดมินคนอื่น)
+        $me = $_SESSION['username'] ?? '';
+        $msg = getAdminUsernames()
+            ? "บัญชี \"$me\" ไม่ได้อยู่ในรายชื่อผู้ดูแลระบบ (ตรวจค่า ADMIN_USERS บน Railway)"
+            : "ยังไม่ได้ตั้ง environment variable ADMIN_USERS บน Railway — เพิ่มค่าเป็น \"$me\" แล้วรอ deploy ใหม่";
+
         http_response_code(403);
         echo json_encode([
             'success' => false,
-            'error'   => 'บัญชีนี้ไม่มีสิทธิ์เข้าถึงหน้าผู้ดูแลระบบ'
+            'error'   => $msg
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }

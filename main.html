@@ -19,14 +19,22 @@
   <style>
     .lightbox {
       position: fixed;
-      inset: 0;
-      top: 0; right: 0; bottom: 0; left: 0;   /* เผื่อเบราว์เซอร์เก่าที่ไม่รู้จัก inset */
-      z-index: 9999;                          /* สูงกว่า bottom-nav (100) */
+      top: 0; left: 0; right: 0;
+      width: 100%;
+      height: 100vh;    /* ค่าสำรองสำหรับเบราว์เซอร์เก่า */
+      height: 100dvh;   /* มือถือ: หักความสูงแถบ address bar ที่ยืด-หดตอนเลื่อนให้เอง
+                           ถ้าใช้ 100vh เฉย ๆ ขอบล่างของรูปจะโดนแถบนั้นบังบน iOS/Android */
+      z-index: 9999;    /* สูงกว่า bottom-nav (100) */
       background: rgba(0,0,0,0.92);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 56px 16px;
+      /* เว้นที่ให้ปุ่มปิดด้านบน + ปุ่มเลื่อน/ตัวเลขด้านล่าง
+         env(safe-area-inset-*) คือเผื่อรอยบากกับแถบขีดล่างของ iPhone */
+      padding-top:    calc(58px + env(safe-area-inset-top, 0px));
+      padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+      padding-left:   calc(12px + env(safe-area-inset-left, 0px));
+      padding-right:  calc(12px + env(safe-area-inset-right, 0px));
       animation: lb-fade 0.18s ease;
     }
     /* ต้องมีกฎนี้ในไฟล์เดียวกับ .lightbox ไม่งั้นถ้า [hidden] ของ main.css ไม่ถูกโหลด
@@ -38,15 +46,54 @@
       to   { opacity: 1; }
     }
 
+    /* พื้นที่วางรูป — แยกออกมาจาก .lightbox เพื่อให้เลื่อนดูรูปตอนขยายได้
+       โดยที่ปุ่มต่าง ๆ ยังเกาะขอบจออยู่กับที่ ไม่เลื่อนตามรูป */
+    .lightbox-stage {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      overscroll-behavior: contain;   /* เลื่อนจนสุดแล้วไม่ไปลากหน้าข้างหลังต่อ */
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* โหมดปกติ: ย่อให้เห็นทั้งรูปพอดีจอ ไม่ว่าจะจอไหน
+       width/height เป็น auto + max 100% => รูปไม่ถูกยืดเกินขนาดจริงจนแตก */
     .lightbox-img {
+      display: block;
+      width: auto;
+      height: auto;
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
       border-radius: 8px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      cursor: zoom-in;
       animation: lb-zoom 0.2s ease;
       -webkit-user-drag: none;   /* กันเบราว์เซอร์ลากรูปออกไปตอนสไวป์ */
       user-select: none;
+    }
+
+    /* โหมดขยาย: บนมือถือให้เต็มความกว้างจอแล้วเลื่อนอ่านลงมา
+       (รูป infographic แนวตั้งถ้าย่อให้พอดีจอจะเล็กจนอ่านตัวหนังสือไม่ออก) */
+    .lightbox-stage.zoomed { align-items: flex-start; }
+    .lightbox-stage.zoomed .lightbox-img {
+      max-width: none;
+      max-height: none;
+      width: 100%;
+      height: auto;
+      border-radius: 0;
+      cursor: zoom-out;
+    }
+
+    /* จอใหญ่: ขยายแล้วแสดงที่ขนาดจริงของไฟล์ ไม่ยืดเกินจนภาพเบลอ */
+    @media (min-width: 900px) {
+      .lightbox-stage.zoomed .lightbox-img {
+        width: auto;
+        height: auto;
+      }
     }
 
     @keyframes lb-zoom {
@@ -73,13 +120,22 @@
     .lightbox-btn:active { background: rgba(255,255,255,0.4); }
     .lightbox-btn[hidden] { display: none !important; }
 
-    .lightbox-close { top: 12px; right: 12px; }
+    /* ปุ่มเกาะขอบจอ ไม่ใช่ขอบรูป จะได้อยู่ที่เดิมเสมอไม่ว่ารูปจะขนาดไหน
+       บวก safe-area เผื่อรอยบาก iPhone ไม่ให้ปุ่มไปอยู่ใต้รอยบาก */
+    .lightbox-close {
+      top:   calc(12px + env(safe-area-inset-top, 0px));
+      right: calc(12px + env(safe-area-inset-right, 0px));
+    }
+    .lightbox-zoom {
+      top:  calc(12px + env(safe-area-inset-top, 0px));
+      left: calc(12px + env(safe-area-inset-left, 0px));
+    }
     .lightbox-prev  { left: 10px;  top: 50%; transform: translateY(-50%); }
     .lightbox-next  { right: 10px; top: 50%; transform: translateY(-50%); }
 
     .lightbox-count {
       position: absolute;
-      bottom: 16px;
+      bottom: calc(16px + env(safe-area-inset-bottom, 0px));
       left: 50%;
       transform: translateX(-50%);
       color: rgba(255,255,255,0.85);
@@ -91,11 +147,35 @@
     }
     .lightbox-count[hidden] { display: none !important; }
 
-    /* จอเล็ก: ย้ายปุ่มซ้าย-ขวาลงมาชิดขอบล่าง ไม่ให้บังรูป */
-    @media (max-width: 420px) {
-      .lightbox { padding: 56px 8px 72px; }
-      .lightbox-prev { left: 16px;  top: auto; bottom: 12px; transform: none; }
-      .lightbox-next { right: 16px; top: auto; bottom: 12px; transform: none; }
+    /* จอแคบ: ย้ายปุ่มซ้าย-ขวาลงมาชิดขอบล่าง ไม่ให้บังตัวรูป
+       (จอกว้าง ๆ ปุ่มอยู่กลางซ้าย-ขวาได้ เพราะมีที่ว่างข้างรูปเหลือเฟือ) */
+    @media (max-width: 480px) {
+      .lightbox {
+        padding-left:   calc(6px + env(safe-area-inset-left, 0px));
+        padding-right:  calc(6px + env(safe-area-inset-right, 0px));
+        padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+      }
+      .lightbox-prev {
+        left: 16px; right: auto; top: auto;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        transform: none;
+      }
+      .lightbox-next {
+        right: 16px; left: auto; top: auto;
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        transform: none;
+      }
+    }
+
+    /* จอเตี้ย (มือถือแนวนอน / หน้าต่างเล็ก): ลดขอบและย่อปุ่ม
+       ไม่งั้นขอบบน-ล่างรวมกันกินที่จนรูปเหลือนิดเดียว */
+    @media (max-height: 460px) {
+      .lightbox {
+        padding-top:    calc(46px + env(safe-area-inset-top, 0px));
+        padding-bottom: calc(46px + env(safe-area-inset-bottom, 0px));
+      }
+      .lightbox-btn { width: 38px; height: 38px; font-size: 0.95rem; }
+      .lightbox-count { bottom: 8px; font-size: 0.75rem; padding: 3px 11px; }
     }
 
     /* รูปเล็กในกล่องสไลด์ — บอกให้รู้ว่ากดได้ */
@@ -136,11 +216,17 @@
 
   <!-- Lightbox: ดูรูปเต็มจอ -->
   <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="ดูรูปภาพเต็มจอ">
-    <!-- ไม่ใส่ src เปล่าไว้ตั้งแต่แรก เดี๋ยวเบราว์เซอร์ยิงโหลด URL ของหน้านี้ซ้ำ -->
-    <img class="lightbox-img" id="lightbox-img" alt="">
+    <!-- พื้นที่วางรูป เลื่อนได้ตอนกดขยาย ส่วนปุ่มอยู่นอกกล่องนี้จึงไม่เลื่อนตาม -->
+    <div class="lightbox-stage" id="lb-stage">
+      <!-- ไม่ใส่ src เปล่าไว้ตั้งแต่แรก เดี๋ยวเบราว์เซอร์ยิงโหลด URL ของหน้านี้ซ้ำ -->
+      <img class="lightbox-img" id="lightbox-img" alt="">
+    </div>
 
     <button type="button" class="lightbox-btn lightbox-close" id="lb-close" aria-label="ปิด">
       <i class="fas fa-xmark"></i>
+    </button>
+    <button type="button" class="lightbox-btn lightbox-zoom" id="lb-zoom" aria-label="ขยายรูป">
+      <i class="fas fa-magnifying-glass-plus"></i>
     </button>
     <button type="button" class="lightbox-btn lightbox-prev" id="lb-prev" aria-label="รูปก่อนหน้า">
       <i class="fas fa-chevron-left"></i>
@@ -196,14 +282,16 @@
     (function () {
       const images  = Array.from(document.querySelectorAll('.info-scroll .info-img'));
       const box     = document.getElementById('lightbox');
+      const stage   = document.getElementById('lb-stage');
       const bigImg  = document.getElementById('lightbox-img');
       const btnPrev = document.getElementById('lb-prev');
       const btnNext = document.getElementById('lb-next');
       const btnClose= document.getElementById('lb-close');
+      const btnZoom = document.getElementById('lb-zoom');
       const counter = document.getElementById('lb-count');
 
       // ถ้าขาดชิ้นไหนไป ให้ฟ้องใน Console ไปเลย จะได้ไม่ต้องเดาว่าทำไมกดรูปแล้วเงียบ
-      if (!images.length || !box || !bigImg) {
+      if (!images.length || !box || !stage || !bigImg || !btnZoom) {
         console.error('[lightbox] เปิดใช้งานไม่ได้ — ' +
           'รูปในกล่องสไลด์: ' + images.length + ', กล่อง popup: ' + (box ? 'มี' : 'ไม่มี'));
         return;
@@ -211,13 +299,27 @@
       console.log('[lightbox] พร้อมใช้งาน — พบรูป ' + images.length + ' รูป');
 
       let index = 0;
+      let zoomed = false;
       let lastFocused = null;   // ปุ่ม/รูปที่กดเข้ามา ไว้คืน focus ตอนปิด
+
+      // ---- โหมดขยาย ----
+      // ปกติจะย่อรูปให้เห็นครบพอดีจอ กดขยายแล้วรูปจะเต็มความกว้างจอและเลื่อนอ่านลงมาได้
+      function setZoom(on) {
+        zoomed = on;
+        stage.classList.toggle('zoomed', on);
+        btnZoom.querySelector('i').className =
+          on ? 'fas fa-magnifying-glass-minus' : 'fas fa-magnifying-glass-plus';
+        btnZoom.setAttribute('aria-label', on ? 'ย่อรูป' : 'ขยายรูป');
+        stage.scrollTop  = 0;
+        stage.scrollLeft = 0;
+      }
 
       function show(i) {
         // วนกลับหัวท้าย: รูปสุดท้ายกดถัดไปแล้ววนมารูปแรก
         index = (i + images.length) % images.length;
         const src = images[index];
 
+        setZoom(false);          // เปลี่ยนรูปแล้วเริ่มที่โหมดพอดีจอเสมอ
         bigImg.src = src.src;
         bigImg.alt = src.alt || '';
 
@@ -229,6 +331,12 @@
         btnNext.hidden = !many;
         counter.hidden = !many;
       }
+
+      // รูปที่เล็กกว่าพื้นที่อยู่แล้ว = เห็นเต็มขนาดจริงตั้งแต่แรก ไม่ต้องมีปุ่มขยายให้รก
+      bigImg.addEventListener('load', function () {
+        btnZoom.hidden = bigImg.naturalWidth  <= stage.clientWidth
+                      && bigImg.naturalHeight <= stage.clientHeight;
+      });
 
       function open(i) {
         lastFocused = document.activeElement;
@@ -269,9 +377,13 @@
       btnPrev.addEventListener('click', () => show(index - 1));
       btnNext.addEventListener('click', () => show(index + 1));
 
+      // กดที่ตัวรูปก็สลับย่อ/ขยายได้ ไม่ต้องเล็งปุ่ม
+      btnZoom.addEventListener('click', () => setZoom(!zoomed));
+      bigImg.addEventListener('click', () => { if (!btnZoom.hidden) setZoom(!zoomed); });
+
       // กดพื้นดำรอบ ๆ เพื่อปิด แต่กดที่ตัวรูปหรือปุ่มไม่ปิด
       box.addEventListener('click', e => {
-        if (e.target === box) close();
+        if (e.target === box || e.target === stage) close();
       });
 
       // ---- คีย์บอร์ด ----
@@ -290,7 +402,8 @@
       }, { passive: true });
 
       box.addEventListener('touchend', e => {
-        if (touchX === null || images.length < 2) return;
+        // ตอนขยายอยู่ไม่ต้องเปลี่ยนรูป เพราะนิ้วกำลังลากเลื่อนดูรูปเดิม
+        if (touchX === null || images.length < 2 || zoomed) { touchX = null; return; }
         const diff = e.changedTouches[0].clientX - touchX;
         if (Math.abs(diff) > 50) show(diff < 0 ? index + 1 : index - 1);
         touchX = null;

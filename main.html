@@ -31,13 +31,31 @@
 
     </div>
 
-    <!-- กล่องสไลด์รูปภาพด้านล่าง -->
+    <!-- กล่องสไลด์รูปภาพด้านล่าง (กดที่รูปเพื่อดูเต็มจอ) -->
     <div class="info-scroll">
-      <img src="images/info1 (2).png" alt="Info 1" class="info-img">
-      <img src="images/info2 (3).png" alt="Info 2" class="info-img">
+      <img src="images/info1 (2).png" alt="Info 1" class="info-img" tabindex="0" role="button">
+      <img src="images/info2 (3).png" alt="Info 2" class="info-img" tabindex="0" role="button">
     </div>
 
   </main>
+
+  <!-- Lightbox: ดูรูปเต็มจอ -->
+  <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="ดูรูปภาพเต็มจอ">
+    <!-- ไม่ใส่ src เปล่าไว้ตั้งแต่แรก เดี๋ยวเบราว์เซอร์ยิงโหลด URL ของหน้านี้ซ้ำ -->
+    <img class="lightbox-img" id="lightbox-img" alt="">
+
+    <button type="button" class="lightbox-btn lightbox-close" id="lb-close" aria-label="ปิด">
+      <i class="fas fa-xmark"></i>
+    </button>
+    <button type="button" class="lightbox-btn lightbox-prev" id="lb-prev" aria-label="รูปก่อนหน้า">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    <button type="button" class="lightbox-btn lightbox-next" id="lb-next" aria-label="รูปถัดไป">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+
+    <span class="lightbox-count" id="lb-count"></span>
+  </div>
 
   <!-- Bottom Navigation -->
   <nav class="bottom-nav">
@@ -73,6 +91,104 @@
           document.getElementById('welcome-text').innerHTML = 'ข้อผิดพลาด';
         });
     });
+  </script>
+
+  <script>
+    // ========================================
+    // Lightbox — กดที่รูปในกล่องสไลด์แล้วเปิดดูเต็มจอ
+    // เลื่อนดูรูปถัดไปได้ด้วยปุ่มลูกศร, คีย์บอร์ด, หรือสไวป์บนมือถือ
+    // ========================================
+    (function () {
+      const images  = Array.from(document.querySelectorAll('.info-scroll .info-img'));
+      if (!images.length) return;
+
+      const box     = document.getElementById('lightbox');
+      const bigImg  = document.getElementById('lightbox-img');
+      const btnPrev = document.getElementById('lb-prev');
+      const btnNext = document.getElementById('lb-next');
+      const btnClose= document.getElementById('lb-close');
+      const counter = document.getElementById('lb-count');
+
+      let index = 0;
+      let lastFocused = null;   // ปุ่ม/รูปที่กดเข้ามา ไว้คืน focus ตอนปิด
+
+      function show(i) {
+        // วนกลับหัวท้าย: รูปสุดท้ายกดถัดไปแล้ววนมารูปแรก
+        index = (i + images.length) % images.length;
+        const src = images[index];
+
+        bigImg.src = src.src;
+        bigImg.alt = src.alt || '';
+
+        counter.textContent = (index + 1) + ' / ' + images.length;
+
+        // มีรูปเดียวก็ไม่ต้องมีปุ่มเลื่อนกับตัวนับ
+        const many = images.length > 1;
+        btnPrev.hidden = !many;
+        btnNext.hidden = !many;
+        counter.hidden = !many;
+      }
+
+      function open(i) {
+        lastFocused = document.activeElement;
+        show(i);
+        box.hidden = false;
+        document.body.classList.add('lightbox-open');
+        btnClose.focus();
+      }
+
+      function close() {
+        box.hidden = true;
+        document.body.classList.remove('lightbox-open');
+        // ใช้ removeAttribute ไม่ใช่ src='' เพราะ src ว่างทำให้เบราว์เซอร์
+        // ยิงโหลด URL ของหน้านี้ซ้ำอีกรอบ
+        bigImg.removeAttribute('src');
+        if (lastFocused) lastFocused.focus();
+      }
+
+      // ---- เปิดจากรูปเล็ก ----
+      images.forEach((img, i) => {
+        img.addEventListener('click', () => open(i));
+        img.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();       // กัน space เลื่อนหน้าลง
+            open(i);
+          }
+        });
+      });
+
+      // ---- ปุ่มควบคุม ----
+      btnClose.addEventListener('click', close);
+      btnPrev.addEventListener('click', () => show(index - 1));
+      btnNext.addEventListener('click', () => show(index + 1));
+
+      // กดพื้นดำรอบ ๆ เพื่อปิด แต่กดที่ตัวรูปหรือปุ่มไม่ปิด
+      box.addEventListener('click', e => {
+        if (e.target === box) close();
+      });
+
+      // ---- คีย์บอร์ด ----
+      document.addEventListener('keydown', e => {
+        if (box.hidden) return;
+        if (e.key === 'Escape')     close();
+        if (e.key === 'ArrowLeft')  show(index - 1);
+        if (e.key === 'ArrowRight') show(index + 1);
+      });
+
+      // ---- สไวป์ซ้าย-ขวาบนมือถือ ----
+      // ใช้ระยะ 50px กันนิ้วสั่นตอนแตะให้กลายเป็นการปัดโดยไม่ตั้งใจ
+      let touchX = null;
+      box.addEventListener('touchstart', e => {
+        touchX = e.changedTouches[0].clientX;
+      }, { passive: true });
+
+      box.addEventListener('touchend', e => {
+        if (touchX === null || images.length < 2) return;
+        const diff = e.changedTouches[0].clientX - touchX;
+        if (Math.abs(diff) > 50) show(diff < 0 ? index + 1 : index - 1);
+        touchX = null;
+      }, { passive: true });
+    })();
   </script>
 
 </body>

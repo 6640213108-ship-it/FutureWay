@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FutureWay - การแจ้งเตือน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/settings.css">
+</head>
+<body>
+
+  <header class="back-header">
+    <a href="profile.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    <span class="page-title">การแจ้งเตือน</span>
+  </header>
+
+  <div class="settings-content">
+
+    <div id="loading" class="loading-state"><i class="fas fa-spinner fa-spin"></i>กำลังโหลดการตั้งค่า...</div>
+
+    <div id="panel" hidden>
+
+      <div class="settings-card">
+        <div class="card-head">
+          <i class="fas fa-bell"></i>
+          <h2>เรื่องที่อยากให้แจ้ง</h2>
+        </div>
+        <p class="card-desc">เลือกว่าอยากรับการแจ้งเตือนเรื่องไหนบ้าง ระบบบันทึกให้อัตโนมัติทันทีที่กดสลับ</p>
+
+        <div class="toggle-row">
+          <div class="toggle-icon"><i class="fas fa-clipboard-check"></i></div>
+          <div class="toggle-text">
+            <span class="toggle-title">ผลการทำแบบทดสอบ</span>
+            <span class="toggle-sub">แจ้งเมื่อผลวิเคราะห์บุคลิกภาพและสาขาที่แนะนำพร้อมแล้ว</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-key="notify_result">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-icon"><i class="fas fa-newspaper"></i></div>
+          <div class="toggle-text">
+            <span class="toggle-title">ข่าวสารและสาขาใหม่</span>
+            <span class="toggle-sub">ข่าวการศึกษา ทุน และสาขาที่เพิ่มเข้ามาในระบบ</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-key="notify_news">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-icon"><i class="fas fa-clock-rotate-left"></i></div>
+          <div class="toggle-text">
+            <span class="toggle-title">เตือนให้ทำแบบทดสอบซ้ำ</span>
+            <span class="toggle-sub">เตือนเมื่อไม่ได้ทำแบบทดสอบมานาน ความสนใจอาจเปลี่ยนไปแล้ว</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-key="notify_reminder">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="card-head">
+          <i class="fas fa-paper-plane"></i>
+          <h2>ช่องทางที่ให้ส่ง</h2>
+        </div>
+        <p class="card-desc">เลือกว่าจะให้ส่งการแจ้งเตือนไปทางไหน</p>
+
+        <div class="toggle-row">
+          <div class="toggle-icon"><i class="fas fa-envelope"></i></div>
+          <div class="toggle-text">
+            <span class="toggle-title">ส่งเข้าอีเมล</span>
+            <span class="toggle-sub" id="email-sub">ส่งไปที่อีเมลในโปรไฟล์ของคุณ</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-key="notify_email">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-icon"><i class="fas fa-desktop"></i></div>
+          <div class="toggle-text">
+            <span class="toggle-title">แจ้งเตือนบนเบราว์เซอร์</span>
+            <span class="toggle-sub" id="push-sub">เด้งแจ้งเตือนบนเครื่องนี้ ต้องกดอนุญาตในเบราว์เซอร์ก่อน</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-key="notify_push" id="push-toggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="alert warn" id="push-alert" hidden><i class="fas fa-triangle-exclamation"></i><span></span></div>
+
+        <button type="button" class="btn btn-ghost" id="test-btn" style="margin-top:12px">
+          <i class="fas fa-vial"></i>ทดสอบการแจ้งเตือน
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast"><i class="fas fa-circle-check"></i><span></span></div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    function showToast(message, isError) {
+      const t = $('toast');
+      t.querySelector('span').textContent = message;
+      t.querySelector('i').className = isError ? 'fas fa-circle-exclamation' : 'fas fa-circle-check';
+      t.classList.toggle('err', !!isError);
+      t.classList.add('show');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => t.classList.remove('show'), 2400);
+    }
+
+    function showPushAlert(message) {
+      const box = $('push-alert');
+      if (!message) { box.hidden = true; return; }
+      box.querySelector('span').textContent = message;
+      box.hidden = false;
+    }
+
+    const toggles = document.querySelectorAll('input[data-key]');
+
+    // ---- โหลดค่าที่บันทึกไว้ ----
+    Promise.all([
+      fetch('php/get_settings.php', { cache: 'no-store' }).then(r => r.json()),
+      fetch('php/get_user.php',     { cache: 'no-store' }).then(r => r.json())
+    ])
+      .then(([res, user]) => {
+        if (!res.success) {
+          window.location.href = 'login.html';
+          return;
+        }
+        toggles.forEach(t => { t.checked = !!res.settings[t.dataset.key]; });
+
+        if (user.success && user.email) {
+          $('email-sub').textContent = 'ส่งไปที่ ' + user.email;
+        }
+
+        syncPushState();
+        $('loading').hidden = true;
+        $('panel').hidden   = false;
+      })
+      .catch(() => {
+        $('loading').innerHTML = 'โหลดการตั้งค่าไม่สำเร็จ กรุณาลองใหม่';
+      });
+
+    // ---- บันทึกทันทีที่กดสลับ (ส่งเฉพาะ key ที่เปลี่ยน) ----
+    function saveSetting(key, value, onFail) {
+      return fetch('php/update_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [key]: value })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.success) throw new Error(data.error || 'บันทึกไม่สำเร็จ');
+          showToast('บันทึกแล้ว');
+          return data;
+        })
+        .catch(err => {
+          showToast(err.message || 'บันทึกไม่สำเร็จ', true);
+          if (onFail) onFail();
+        });
+    }
+
+    toggles.forEach(toggle => {
+      toggle.addEventListener('change', function () {
+        const key   = this.dataset.key;
+        const value = this.checked;
+        const before = !value;
+
+        // เปิดแจ้งเตือนบนเบราว์เซอร์ ต้องได้สิทธิ์จากเบราว์เซอร์ก่อนถึงจะบันทึกว่าเปิด
+        if (key === 'notify_push' && value) {
+          requestPushPermission().then(granted => {
+            if (!granted) {
+              this.checked = false;
+              return;
+            }
+            saveSetting(key, true, () => { this.checked = before; });
+          });
+          return;
+        }
+
+        saveSetting(key, value, () => { this.checked = before; });
+      });
+    });
+
+    // ---- สิทธิ์แจ้งเตือนของเบราว์เซอร์ ----
+    // การตั้งค่านี้เก็บใน DB ก็จริง แต่จะเด้งจริงได้ต่อเมื่อเบราว์เซอร์อนุญาต
+    // และสิทธิ์เป็นของ "เครื่องนี้" ไม่ใช่ของบัญชี เลยต้องเช็คสถานะทุกครั้งที่เปิดหน้า
+    function pushSupported() {
+      return typeof window.Notification !== 'undefined';
+    }
+
+    function syncPushState() {
+      const toggle = $('push-toggle');
+
+      if (!pushSupported()) {
+        toggle.checked  = false;
+        toggle.disabled = true;
+        showPushAlert('เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน (หรือเปิดผ่าน http ที่ไม่ใช่ localhost)');
+        return;
+      }
+
+      if (Notification.permission === 'denied') {
+        toggle.checked = false;
+        showPushAlert('เบราว์เซอร์ถูกตั้งให้บล็อกการแจ้งเตือนของเว็บนี้ไว้ ต้องไปปลดล็อกที่ไอคอนซ้ายของช่อง URL ก่อน');
+      } else if (toggle.checked && Notification.permission !== 'granted') {
+        showPushAlert('เปิดไว้ในระบบแล้ว แต่ยังไม่ได้กดอนุญาตบนเครื่องนี้ — กดปุ่ม "ทดสอบการแจ้งเตือน" เพื่อขอสิทธิ์');
+      } else {
+        showPushAlert('');
+      }
+    }
+
+    function requestPushPermission() {
+      if (!pushSupported()) {
+        showPushAlert('เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน');
+        return Promise.resolve(false);
+      }
+      if (Notification.permission === 'granted') {
+        showPushAlert('');
+        return Promise.resolve(true);
+      }
+      if (Notification.permission === 'denied') {
+        showPushAlert('เบราว์เซอร์บล็อกการแจ้งเตือนของเว็บนี้ไว้ ต้องปลดล็อกที่การตั้งค่าเบราว์เซอร์ก่อน');
+        return Promise.resolve(false);
+      }
+      return Notification.requestPermission().then(result => {
+        const granted = result === 'granted';
+        showPushAlert(granted ? '' : 'ยังไม่ได้รับอนุญาตให้แจ้งเตือนบนเครื่องนี้');
+        return granted;
+      });
+    }
+
+    // ---- ปุ่มทดสอบ: เด้งแจ้งเตือนจริงบนเครื่องนี้ ----
+    $('test-btn').addEventListener('click', function () {
+      requestPushPermission().then(granted => {
+        if (!granted) {
+          showToast('ยังไม่ได้รับอนุญาตให้แจ้งเตือน', true);
+          return;
+        }
+
+        new Notification('FutureWay', {
+          body: 'นี่คือตัวอย่างการแจ้งเตือน — ตั้งค่าเรียบร้อยแล้ว',
+          icon: 'images/account_circle_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png'
+        });
+
+        // กดทดสอบแล้วผ่าน = เครื่องนี้พร้อมรับแจ้งเตือน เปิดสวิตช์ให้เลยจะได้ไม่ต้องกดซ้ำ
+        const toggle = $('push-toggle');
+        if (!toggle.checked) {
+          toggle.checked = true;
+          saveSetting('notify_push', true, () => { toggle.checked = false; });
+        } else {
+          showToast('ส่งการแจ้งเตือนทดสอบแล้ว');
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>

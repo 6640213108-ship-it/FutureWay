@@ -1,0 +1,443 @@
+/* ========================================
+   FutureWay - settings.css
+   ใช้ร่วมกัน 4 หน้าที่เปิดจากเมนูใน profile.html
+     edit_profile.html, change_password.html,
+     notifications.html, privacy.html
+   โหลดต่อจาก main.css (ใช้ตัวแปรสีและ base ร่วมกัน)
+   ======================================== */
+
+/* หัวหน้าเพจ — ชุดเดียวกับ history.css เพื่อให้ทุกหน้าย่อยหน้าตาเหมือนกัน */
+.back-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #7b2ff7 0%, #4a0080 100%);
+}
+.back-header .back-btn {
+  color: var(--white);
+  font-size: 1.1rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.back-header .page-title {
+  color: var(--white);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+/* ========================================
+   โครงหน้า
+   ======================================== */
+.settings-content {
+  padding: 18px 16px 24px;
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.settings-card {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 3px 16px rgba(0,0,0,0.08);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.card-head i {
+  color: var(--primary);
+  font-size: 1rem;
+}
+.card-head h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+.card-desc {
+  font-size: 0.8rem;
+  color: var(--gray);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+/* ========================================
+   ฟอร์ม
+   ======================================== */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.field:last-of-type { margin-bottom: 0; }
+
+.field label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #444;
+}
+.field label .required { color: var(--red); }
+
+.field input,
+.field select,
+.field textarea {
+  font-family: 'Kanit', sans-serif;
+  font-size: 0.92rem;
+  color: #222;
+  background: var(--gray-light);
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  padding: 11px 13px;
+  width: 100%;
+  transition: border-color var(--transition), background var(--transition);
+}
+.field textarea {
+  resize: vertical;
+  min-height: 76px;
+  line-height: 1.5;
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  background: var(--white);
+  border-color: var(--primary);
+}
+.field input:disabled {
+  color: #999;
+  cursor: not-allowed;
+}
+.field .hint {
+  font-size: 0.72rem;
+  color: var(--gray);
+}
+
+/* กลุ่มปุ่มเลือกเพศ */
+.radio-row {
+  display: flex;
+  gap: 8px;
+}
+.radio-row label {
+  flex: 1;
+  text-align: center;
+  padding: 10px 6px;
+  border-radius: 10px;
+  background: var(--gray-light);
+  border: 1.5px solid transparent;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.radio-row input { display: none; }
+/* .selected ใส่โดย JS เพื่อรองรับเบราว์เซอร์ที่ยังไม่มี :has() */
+.radio-row label.selected,
+.radio-row label:has(input:checked) {
+  border-color: var(--primary);
+  background: rgba(123,47,247,0.08);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ปุ่มดูรหัสผ่าน */
+.pw-wrap { position: relative; }
+.pw-wrap input { padding-right: 44px; }
+.pw-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--gray);
+  cursor: pointer;
+  font-size: 0.95rem;
+  border-radius: 8px;
+}
+.pw-toggle:hover { color: var(--primary); }
+
+/* แถบความแข็งแรงของรหัสผ่าน */
+.pw-meter {
+  height: 6px;
+  border-radius: 3px;
+  background: #e8e8ee;
+  overflow: hidden;
+  margin-top: 2px;
+}
+.pw-meter span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  background: var(--red);
+  transition: width var(--transition), background var(--transition);
+}
+.pw-meter.mid   span { background: #f39c12; }
+.pw-meter.good  span { background: #27ae60; }
+.pw-label { font-size: 0.72rem; color: var(--gray); }
+
+/* ========================================
+   ปุ่ม
+   ======================================== */
+.btn {
+  font-family: 'Kanit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 13px 16px;
+  width: 100%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: all var(--transition);
+}
+.btn-primary {
+  background: linear-gradient(135deg, #7b2ff7 0%, #4a0080 100%);
+  color: var(--white);
+}
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-ghost {
+  background: var(--white);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.btn-ghost:hover { background: rgba(123,47,247,0.07); }
+.btn-danger {
+  background: var(--white);
+  color: var(--red);
+  border-color: var(--red);
+}
+.btn-danger:hover { background: rgba(231,76,60,0.07); }
+.btn-danger-solid {
+  background: var(--red);
+  color: var(--white);
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: none;
+}
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.btn-row .btn { margin-top: 0; }
+
+/* ========================================
+   สวิตช์เปิด/ปิด
+   ======================================== */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid #f0f0f5;
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-row:first-child { padding-top: 4px; }
+
+.toggle-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(123,47,247,0.1);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+.toggle-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.toggle-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+.toggle-sub {
+  font-size: 0.74rem;
+  color: var(--gray);
+  line-height: 1.5;
+}
+
+/* ตัวสวิตช์ */
+.switch {
+  position: relative;
+  width: 48px;
+  height: 27px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.switch .slider {
+  position: absolute;
+  inset: 0;
+  background: #d5d5dd;
+  border-radius: 27px;
+  transition: background var(--transition);
+}
+.switch .slider::before {
+  content: '';
+  position: absolute;
+  width: 21px;
+  height: 21px;
+  left: 3px;
+  top: 3px;
+  border-radius: 50%;
+  background: var(--white);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  transition: transform var(--transition);
+}
+.switch input:checked + .slider {
+  background: linear-gradient(135deg, #9b59b6, #7b2ff7);
+}
+.switch input:checked + .slider::before { transform: translateX(21px); }
+.switch input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
+.switch input:focus-visible + .slider { box-shadow: 0 0 0 3px rgba(123,47,247,0.3); }
+
+/* ========================================
+   กล่องข้อมูล / โซนอันตราย
+   ======================================== */
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.info-list .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.85rem;
+}
+.info-list .row .k { color: var(--gray); }
+.info-list .row .v { color: #333; font-weight: 500; text-align: right; word-break: break-word; }
+
+.danger-card { border: 1.5px solid rgba(231,76,60,0.35); }
+.danger-card .card-head i,
+.danger-card .card-head h2 { color: var(--red); }
+.danger-card .btn { margin-top: 10px; }
+
+/* ========================================
+   ข้อความแจ้งผล
+   ======================================== */
+.alert {
+  border-radius: 10px;
+  padding: 11px 13px;
+  font-size: 0.83rem;
+  line-height: 1.55;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.alert i { margin-top: 2px; }
+.alert.ok   { background: rgba(39,174,96,0.1);  color: #1e8449; }
+.alert.err  { background: rgba(231,76,60,0.1);  color: #c0392b; }
+.alert.warn { background: rgba(243,156,18,0.12); color: #b9770e; }
+.alert[hidden] { display: none; }
+
+/* แถบเด้งมุมล่างเวลาบันทึกสำเร็จ */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 20px);
+  background: #2c2c34;
+  color: var(--white);
+  font-size: 0.85rem;
+  padding: 11px 18px;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition), transform var(--transition);
+  z-index: 200;
+  max-width: 90vw;
+}
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.toast.err { background: #c0392b; }
+
+/* ========================================
+   กล่องยืนยันก่อนลบ
+   ======================================== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 300;
+}
+.modal-backdrop[hidden] { display: none !important; }
+
+.modal {
+  background: var(--white);
+  border-radius: 18px;
+  padding: 20px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+}
+.modal h3 {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+.modal p {
+  font-size: 0.83rem;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+.modal .field { margin-bottom: 0; }
+
+/* สถานะกำลังโหลด */
+.loading-state {
+  text-align: center;
+  color: var(--gray);
+  font-size: 0.85rem;
+  padding: 30px 0;
+}
+.loading-state i { margin-right: 6px; }

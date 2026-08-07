@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FutureWay - แก้ไขโปรไฟล์</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/settings.css">
+</head>
+<body>
+
+  <header class="back-header">
+    <a href="profile.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    <span class="page-title">แก้ไขโปรไฟล์</span>
+  </header>
+
+  <div class="settings-content">
+
+    <div id="loading" class="loading-state"><i class="fas fa-spinner fa-spin"></i>กำลังโหลดข้อมูล...</div>
+
+    <form id="profile-form" class="settings-card" hidden>
+      <div class="card-head">
+        <i class="fas fa-id-card"></i>
+        <h2>ข้อมูลส่วนตัว</h2>
+      </div>
+      <p class="card-desc">แก้ไขชื่อ อีเมล เบอร์โทร และที่อยู่ของคุณ</p>
+
+      <div class="alert err" id="alert-err" hidden><i class="fas fa-circle-exclamation"></i><span></span></div>
+      <div class="alert warn" id="alert-warn" hidden><i class="fas fa-triangle-exclamation"></i><span></span></div>
+
+      <div class="field">
+        <label for="username">ชื่อผู้ใช้ (Username)</label>
+        <input type="text" id="username" disabled>
+        <span class="hint">ชื่อผู้ใช้สำหรับเข้าสู่ระบบ เปลี่ยนไม่ได้</span>
+      </div>
+
+      <div class="field">
+        <label for="firstname">ชื่อจริง <span class="required">*</span></label>
+        <input type="text" id="firstname" maxlength="100" autocomplete="given-name" required>
+      </div>
+
+      <div class="field">
+        <label for="lastname">นามสกุล <span class="required">*</span></label>
+        <input type="text" id="lastname" maxlength="100" autocomplete="family-name" required>
+      </div>
+
+      <div class="field">
+        <label for="email">อีเมล <span class="required">*</span></label>
+        <input type="email" id="email" maxlength="150" autocomplete="email" required>
+        <span class="hint">ใช้อีเมลซ้ำกับบัญชีอื่นไม่ได้</span>
+      </div>
+
+      <div class="field">
+        <label>เพศ</label>
+        <div class="radio-row" id="gender-row">
+          <label><input type="radio" name="gender" value="ชาย"><span>ชาย</span></label>
+          <label><input type="radio" name="gender" value="หญิง"><span>หญิง</span></label>
+          <label><input type="radio" name="gender" value="อื่นๆ"><span>อื่นๆ</span></label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="phone">เบอร์โทรศัพท์</label>
+        <input type="tel" id="phone" maxlength="20" autocomplete="tel" placeholder="เช่น 081-234-5678">
+      </div>
+
+      <div class="field">
+        <label for="address">ที่อยู่</label>
+        <textarea id="address" maxlength="255" placeholder="บ้านเลขที่ ตำบล อำเภอ จังหวัด"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <a href="profile.html" class="btn btn-ghost">ยกเลิก</a>
+        <button type="submit" class="btn btn-primary" id="save-btn">
+          <i class="fas fa-floppy-disk"></i>บันทึก
+        </button>
+      </div>
+    </form>
+
+  </div>
+
+  <div class="toast" id="toast"><i class="fas fa-circle-check"></i><span></span></div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    function showToast(message, isError) {
+      const t = $('toast');
+      t.querySelector('span').textContent = message;
+      t.querySelector('i').className = isError ? 'fas fa-circle-exclamation' : 'fas fa-circle-check';
+      t.classList.toggle('err', !!isError);
+      t.classList.add('show');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => t.classList.remove('show'), 2600);
+    }
+
+    function showAlert(id, message) {
+      const box = $(id);
+      if (!message) { box.hidden = true; return; }
+      box.querySelector('span').textContent = message;
+      box.hidden = false;
+    }
+
+    function setGender(value) {
+      const inputs = document.querySelectorAll('#gender-row input');
+      let matched = false;
+      inputs.forEach(input => {
+        input.checked = (input.value === value);
+        if (input.checked) matched = true;
+      });
+      // ข้อมูลเก่าอาจเก็บคำอื่นที่ไม่ตรงกับ 3 ตัวเลือกนี้ -> ให้ตกไปที่ "อื่นๆ"
+      if (!matched) inputs[2].checked = true;
+      syncGenderStyle();
+    }
+
+    // ทาสีปุ่มเพศที่เลือกอยู่ (เผื่อเบราว์เซอร์ที่ยังไม่รองรับ CSS :has)
+    function syncGenderStyle() {
+      document.querySelectorAll('#gender-row label').forEach(label => {
+        label.classList.toggle('selected', label.querySelector('input').checked);
+      });
+    }
+    $('gender-row').addEventListener('change', syncGenderStyle);
+
+    // ---- โหลดข้อมูลเดิมมาเติมในฟอร์ม ----
+    fetch('php/get_user.php', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) {
+          window.location.href = 'login.html';
+          return;
+        }
+        $('username').value  = data.username  || '';
+        $('firstname').value = data.firstname || '';
+        $('lastname').value  = data.lastname  || '';
+        $('email').value     = data.email     || '';
+        $('phone').value     = data.phone     || '';
+        $('address').value   = data.address   || '';
+        setGender(data.gender || 'อื่นๆ');
+
+        $('loading').hidden       = true;
+        $('profile-form').hidden  = false;
+      })
+      .catch(() => {
+        $('loading').innerHTML = 'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่';
+      });
+
+    // ---- บันทึก ----
+    $('profile-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      showAlert('alert-err', '');
+      showAlert('alert-warn', '');
+
+      const btn = $('save-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>กำลังบันทึก...';
+
+      const checked = document.querySelector('#gender-row input:checked');
+
+      fetch('php/update_profile.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstname: $('firstname').value.trim(),
+          lastname:  $('lastname').value.trim(),
+          email:     $('email').value.trim(),
+          gender:    checked ? checked.value : 'อื่นๆ',
+          phone:     $('phone').value.trim(),
+          address:   $('address').value.trim()
+        })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.success) {
+            showAlert('alert-err', data.error || 'บันทึกไม่สำเร็จ');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+          }
+
+          // ถ้า DB ยังไม่มีคอลัมน์ phone/address ต้องบอกให้รู้ ไม่ใช่บอกว่าเซฟครบแล้ว
+          if (data.not_saved && data.not_saved.length) {
+            const names = { phone: 'เบอร์โทรศัพท์', address: 'ที่อยู่' };
+            showAlert('alert-warn',
+              'บันทึกแล้ว แต่ยังเก็บ ' + data.not_saved.map(k => names[k] || k).join(' และ ') +
+              ' ไม่ได้ เพราะฐานข้อมูลยังไม่มีคอลัมน์นี้ (รัน php/migrate.php เพื่อเพิ่ม)');
+            showToast('บันทึกบางส่วนแล้ว', true);
+            return;
+          }
+
+          showToast('บันทึกข้อมูลเรียบร้อยแล้ว');
+          setTimeout(() => { window.location.href = 'profile.html'; }, 900);
+        })
+        .catch(() => showAlert('alert-err', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาลองใหม่'))
+        .finally(() => {
+          btn.disabled  = false;
+          btn.innerHTML = '<i class="fas fa-floppy-disk"></i>บันทึก';
+        });
+    });
+  </script>
+
+</body>
+</html>

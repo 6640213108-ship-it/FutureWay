@@ -44,7 +44,7 @@
       <i class="fas fa-chevron-right menu-arrow"></i>
     </a>
 
-    <a href="#" class="menu-item">
+    <a href="notifications.html" class="menu-item">
       <div class="menu-icon purple"><i class="fas fa-bell"></i></div>
       <div class="menu-text">
         <span class="menu-title">การแจ้งเตือน</span>
@@ -53,7 +53,7 @@
       <i class="fas fa-chevron-right menu-arrow"></i>
     </a>
 
-    <a href="#" class="menu-item">
+    <a href="privacy.html" class="menu-item">
       <div class="menu-icon purple"><i class="fas fa-shield-alt"></i></div>
       <div class="menu-text">
         <span class="menu-title">ความเป็นส่วนตัว</span>
@@ -108,7 +108,11 @@
         .then(data => {
           if (data.success) {
             document.getElementById('profile-name').textContent = data.fullname;
-            document.getElementById('profile-email').textContent = data.email || '';
+
+            // ซ่อนอีเมลได้จากหน้า "ความเป็นส่วนตัว" (settings.show_email)
+            // ผู้ใช้เก่าที่ยังไม่เคยตั้งค่าจะได้ค่าเริ่มต้นเป็น true จาก get_user.php
+            const showEmail = !data.settings || data.settings.show_email !== false;
+            document.getElementById('profile-email').textContent = showEmail ? (data.email || '') : '';
             // สร้างเมนูผู้ดูแลระบบเฉพาะตอนเป็นแอดมิน แล้วแทรกไว้เหนือปุ่ม Logout
             // ถ้าไม่ใช่แอดมิน element นี้จะไม่มีอยู่ใน DOM เลย ไม่ว่า CSS จะเป็นยังไง
             if (data.is_admin === true) {

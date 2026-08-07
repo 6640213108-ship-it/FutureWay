@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FutureWay - ความเป็นส่วนตัว</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/settings.css">
+</head>
+<body>
+
+  <header class="back-header">
+    <a href="profile.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    <span class="page-title">ความเป็นส่วนตัว</span>
+  </header>
+
+  <div class="settings-content">
+
+    <div id="loading" class="loading-state"><i class="fas fa-spinner fa-spin"></i>กำลังโหลดข้อมูล...</div>
+
+    <div id="panel" hidden>
+
+      <!-- ข้อมูลที่ระบบเก็บไว้ -->
+      <div class="settings-card">
+        <div class="card-head">
+          <i class="fas fa-database"></i>
+          <h2>ข้อมูลที่ระบบเก็บของคุณ</h2>
+        </div>
+        <p class="card-desc">นี่คือข้อมูลทั้งหมดที่ FutureWay เก็บไว้ในบัญชีนี้</p>
+
+        <div class="info-list">
+          <div class="row"><span class="k">ชื่อ-นามสกุล</span><span class="v" id="i-name">-</span></div>
+          <div class="row"><span class="k">อีเมล</span><span class="v" id="i-email">-</span></div>
+          <div class="row"><span class="k">เบอร์โทรศัพท์</span><span class="v" id="i-phone">-</span></div>
+          <div class="row"><span class="k">สมัครสมาชิกเมื่อ</span><span class="v" id="i-joined">-</span></div>
+          <div class="row"><span class="k">ทำแบบทดสอบไปแล้ว</span><span class="v" id="i-rounds">-</span></div>
+          <div class="row"><span class="k">ทำครั้งล่าสุด</span><span class="v" id="i-last">-</span></div>
+        </div>
+      </div>
+
+      <!-- การตั้งค่าความเป็นส่วนตัว -->
+      <div class="settings-card">
+        <div class="card-head">
+          <i class="fas fa-shield-halved"></i>
+          <h2>การตั้งค่า</h2>
+        </div>
+        <p class="card-desc">ระบบบันทึกให้อัตโนมัติทันทีที่กดสลับ</p>
+
+        <div class="toggle-row">
+          <div class="toggle-icon"><i class="fas fa-eye"></i></div>
+          <div class="toggle-text">
+            <span class="toggle-title">แสดงอีเมลบนหน้าโปรไฟล์</span>
+            <span class="toggle-sub">ปิดไว้ถ้าไม่อยากให้คนที่มองจอเห็นอีเมลของคุณ</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-key="show_email">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-icon"><i class="fas fa-chart-pie"></i></div>
+          <div class="toggle-text">
+            <span class="toggle-title">ให้ใช้ข้อมูลทำสถิติแบบไม่ระบุตัวตน</span>
+            <span class="toggle-sub">เช่น สัดส่วนบุคลิกภาพและสาขายอดนิยมในภาพรวม โดยไม่ระบุว่าเป็นของใคร</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-key="allow_stats">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ข้อมูลของฉัน -->
+      <div class="settings-card">
+        <div class="card-head">
+          <i class="fas fa-download"></i>
+          <h2>ข้อมูลของฉัน</h2>
+        </div>
+        <p class="card-desc">ดาวน์โหลดสำเนาข้อมูลทั้งหมดของคุณเก็บไว้เป็นไฟล์ JSON (ไม่รวมรหัสผ่าน)</p>
+        <a href="php/export_my_data.php" class="btn btn-ghost" download>
+          <i class="fas fa-file-arrow-down"></i>ดาวน์โหลดข้อมูลของฉัน
+        </a>
+      </div>
+
+      <!-- โซนอันตราย -->
+      <div class="settings-card danger-card">
+        <div class="card-head">
+          <i class="fas fa-triangle-exclamation"></i>
+          <h2>ลบข้อมูล</h2>
+        </div>
+        <p class="card-desc">การลบทั้งสองแบบนี้กู้คืนไม่ได้ ต้องยืนยันด้วยรหัสผ่านก่อน</p>
+
+        <button type="button" class="btn btn-danger" id="del-history-btn">
+          <i class="fas fa-eraser"></i>ลบประวัติผลลัพธ์ทั้งหมด
+        </button>
+        <button type="button" class="btn btn-danger-solid" id="del-account-btn">
+          <i class="fas fa-user-slash"></i>ลบบัญชีผู้ใช้
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- กล่องยืนยันก่อนลบ -->
+  <div class="modal-backdrop" id="modal" hidden>
+    <div class="modal">
+      <h3 id="modal-title">ยืนยันการลบ</h3>
+      <p id="modal-text"></p>
+
+      <div class="alert err" id="modal-err" hidden><i class="fas fa-circle-exclamation"></i><span></span></div>
+
+      <div class="field">
+        <label for="modal-pw">รหัสผ่านของคุณ</label>
+        <input type="password" id="modal-pw" autocomplete="current-password">
+      </div>
+
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" id="modal-cancel">ยกเลิก</button>
+        <button type="button" class="btn btn-danger-solid" id="modal-confirm">ยืนยันลบ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"><i class="fas fa-circle-check"></i><span></span></div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    function showToast(message, isError) {
+      const t = $('toast');
+      t.querySelector('span').textContent = message;
+      t.querySelector('i').className = isError ? 'fas fa-circle-exclamation' : 'fas fa-circle-check';
+      t.classList.toggle('err', !!isError);
+      t.classList.add('show');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => t.classList.remove('show'), 2600);
+    }
+
+    // '2026-07-15 13:38:38' -> '15 ก.ค. 2569 13:38'
+    // แปลงเองเพราะ Safari บนมือถือ parse รูปแบบที่มีเว้นวรรคไม่ได้
+    const TH_MONTH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    function formatThaiDate(raw) {
+      if (!raw) return '-';
+      const m = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+      if (!m) return raw;
+      const [, y, mo, d, hh, mm] = m;
+      return `${+d} ${TH_MONTH[+mo - 1]} ${+y + 543} ${hh}:${mm} น.`;
+    }
+
+    let settingsLoaded = false;
+
+    // ---- โหลดข้อมูล + การตั้งค่า ----
+    Promise.all([
+      fetch('php/get_settings.php', { cache: 'no-store' }).then(r => r.json()),
+      fetch('php/get_user.php',     { cache: 'no-store' }).then(r => r.json())
+    ])
+      .then(([res, user]) => {
+        if (!res.success) {
+          window.location.href = 'login.html';
+          return;
+        }
+
+        document.querySelectorAll('input[data-key]').forEach(t => {
+          t.checked = !!res.settings[t.dataset.key];
+        });
+        settingsLoaded = true;
+
+        if (user.success) {
+          $('i-name').textContent  = user.fullname || '-';
+          $('i-email').textContent = user.email    || '-';
+          $('i-phone').textContent = user.phone    || 'ยังไม่ได้กรอก';
+        }
+
+        $('i-joined').textContent = formatThaiDate(res.stats.joined);
+        $('i-rounds').textContent = res.stats.rounds + ' รอบ';
+        $('i-last').textContent   = res.stats.rounds ? formatThaiDate(res.stats.last_quiz) : 'ยังไม่เคยทำ';
+
+        $('loading').hidden = true;
+        $('panel').hidden   = false;
+      })
+      .catch(() => {
+        $('loading').innerHTML = 'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่';
+      });
+
+    // ---- สวิตช์: บันทึกทันทีที่กด ----
+    document.querySelectorAll('input[data-key]').forEach(toggle => {
+      toggle.addEventListener('change', function () {
+        if (!settingsLoaded) return;
+        const before = !this.checked;
+
+        fetch('php/update_settings.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [this.dataset.key]: this.checked })
+        })
+          .then(r => r.json())
+          .then(data => {
+            if (!data.success) throw new Error(data.error || 'บันทึกไม่สำเร็จ');
+            showToast('บันทึกแล้ว');
+          })
+          .catch(err => {
+            this.checked = before;          // บันทึกไม่ผ่าน ต้องดีดสวิตช์กลับ ไม่งั้นหน้าจอโกหก
+            showToast(err.message || 'บันทึกไม่สำเร็จ', true);
+          });
+      });
+    });
+
+    // ---- กล่องยืนยันก่อนลบ ----
+    let pendingScope = null;
+
+    function openModal(scope) {
+      pendingScope = scope;
+      $('modal-pw').value = '';
+      $('modal-err').hidden = true;
+
+      if (scope === 'history') {
+        $('modal-title').textContent = 'ลบประวัติผลลัพธ์ทั้งหมด';
+        $('modal-text').textContent  = 'ผลการทำแบบทดสอบทุกรอบของคุณจะถูกลบถาวร รวมถึงสาขาที่แนะนำและคำตอบรายข้อ บัญชีของคุณยังใช้งานได้ตามปกติ';
+      } else {
+        $('modal-title').textContent = 'ลบบัญชีผู้ใช้';
+        $('modal-text').textContent  = 'บัญชี ประวัติผลลัพธ์ และการตั้งค่าทั้งหมดจะถูกลบถาวร และจะเข้าสู่ระบบด้วยบัญชีนี้ไม่ได้อีก';
+      }
+
+      $('modal').hidden = false;
+      $('modal-pw').focus();
+    }
+
+    function closeModal() {
+      $('modal').hidden = true;
+      pendingScope = null;
+    }
+
+    $('del-history-btn').addEventListener('click', () => openModal('history'));
+    $('del-account-btn').addEventListener('click', () => openModal('account'));
+    $('modal-cancel').addEventListener('click', closeModal);
+    $('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('modal').hidden) closeModal(); });
+    $('modal-pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('modal-confirm').click(); });
+
+    $('modal-confirm').addEventListener('click', function () {
+      const password = $('modal-pw').value;
+      const scope    = pendingScope;
+
+      if (!password) {
+        $('modal-err').querySelector('span').textContent = 'กรุณากรอกรหัสผ่านเพื่อยืนยัน';
+        $('modal-err').hidden = false;
+        return;
+      }
+
+      this.disabled  = true;
+      this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>กำลังลบ...';
+
+      fetch('php/delete_my_data.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scope: scope, password: password })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.success) {
+            $('modal-err').querySelector('span').textContent = data.error || 'ลบไม่สำเร็จ';
+            $('modal-err').hidden = false;
+            return;
+          }
+
+          closeModal();
+
+          if (scope === 'account') {
+            showToast('ลบบัญชีเรียบร้อยแล้ว');
+            setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+            return;
+          }
+
+          showToast(data.message || 'ลบประวัติเรียบร้อยแล้ว');
+          $('i-rounds').textContent = '0 รอบ';
+          $('i-last').textContent   = 'ยังไม่เคยทำ';
+        })
+        .catch(() => {
+          $('modal-err').querySelector('span').textContent = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาลองใหม่';
+          $('modal-err').hidden = false;
+        })
+        .finally(() => {
+          this.disabled  = false;
+          this.innerHTML = 'ยืนยันลบ';
+        });
+    });
+  </script>
+
+</body>
+</html>

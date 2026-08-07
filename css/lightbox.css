@@ -1,0 +1,171 @@
+/* ========================================
+   FutureWay - lightbox.css
+   popup ดูรูปเต็มจอ — ใช้เฉพาะกล่องสไลด์รูปในหน้า main.html
+   โหลดต่อจาก main.css (ใช้ตัวแปรสีและ base ร่วมกัน)
+   ======================================== */
+
+.lightbox {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  width: 100%;
+  height: 100vh;    /* ค่าสำรองสำหรับเบราว์เซอร์เก่า */
+  height: 100dvh;   /* มือถือ: หักความสูงแถบ address bar ที่ยืด-หดตอนเลื่อนให้เอง
+                       ถ้าใช้ 100vh เฉย ๆ ขอบล่างของรูปจะโดนแถบนั้นบังบน iOS/Android */
+  z-index: 9999;    /* สูงกว่า bottom-nav (100) */
+  background: rgba(0,0,0,0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* เว้นที่ให้ปุ่มปิดด้านบน + ปุ่มเลื่อน/ตัวเลขด้านล่าง
+     env(safe-area-inset-*) คือเผื่อรอยบากกับแถบขีดล่างของ iPhone */
+  padding-top:    calc(58px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+  padding-left:   calc(12px + env(safe-area-inset-left, 0px));
+  padding-right:  calc(12px + env(safe-area-inset-right, 0px));
+  animation: lb-fade 0.18s ease;
+}
+/* main.css มีกฎ [hidden]{display:none!important} อยู่แล้ว แต่ประกาศซ้ำตรงนี้ด้วย
+   เพราะ .lightbox ตั้ง display:flex ไว้ ถ้ากฎ [hidden] หายไปด้วยเหตุใดก็ตาม
+   popup จะโผล่ค้างเต็มจอตั้งแต่เปิดหน้า ซึ่งพังหนักกว่าการที่มันไม่เปิด */
+.lightbox[hidden] { display: none !important; }
+
+@keyframes lb-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* พื้นที่วางรูป — แยกออกมาจาก .lightbox เพื่อให้เลื่อนดูรูปตอนขยายได้
+   โดยที่ปุ่มต่าง ๆ ยังเกาะขอบจออยู่กับที่ ไม่เลื่อนตามรูป */
+.lightbox-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  overscroll-behavior: contain;   /* เลื่อนจนสุดแล้วไม่ไปลากหน้าข้างหลังต่อ */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* โหมดปกติ: ย่อให้เห็นทั้งรูปพอดีจอ ไม่ว่าจะจอไหน
+   width/height เป็น auto + max 100% => รูปไม่ถูกยืดเกินขนาดจริงจนแตก */
+.lightbox-img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  cursor: zoom-in;
+  animation: lb-zoom 0.2s ease;
+  -webkit-user-drag: none;   /* กันเบราว์เซอร์ลากรูปออกไปตอนสไวป์ */
+  user-select: none;
+}
+
+/* โหมดขยาย: บนมือถือให้เต็มความกว้างจอแล้วเลื่อนอ่านลงมา
+   (รูป infographic แนวตั้งถ้าย่อให้พอดีจอจะเล็กจนอ่านตัวหนังสือไม่ออก) */
+.lightbox-stage.zoomed { align-items: flex-start; }
+.lightbox-stage.zoomed .lightbox-img {
+  max-width: none;
+  max-height: none;
+  width: 100%;
+  height: auto;
+  border-radius: 0;
+  cursor: zoom-out;
+}
+
+/* จอใหญ่: ขยายแล้วแสดงที่ขนาดจริงของไฟล์ ไม่ยืดเกินจนภาพเบลอ */
+@media (min-width: 900px) {
+  .lightbox-stage.zoomed .lightbox-img {
+    width: auto;
+    height: auto;
+  }
+}
+
+@keyframes lb-zoom {
+  from { transform: scale(0.94); }
+  to   { transform: scale(1); }
+}
+
+.lightbox-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: rgba(255,255,255,0.16);
+  color: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.1rem;
+  width: 44px;               /* พื้นที่กดอย่างน้อย 44px ตามขนาดนิ้วบนมือถือ */
+  height: 44px;
+  transition: background 0.2s ease;
+}
+.lightbox-btn:hover  { background: rgba(255,255,255,0.3); }
+.lightbox-btn:active { background: rgba(255,255,255,0.4); }
+.lightbox-btn[hidden] { display: none !important; }
+
+/* ปุ่มเกาะขอบจอ ไม่ใช่ขอบรูป จะได้อยู่ที่เดิมเสมอไม่ว่ารูปจะขนาดไหน
+   บวก safe-area เผื่อรอยบาก iPhone ไม่ให้ปุ่มไปอยู่ใต้รอยบาก */
+.lightbox-close {
+  top:   calc(12px + env(safe-area-inset-top, 0px));
+  right: calc(12px + env(safe-area-inset-right, 0px));
+}
+.lightbox-zoom {
+  top:  calc(12px + env(safe-area-inset-top, 0px));
+  left: calc(12px + env(safe-area-inset-left, 0px));
+}
+.lightbox-prev  { left: 10px;  top: 50%; transform: translateY(-50%); }
+.lightbox-next  { right: 10px; top: 50%; transform: translateY(-50%); }
+
+.lightbox-count {
+  position: absolute;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.85);
+  font-size: 0.82rem;
+  font-weight: 500;
+  background: rgba(0,0,0,0.45);
+  padding: 5px 14px;
+  border-radius: 999px;
+}
+.lightbox-count[hidden] { display: none !important; }
+
+/* จอแคบ: ย้ายปุ่มซ้าย-ขวาลงมาชิดขอบล่าง ไม่ให้บังตัวรูป
+   (จอกว้าง ๆ ปุ่มอยู่กลางซ้าย-ขวาได้ เพราะมีที่ว่างข้างรูปเหลือเฟือ) */
+@media (max-width: 480px) {
+  .lightbox {
+    padding-left:   calc(6px + env(safe-area-inset-left, 0px));
+    padding-right:  calc(6px + env(safe-area-inset-right, 0px));
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  }
+  .lightbox-prev {
+    left: 16px; right: auto; top: auto;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    transform: none;
+  }
+  .lightbox-next {
+    right: 16px; left: auto; top: auto;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    transform: none;
+  }
+}
+
+/* จอเตี้ย (มือถือแนวนอน / หน้าต่างเล็ก): ลดขอบและย่อปุ่ม
+   ไม่งั้นขอบบน-ล่างรวมกันกินที่จนรูปเหลือนิดเดียว */
+@media (max-height: 460px) {
+  .lightbox {
+    padding-top:    calc(46px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(46px + env(safe-area-inset-bottom, 0px));
+  }
+  .lightbox-btn { width: 38px; height: 38px; font-size: 0.95rem; }
+  .lightbox-count { bottom: 8px; font-size: 0.75rem; padding: 3px 11px; }
+}
+
+/* ล็อกไม่ให้หน้าข้างหลังเลื่อนตามตอนเปิด popup
+   (สไตล์ของรูปเล็กในกล่องสไลด์ รวมถึง cursor: zoom-in อยู่ใน main.css) */
+body.lightbox-open { overflow: hidden; }

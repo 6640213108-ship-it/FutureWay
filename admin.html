@@ -6,7 +6,7 @@
   <title>FutureWay - ผู้ดูแลระบบ</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin.css?v=3">
 </head>
 <body>
 
@@ -209,7 +209,7 @@
                     <span class="grow">${esc(b.name)}<br><span class="fac">${esc(b.faculty) || ''}</span></span>
                     <span class="score-pill">${b.score}%</span>
                   </div>`).join('')
-                : '<p class="muted" style="font-size:.85rem">ผลลัพธ์รอบนี้บันทึกไว้ก่อนระบบเก็บครบ 3 อันดับ</p>'}
+                : '<p class="muted note-old">ผลลัพธ์รอบนี้บันทึกไว้ก่อนระบบเก็บครบ 3 อันดับ</p>'}
               </div>
               <div class="detail-block">
                 <h4>เกรดที่กรอก</h4>
@@ -316,7 +316,7 @@
         </div>
         <div class="stat-tile">
           <div class="label">สาขาที่ถูกแนะนำบ่อยที่สุด</div>
-          <div class="value" style="font-size:1.05rem">${topBranch ? esc(topBranch.name) : '-'}</div>
+          <div class="value value-text">${topBranch ? esc(topBranch.name) : '-'}</div>
           <div class="sub">${topBranch ? topBranch.count + ' ครั้ง' : 'ยังไม่มีข้อมูล'}</div>
         </div>`;
     }

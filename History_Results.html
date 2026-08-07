@@ -6,8 +6,8 @@
   <title>FutureWay - ประวัติผลลัพธ์</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/history.css">
+  <link rel="stylesheet" href="css/main.css?v=3">
+  <link rel="stylesheet" href="css/history.css?v=3">
 </head>
 <body>
 
@@ -131,7 +131,7 @@
                   เกรดเฉลี่ยที่กรอก <strong>${Number(h.avg_grade).toFixed(2)}</strong><br>
                   ${ranks.length
                     ? `สาขาที่เหมาะที่สุดคือ <strong>${esc(ranks[0].name)}</strong>`
-                    : '<span style="color:#999">ไม่มีข้อมูลสาขาที่แนะนำ</span>'}
+                    : '<span class="no-data">ไม่มีข้อมูลสาขาที่แนะนำ</span>'}
                 </div>
               </div>
 
@@ -147,11 +147,11 @@
                     </div>
                     <span class="rank-score">${b.score}%</span>
                   </div>`).join('')}
-                ${!h.top3.length ? '<p class="rfac" style="margin-top:6px">ผลรอบนี้บันทึกไว้ก่อนระบบเก็บครบ 3 อันดับ</p>' : ''}
+                ${!h.top3.length ? '<p class="rfac note-old">ผลรอบนี้บันทึกไว้ก่อนระบบเก็บครบ 3 อันดับ</p>' : ''}
               ` : ''}
 
               <a href="result.html?id=${h.id}" class="full-link">
-                ดูผลลัพธ์เต็มของรอบนี้ <i class="fas fa-chevron-right" style="font-size:.75rem"></i>
+                ดูผลลัพธ์เต็มของรอบนี้ <i class="fas fa-chevron-right arrow"></i>
               </a>
             </div>
           </div>`;

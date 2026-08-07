@@ -6,8 +6,8 @@
   <title>FutureWay - แบบทดสอบ</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/quiz.css">
+  <link rel="stylesheet" href="css/main.css?v=3">
+  <link rel="stylesheet" href="css/quiz.css?v=3">
 </head>
 <body>
 
@@ -96,13 +96,13 @@
   </div>
 
   <!-- ===== SECTION 2: MBTI ===== -->
-  <div id="section-mbti" style="display:none;">
+  <div id="section-mbti" hidden>
     <div class="quiz-content">
       <p class="quiz-section-title">🧠 แบบทดสอบบุคลิกภาพ MBTI</p>
 
       <!-- ⭐ คำถามจะถูกดึงจาก DB มาแสดงตรงนี้แทนของ hardcode เดิม -->
       <div id="mbti-questions-container">
-        <p style="text-align:center;padding:20px;">กำลังโหลดคำถาม...</p>
+        <p class="quiz-loading">กำลังโหลดคำถาม...</p>
       </div>
 
       <p class="error-msg" id="mbti-error">⚠️ กรุณาตอบทุกข้อให้ครบ</p>
@@ -260,12 +260,12 @@
       }
 
       document.getElementById('grade-error').classList.remove('show');
-      document.getElementById('section-grade').style.display = 'none';
-      document.getElementById('section-mbti').style.display = 'block';
+      document.getElementById('section-grade').hidden = true;
+      document.getElementById('section-mbti').hidden  = false;
 
       document.getElementById('step1').classList.remove('active');
       document.getElementById('step1').classList.add('done');
-      document.getElementById('step1').querySelector('.step-circle').innerHTML = '<i class="fas fa-check" style="font-size:0.7rem"></i>';
+      document.getElementById('step1').querySelector('.step-circle').innerHTML = '<i class="fas fa-check step-check"></i>';
       document.getElementById('line1').classList.add('done');
       document.getElementById('step2').classList.add('active');
 

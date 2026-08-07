@@ -1,0 +1,14 @@
+# ไฟล์ที่ไม่ควรเข้า repo — กันไม่ให้ของที่ลบไปแล้วกลับมาอีก
+
+# ไฟล์คอมไพล์อัตโนมัติของ Python (เกิดใหม่ทุกครั้งที่รัน decision_tree.py)
+__pycache__/
+*.pyc
+
+# virtual environment ของ Python ในเครื่อง dev
+# (บน Railway ใช้ python3 ที่ติดตั้งจาก Dockerfile ไม่ได้ใช้โฟลเดอร์นี้)
+venv/
+
+# ไฟล์ขยะของระบบปฏิบัติการ / editor
+Thumbs.db
+desktop.ini
+.DS_Store

@@ -1,7 +1,13 @@
 /* ========================================
    FutureWay - main.css
-   ใช้เฉพาะหน้า main.html
-   ไฟล์นี้ standalone ไม่ต้องโหลด style.css
+   ไฟล์ฐานของหน้าที่ล็อกอินแล้วทุกหน้า — โหลดเป็นไฟล์แรกเสมอ แล้วค่อยตามด้วย
+   ไฟล์เฉพาะหน้า (profile.css, history.css, settings.css, result.css,
+   quiz.css, chat.css, admin.css, lightbox.css)
+
+   ในนี้มี: ตัวแปรสี, reset, หัวเพจทั้งสองแบบ, กล่องขาว, แถบเมนูล่าง
+            และสไตล์เฉพาะของหน้า main.html
+   ไฟล์นี้ standalone ไม่ต้องโหลด style.css (style.css ใช้กับหน้า
+   index/login/register ที่ยังไม่ได้ล็อกอิน ซึ่งไม่ได้โหลด main.css)
    ======================================== */
 
 /* -- ตัวแปรสี (copy จาก style.css เพื่อใช้ได้อิสระ) -- */
@@ -11,6 +17,7 @@
   --white:        #ffffff;
   --gray:         #aaaaaa;
   --gray-light:   #f5f5f5;
+  --red:          #e74c3c;   /* สีของปุ่ม/ข้อความเตือน ใช้ร่วมกันหลายหน้า */
   --transition:   0.2s ease;
 }
 
@@ -63,6 +70,42 @@ body {
 }
 
 /* ========================================
+   Back Header — หัวเพจแบบมีปุ่มย้อนกลับ
+   ใช้ใน: result.html, quiz.html, History_Results.html,
+          edit_profile.html, change_password.html,
+          notifications.html, privacy.html
+   อยู่ในไฟล์นี้เพราะทุกหน้าโหลด main.css อยู่แล้ว
+   (เดิมประกาศซ้ำ 3 ไฟล์ ทำให้หน้าที่ไม่ได้โหลดไฟล์พวกนั้น
+    เช่น result.html กับ quiz.html ได้หัวเพจที่ไม่มีสไตล์)
+   ======================================== */
+.back-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #7b2ff7 0%, #4a0080 100%);
+}
+.back-header .back-btn {
+  color: var(--white);
+  font-size: 1.1rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.back-header .page-title {
+  color: var(--white);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+/* ========================================
    Main Content
    ======================================== */
 .app-content {
@@ -85,13 +128,10 @@ body {
   gap: 10px;
 }
 
-/* รูป Banner */
-.card-banner {
+/* โลโก้ FutureWay ในกล่องขาว — เต็มความกว้างการ์ด สูงตามสัดส่วนรูป */
+.card-logo {
   width: 100%;
-  height: 170px;
-  border-radius: 12px;
-  object-fit: cover;
-  background: #1a1a2e;  /* พื้นหลังสำรองถ้าไม่มีรูป */
+  height: auto;
   display: block;
 }
 
@@ -169,11 +209,8 @@ body {
   outline-offset: 2px;
 }
 
-/* หมายเหตุ: สไตล์ของ Lightbox (popup ดูรูปเต็มจอ) ไม่ได้อยู่ในไฟล์นี้
-   แต่ฝังไว้ใน <style> ของ main.html โดยตั้งใจ
-   เพราะถ้าเบราว์เซอร์ cache main.css ตัวเก่าไว้ HTML จะได้ปุ่มกับสคริปต์ใหม่
-   แต่ไม่ได้สไตล์ -> popup เปิดจริงแต่กลายเป็นกล่องเปล่าท้ายหน้า มองไม่เห็นอะไรเลย
-   เอาไว้ในหน้าเดียวกับ markup จึงมาพร้อมกันเสมอ */
+/* สไตล์ของ popup ดูรูปเต็มจอ (ตอนกดที่รูปในกล่องสไลด์) อยู่ใน css/lightbox.css
+   ซึ่ง main.html โหลดต่อจากไฟล์นี้ */
 
 /* ========================================
    Bottom Navigation
@@ -237,114 +274,8 @@ body {
 }
 
 /* ========================================
-   Profile Page
-   ใช้ใน: profile.html
+   หมายเหตุ: สไตล์ของหน้า profile.html (.hero, .menu-item, .copyright ฯลฯ)
+   เคยถูก copy มาไว้ท้ายไฟล์นี้ ทั้งที่ profile.css มีอยู่ครบแล้วและ profile.html
+   ก็โหลดทั้งสองไฟล์ กลายเป็นของซ้ำสองชุด แก้ที่เดียวไม่ครบ
+   ตอนนี้ย้ายไปอยู่ใน css/profile.css ที่เดียวแล้ว
    ======================================== */
-
-:root {
-  --red: #e74c3c;
-}
-
-.hero {
-  position: relative;
-  background: linear-gradient(160deg, #9b30f0 0%, #6a0dad 50%, #4a0080 100%);
-  padding: 40px 24px 60px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;      /* รูปและชื่ออยู่ขวา */
-  overflow: hidden;
-}
-
-.hero-bg {
-  position: absolute;
-  bottom: -30px;
-  left: -40px;
-  width: 260px;
-  height: 260px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.07);
-  pointer-events: none;
-}
-.hero-bg::after {
-  content: '';
-  position: absolute;
-  top: 30px;
-  left: 30px;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.05);
-}
-
-.profile-wrap {
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  border: 4px solid rgba(255,255,255,0.8);
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-  background: #ccc;
-}
-.profile-wrap .profile-pic {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.profile-info { text-align: right; margin-top: 12px; }
-.profile-name  { color: var(--white); font-size: 1.5rem; font-weight: 700; }
-.profile-email { color: rgba(255,255,255,0.75); font-size: 0.85rem; margin-top: 2px; }
-
-.menu-list {
-  padding: 16px 14px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.menu-item {
-  background: var(--white);
-  border-radius: 14px;
-  padding: 14px 16px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  text-decoration: none;
-  color: #222;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-  transition: transform var(--transition), box-shadow var(--transition);
-}
-.menu-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.11);
-}
-
-.menu-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 1.1rem;
-}
-.menu-icon.purple { background: rgba(123,47,247,0.12); color: var(--primary); }
-.menu-icon.red    { background: rgba(231,76,60,0.12);  color: var(--red); }
-
-.menu-text  { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.menu-title { font-size: 0.95rem; font-weight: 700; color: #1a1a1a; }
-.menu-sub   { font-size: 0.78rem; color: var(--gray); font-weight: 400; }
-.menu-arrow { color: #cccccc; font-size: 0.85rem; }
-
-.menu-item.logout .logout-text { color: var(--red); font-size: 1rem; }
-
-.copyright {
-  text-align: center;
-  font-size: 0.72rem;
-  color: #bbbbbb;
-  padding: 16px 20px 0;
-  line-height: 1.5;
-}
-

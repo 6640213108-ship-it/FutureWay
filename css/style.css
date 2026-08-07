@@ -127,6 +127,17 @@ body {
   margin: 4px 0 2px;
 }
 
+/* หน้าแรก (index.html) จัดข้อความกึ่งกลาง ต่างจากหน้า login/register ที่ชิดซ้าย
+   เดิมเขียนเป็น inline style ในไฟล์ HTML ย้ายมารวมไว้ที่นี่ */
+.subtitle.centered {
+  text-align: center;
+  margin-bottom: 6px;
+}
+.desc.centered {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
 /* ข้อความเล็กสุด เช่น "กรุณากรอกข้อมูล..." */
 .note {
   display: block;        /* บังคับขึ้นบรรทัดใหม่ */

@@ -6,33 +6,7 @@
    โหลดต่อจาก main.css (ใช้ตัวแปรสีและ base ร่วมกัน)
    ======================================== */
 
-/* หัวหน้าเพจ — ชุดเดียวกับ history.css เพื่อให้ทุกหน้าย่อยหน้าตาเหมือนกัน */
-.back-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #7b2ff7 0%, #4a0080 100%);
-}
-.back-header .back-btn {
-  color: var(--white);
-  font-size: 1.1rem;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-}
-.back-header .page-title {
-  color: var(--white);
-  font-size: 1.15rem;
-  font-weight: 700;
-}
+/* หัวเพจ .back-header ย้ายไปอยู่ใน main.css แล้ว (ทุกหน้าโหลด main.css อยู่แล้ว) */
 
 /* ========================================
    โครงหน้า
@@ -126,6 +100,9 @@
   font-size: 0.72rem;
   color: var(--gray);
 }
+/* ใช้กับข้อความใต้ช่องยืนยันรหัสผ่าน (JS สลับ class ให้) */
+.field .hint.ok  { color: #1e8449; }
+.field .hint.bad { color: #c0392b; }
 
 /* กลุ่มปุ่มเลือกเพศ */
 .radio-row {
@@ -237,6 +214,9 @@
   cursor: not-allowed;
   filter: none;
 }
+
+/* ปุ่มที่อยู่เดี่ยว ๆ ต่อจากเนื้อหาด้านบน ต้องการระยะห่างนิดหนึ่ง */
+.btn-spaced { margin-top: 12px; }
 
 .btn-row {
   display: flex;

@@ -17,42 +17,21 @@ require_once __DIR__ . '/admin_config.php';
 requireAdminJson();
 
 require_once __DIR__ . '/db_config.php';
+require_once __DIR__ . '/admin_filter.php';
 
 const PER_PAGE = 20;
 
 try {
     $conn = getDbConnection();
 
-    // ---- รับพารามิเตอร์ ----
-    $q      = trim((string)($_GET['q']      ?? ''));
-    $gender = trim((string)($_GET['gender'] ?? ''));
-    $mbti   = strtoupper(trim((string)($_GET['mbti'] ?? '')));
     $page   = max(1, (int)($_GET['page'] ?? 1));
     $offset = ($page - 1) * PER_PAGE;
 
-    // ---- ประกอบเงื่อนไข WHERE แบบ dynamic (ยังใช้ prepared statement เหมือนเดิม) ----
-    $where  = [];
-    $params = [];
-    $types  = '';
-
-    if ($q !== '') {
-        $like    = '%' . $q . '%';
-        $where[] = '(u.firstname LIKE ? OR u.lastname LIKE ? OR u.username LIKE ? OR u.email LIKE ?)';
-        array_push($params, $like, $like, $like, $like);
-        $types  .= 'ssss';
-    }
-    if ($gender !== '') {
-        $where[]  = 'u.gender = ?';
-        $params[] = $gender;
-        $types   .= 's';
-    }
-    if ($mbti !== '') {
-        $where[]  = 'qr.mbti_type = ?';
-        $params[] = $mbti;
-        $types   .= 's';
-    }
-
-    $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
+    // ---- เงื่อนไขกรอง (ใช้ตัวเดียวกับฝั่ง export เพื่อให้ผลตรงกันเสมอ) ----
+    $filter   = buildAdminFilter($_GET);
+    $whereSql = $filter['sql'];
+    $params   = $filter['params'];
+    $types    = $filter['types'];
 
     // ---- นับจำนวนทั้งหมด (ตามเงื่อนไขที่กรอง) ----
     $stmtC = $conn->prepare("

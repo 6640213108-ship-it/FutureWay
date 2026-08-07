@@ -37,6 +37,23 @@
       <button type="submit"><i class="fas fa-search"></i> ค้นหา</button>
     </form>
 
+    <!-- ส่งออกข้อมูล -->
+    <div class="export-bar" id="export-bar">
+      <div class="export-info">
+        <i class="fas fa-file-excel"></i>
+        <span>ส่งออกข้อมูลเป็นไฟล์ Excel (.xlsx) — มีชีตผลการทำแบบทดสอบและชีตสรุปสถิติ</span>
+      </div>
+      <div class="export-actions">
+        <!-- ปุ่มนี้โผล่เฉพาะตอนมีตัวกรองอยู่ เพราะไม่มีตัวกรองก็ได้ผลเท่ากับปุ่มทั้งหมด -->
+        <button type="button" class="export-btn ghost" id="export-filtered" hidden>
+          <i class="fas fa-filter"></i> เฉพาะที่กรองอยู่
+        </button>
+        <button type="button" class="export-btn" id="export-all">
+          <i class="fas fa-file-excel"></i> ส่งออกทั้งหมด
+        </button>
+      </div>
+    </div>
+
     <!-- ตาราง -->
     <div class="table-card">
       <div class="table-scroll">
@@ -72,6 +89,14 @@
     let page = 1;
     let totalPages = 1;
     let filtersLoaded = false;
+
+    // ตัวกรองที่กรอกอยู่ตอนนี้ — ใช้ทั้งตอนโหลดตารางและตอนส่งออกไฟล์ Excel
+    // ประกาศไว้บนสุดเพราะ load() เรียกใช้ ต้องมีค่าก่อนถูกเรียกครั้งแรก
+    const currentFilters = () => ({
+      q:      document.getElementById('f-q').value.trim(),
+      gender: document.getElementById('f-gender').value,
+      mbti:   document.getElementById('f-mbti').value,
+    });
 
     // กันข้อมูลจากผู้ใช้ (ชื่อ อีเมล ชื่อสาขา) ยิง HTML เข้ามาตอน render
     const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({
@@ -115,7 +140,7 @@
      * ไม่ให้เห็นแม้แต่หัวตารางหรือช่องค้นหา เพราะโครงหน้าเองก็บอกใบ้ว่าระบบเก็บอะไรไว้บ้าง
      */
     function showDenied(msg, needLogin = false) {
-      ['stat-grid', 'filter-form'].forEach(id => document.getElementById(id).hidden = true);
+      ['stat-grid', 'filter-form', 'export-bar'].forEach(id => document.getElementById(id).hidden = true);
       document.querySelector('.table-card').hidden = true;
       document.getElementById('who').textContent = '';
 
@@ -133,12 +158,7 @@
     }
 
     function load() {
-      const params = new URLSearchParams({
-        page,
-        q:      document.getElementById('f-q').value.trim(),
-        gender: document.getElementById('f-gender').value,
-        mbti:   document.getElementById('f-mbti').value,
-      });
+      const params = new URLSearchParams({ page, ...currentFilters() });
 
       showState('<i class="fas fa-spinner fa-spin"></i>กำลังโหลด...');
 
@@ -337,6 +357,82 @@
     document.getElementById('f-mbti').addEventListener('change',   () => { page = 1; load(); });
     document.getElementById('prev').addEventListener('click', () => { if (page > 1)          { page--; load(); window.scrollTo(0, 0); } });
     document.getElementById('next').addEventListener('click', () => { if (page < totalPages) { page++; load(); window.scrollTo(0, 0); } });
+
+    /* ========================================
+       ส่งออกเป็นไฟล์ Excel
+       ======================================== */
+
+    // ปุ่ม "เฉพาะที่กรองอยู่" ไม่มีประโยชน์ถ้ายังไม่ได้กรองอะไร -> ซ่อนไว้
+    function syncExportButtons() {
+      const f = currentFilters();
+      document.getElementById('export-filtered').hidden = !(f.q || f.gender || f.mbti);
+    }
+
+    /**
+     * ดาวน์โหลดไฟล์ Excel
+     *
+     * ใช้ fetch แล้วแปลงเป็น blob แทนการ set window.location เพราะถ้า session หมดอายุ
+     * หรือ server พัง ฝั่งนั้นจะตอบ JSON กลับมา ถ้าปล่อยให้เบราว์เซอร์เปิด URL ตรง ๆ
+     * ผู้ใช้จะเจอหน้าขาวที่มีข้อความ JSON ดิบ แทนที่จะได้ข้อความบอกว่าเกิดอะไรขึ้น
+     */
+    function exportExcel(scope, btn) {
+      const params = new URLSearchParams({ scope });
+      if (scope === 'filtered') {
+        const f = currentFilters();
+        Object.entries(f).forEach(([k, v]) => { if (v) params.set(k, v); });
+      }
+
+      const original = btn.innerHTML;
+      btn.disabled  = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังสร้างไฟล์...';
+
+      fetch('php/export_admin_results.php?' + params, { credentials: 'include', cache: 'no-store' })
+        .then(async (r) => {
+          const type = r.headers.get('Content-Type') || '';
+
+          // ตอบเป็น JSON = มีปัญหา (ไม่มีสิทธิ์ / session หมดอายุ / server error)
+          if (type.includes('application/json')) {
+            const data = await r.json().catch(() => null);
+            throw new Error(data?.error || 'ส่งออกไม่สำเร็จ');
+          }
+          if (!r.ok) {
+            throw new Error('ส่งออกไม่สำเร็จ (HTTP ' + r.status + ')');
+          }
+
+          const blob = await r.blob();
+          const now  = new Date();
+          const pad  = (n) => String(n).padStart(2, '0');
+          const stamp = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate())
+                      + '-' + pad(now.getHours()) + pad(now.getMinutes());
+
+          const url = URL.createObjectURL(blob);
+          const a   = document.createElement('a');
+          a.href    = url;
+          a.download = 'FutureWay-ผลแบบทดสอบ-' + stamp + '.xlsx';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          // คืนหน่วยความจำที่จองไว้ให้ blob หลังเบราว์เซอร์เริ่มดาวน์โหลดแล้ว
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        })
+        .catch((err) => alert(err.message || 'ส่งออกไม่สำเร็จ'))
+        .finally(() => {
+          btn.disabled  = false;
+          btn.innerHTML = original;
+        });
+    }
+
+    document.getElementById('export-all').addEventListener('click', function () {
+      exportExcel('all', this);
+    });
+    document.getElementById('export-filtered').addEventListener('click', function () {
+      exportExcel('filtered', this);
+    });
+
+    ['f-q', 'f-gender', 'f-mbti'].forEach(id => {
+      document.getElementById(id).addEventListener('input',  syncExportButtons);
+      document.getElementById(id).addEventListener('change', syncExportButtons);
+    });
 
     // แสดงชื่อผู้ใช้ที่ login อยู่บน header
     fetch('php/get_user.php', { cache: 'no-store' })

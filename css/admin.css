@@ -146,6 +146,76 @@ body {
 }
 .filter-bar button:hover { background: var(--primary-dark); }
 
+/* ---- แถบส่งออกเป็นไฟล์ Excel ---- */
+.export-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--white);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.export-bar[hidden] { display: none !important; }
+
+.export-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--gray);
+  min-width: 0;
+  flex: 1;
+}
+.export-info i {
+  color: #1d6f42;          /* เขียวแบบไอคอน Excel ให้รู้ทันทีว่าเป็นไฟล์อะไร */
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.export-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.export-btn {
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 9px 18px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: #1d6f42;
+  color: var(--white);
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: background var(--transition), border-color var(--transition);
+}
+.export-btn:hover:not(:disabled) { background: #175935; }
+
+.export-btn.ghost {
+  background: var(--white);
+  color: #1d6f42;
+  border-color: #1d6f42;
+}
+.export-btn.ghost:hover:not(:disabled) { background: rgba(29,111,66,0.08); }
+
+.export-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.export-btn[hidden]  { display: none !important; }
+
+/* จอแคบ: ปุ่มเรียงเต็มความกว้าง กดง่ายกว่าปุ่มเล็ก ๆ ชิดขวา */
+@media (max-width: 560px) {
+  .export-actions { width: 100%; }
+  .export-btn { flex: 1; justify-content: center; }
+}
+
 /* ---- Table ---- */
 .table-card {
   background: var(--white);

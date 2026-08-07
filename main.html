@@ -7,7 +7,102 @@
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   
-  <link rel="stylesheet" href="css/main.css">
+  <!-- ?v=2 บังคับให้เบราว์เซอร์โหลด CSS ใหม่ ไม่ใช้ตัวที่ cache ไว้
+       (เลขนี้เปลี่ยนทุกครั้งที่แก้ main.css แล้วอยากให้ผู้ใช้เห็นผลทันที) -->
+  <link rel="stylesheet" href="css/main.css?v=2">
+
+  <!--
+    สไตล์ของ Lightbox (popup ดูรูปเต็มจอ) อยู่ตรงนี้ ไม่ได้อยู่ใน main.css
+    เพราะถ้า CSS ถูก cache ไว้ จะได้ HTML+script ใหม่แต่ไม่ได้สไตล์
+    ผลคือกดรูปแล้ว popup เปิดจริง แต่กลายเป็นกล่องเปล่าท้ายหน้า เหมือนกดแล้วไม่มีอะไรเกิดขึ้น
+  -->
+  <style>
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      top: 0; right: 0; bottom: 0; left: 0;   /* เผื่อเบราว์เซอร์เก่าที่ไม่รู้จัก inset */
+      z-index: 9999;                          /* สูงกว่า bottom-nav (100) */
+      background: rgba(0,0,0,0.92);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 56px 16px;
+      animation: lb-fade 0.18s ease;
+    }
+    /* ต้องมีกฎนี้ในไฟล์เดียวกับ .lightbox ไม่งั้นถ้า [hidden] ของ main.css ไม่ถูกโหลด
+       popup จะโผล่ค้างเต็มจอตั้งแต่เปิดหน้า */
+    .lightbox[hidden] { display: none !important; }
+
+    @keyframes lb-fade {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .lightbox-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      animation: lb-zoom 0.2s ease;
+      -webkit-user-drag: none;   /* กันเบราว์เซอร์ลากรูปออกไปตอนสไวป์ */
+      user-select: none;
+    }
+
+    @keyframes lb-zoom {
+      from { transform: scale(0.94); }
+      to   { transform: scale(1); }
+    }
+
+    .lightbox-btn {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: rgba(255,255,255,0.16);
+      color: #ffffff;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.1rem;
+      width: 44px;               /* พื้นที่กดอย่างน้อย 44px ตามขนาดนิ้วบนมือถือ */
+      height: 44px;
+      transition: background 0.2s ease;
+    }
+    .lightbox-btn:hover  { background: rgba(255,255,255,0.3); }
+    .lightbox-btn:active { background: rgba(255,255,255,0.4); }
+    .lightbox-btn[hidden] { display: none !important; }
+
+    .lightbox-close { top: 12px; right: 12px; }
+    .lightbox-prev  { left: 10px;  top: 50%; transform: translateY(-50%); }
+    .lightbox-next  { right: 10px; top: 50%; transform: translateY(-50%); }
+
+    .lightbox-count {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.85);
+      font-size: 0.82rem;
+      font-weight: 500;
+      background: rgba(0,0,0,0.45);
+      padding: 5px 14px;
+      border-radius: 999px;
+    }
+    .lightbox-count[hidden] { display: none !important; }
+
+    /* จอเล็ก: ย้ายปุ่มซ้าย-ขวาลงมาชิดขอบล่าง ไม่ให้บังรูป */
+    @media (max-width: 420px) {
+      .lightbox { padding: 56px 8px 72px; }
+      .lightbox-prev { left: 16px;  top: auto; bottom: 12px; transform: none; }
+      .lightbox-next { right: 16px; top: auto; bottom: 12px; transform: none; }
+    }
+
+    /* รูปเล็กในกล่องสไลด์ — บอกให้รู้ว่ากดได้ */
+    .info-scroll .info-img { cursor: zoom-in; }
+
+    body.lightbox-open { overflow: hidden; }
+  </style>
 </head>
 <body>
 
@@ -100,14 +195,20 @@
     // ========================================
     (function () {
       const images  = Array.from(document.querySelectorAll('.info-scroll .info-img'));
-      if (!images.length) return;
-
       const box     = document.getElementById('lightbox');
       const bigImg  = document.getElementById('lightbox-img');
       const btnPrev = document.getElementById('lb-prev');
       const btnNext = document.getElementById('lb-next');
       const btnClose= document.getElementById('lb-close');
       const counter = document.getElementById('lb-count');
+
+      // ถ้าขาดชิ้นไหนไป ให้ฟ้องใน Console ไปเลย จะได้ไม่ต้องเดาว่าทำไมกดรูปแล้วเงียบ
+      if (!images.length || !box || !bigImg) {
+        console.error('[lightbox] เปิดใช้งานไม่ได้ — ' +
+          'รูปในกล่องสไลด์: ' + images.length + ', กล่อง popup: ' + (box ? 'มี' : 'ไม่มี'));
+        return;
+      }
+      console.log('[lightbox] พร้อมใช้งาน — พบรูป ' + images.length + ' รูป');
 
       let index = 0;
       let lastFocused = null;   // ปุ่ม/รูปที่กดเข้ามา ไว้คืน focus ตอนปิด
@@ -132,13 +233,19 @@
       function open(i) {
         lastFocused = document.activeElement;
         show(i);
+
+        // สั่งทั้ง attribute hidden และ inline style
+        // เผื่อกรณีที่กฎ CSS ของ [hidden] ไม่ถูกโหลด popup จะได้ยังโผล่แน่นอน
         box.hidden = false;
+        box.style.display = 'flex';
+
         document.body.classList.add('lightbox-open');
         btnClose.focus();
       }
 
       function close() {
         box.hidden = true;
+        box.style.display = 'none';
         document.body.classList.remove('lightbox-open');
         // ใช้ removeAttribute ไม่ใช่ src='' เพราะ src ว่างทำให้เบราว์เซอร์
         // ยิงโหลด URL ของหน้านี้ซ้ำอีกรอบ

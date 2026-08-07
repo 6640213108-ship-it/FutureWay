@@ -9,4 +9,17 @@
     Header set Pragma "no-cache"
     Header set Expires "0"
   </FilesMatch>
+
+  # CSS/JS ต้องบังคับให้ถามเซิร์ฟเวอร์ก่อนใช้ทุกครั้งด้วย
+  #
+  # เดิมกฎข้างบนคุมแค่ .html ทำให้ deploy แล้วเบราว์เซอร์ได้ HTML ใหม่
+  # แต่ยังใช้ CSS ตัวเก่าที่ cache ไว้ (ไม่มี Cache-Control เบราว์เซอร์จะเดาอายุเอง
+  # จาก Last-Modified ซึ่งอาจเก็บไว้เป็นวัน) ผลคือของใหม่ที่ต้องใช้ CSS ใหม่จะเสียหมด
+  # เช่น popup ดูรูปในหน้า main ที่เปิดขึ้นจริงแต่ไม่มีสไตล์ เลยมองไม่เห็นอะไรเลย
+  #
+  # ใช้ "no-cache" ไม่ใช่ "no-store": ไฟล์ยังถูกเก็บไว้ในเครื่อง แต่ต้องถาม
+  # เซิร์ฟเวอร์ก่อนใช้ทุกครั้ง ถ้าไม่มีอะไรเปลี่ยนจะได้ 304 กลับมา ซึ่งเบามาก
+  <FilesMatch "\.(css|js)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
 </IfModule>

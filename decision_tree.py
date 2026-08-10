@@ -138,32 +138,39 @@ def resolve_mbti_from_answers(answers):
 # Decision Tree Logic
 # ========================================
 # ----------------------------------------
-# สัดส่วนคะแนน (รวม 100): MBTI เป็นตัวหลัก น้ำหนักเท่ากับเกรด 50:50
-# ในทางปฏิบัติ MBTI จะชี้อันดับมากกว่า เพราะสาขาที่ตรง/ไม่ตรงบุคลิก
-# คะแนนต่างกันได้ถึง ~24 แต้ม ขณะที่ส่วนเกรดต่างกันระหว่างสาขาไม่กี่แต้ม
+# สัดส่วนคะแนน (รวม 100): MBTI เป็นตัวหลัก 60 : เกรด 40
+#
+# MBTI ให้คะแนนตาม "ลำดับในลิสต์ mbti_match" ของสาขา (ตัวแรก = เข้ากันที่สุด)
+# เพื่อให้สาขาในกลุ่มบุคลิกเดียวกันได้คะแนนลดหลั่น ไม่กองเท่ากันหมด
+# ส่วนเกรดใช้เลขชี้กำลัง (GRADE_CURVE) ถ่างคะแนนให้ต่างกันชัดขึ้น
+# ผลคือ % อันดับ 1-2-3 ห่างกันอย่างมีความหมาย ไม่ใช่ 98.3/98.3/98.2
 # ----------------------------------------
-MBTI_FULL_SCORE    = 50   # MBTI อยู่ในลิสต์ของสาขา = ตรงเต็ม
-MBTI_PARTIAL_MAX   = 35   # ตรงบางส่วน: (ตัวอักษรที่ตรงมากสุด/4) x ค่านี้ (ตรง 3/4 = 26.25)
-GRADE_SCORE_MAX    = 50   # ส่วนเกรดถ่วงน้ำหนัก
-BELOW_MIN_PENALTY  = 10   # หักต่อวิชาที่เกรดต่ำกว่าขั้นต่ำของสาขา
+MBTI_POSITION_SCORES = [60, 56, 52, 48, 44]  # คะแนนตามลำดับใน mbti_match
+MBTI_PARTIAL_MAX     = 40   # ไม่อยู่ในลิสต์: (ตัวอักษรตรงมากสุด/4) x ค่านี้ (ตรง 3/4 = 30)
+GRADE_SCORE_MAX      = 40   # ส่วนเกรดถ่วงน้ำหนัก
+GRADE_CURVE          = 1.5  # เลขชี้กำลังถ่างช่วงคะแนนเกรด (1.0 = เส้นตรงแบบเดิม)
+BELOW_MIN_PENALTY    = 8    # หักต่อวิชาที่เกรดต่ำกว่าขั้นต่ำของสาขา
 
 
 def calculate_score(branch, grades, mbti):
     """
     คำนวณคะแนนความเหมาะสมของสาขา (0-100)
 
-    สูตร (MBTI เป็นตัวหลัก):
-    1. MBTI match เต็ม 50 / ตรงบางส่วนสูงสุด 26.25
-    2. เกรดถ่วงน้ำหนักตามวิชาเด่นของสาขา เต็ม 50
-    3. เกรดต่ำกว่าขั้นต่ำของสาขา หัก 10 ต่อวิชา
+    สูตร (MBTI เป็นตัวหลัก 60:40):
+    1. MBTI อยู่ในลิสต์ของสาขา ได้ตามลำดับความเข้ากัน 60/56/52/48/44
+       ไม่อยู่ในลิสต์ ได้ตามตัวอักษรที่ตรงบางส่วน สูงสุด 30
+    2. เกรดถ่วงน้ำหนักตามวิชาเด่นของสาขา เต็ม 40 (ยกกำลัง 1.5 ให้คะแนนถ่างขึ้น)
+    3. เกรดต่ำกว่าขั้นต่ำของสาขา หัก 8 ต่อวิชา
     """
     score = 0
 
-    # --- Step 1: MBTI Score (ตัวหลัก, 50 คะแนน) ---
+    # --- Step 1: MBTI Score (ตัวหลัก, สูงสุด 60 คะแนน) ---
     mbti_match = json.loads(branch['mbti_match']) if isinstance(branch['mbti_match'], str) else branch['mbti_match']
 
     if mbti in mbti_match:
-        score += MBTI_FULL_SCORE  # match เต็ม
+        # ยิ่งอยู่ต้นลิสต์ = สาขานั้นเข้ากับบุคลิกนี้มากที่สุด ได้คะแนนสูงสุด
+        idx = mbti_match.index(mbti)
+        score += MBTI_POSITION_SCORES[min(idx, len(MBTI_POSITION_SCORES) - 1)]
     else:
         # เช็คว่า match บางมิติไหม
         partial = 0
@@ -183,7 +190,7 @@ def calculate_score(branch, grades, mbti):
             below_min = True
             score -= BELOW_MIN_PENALTY  # หักคะแนนถ้าเกรดต่ำกว่าขั้นต่ำ
 
-    # --- Step 3: Weighted Grade Score (50 คะแนน) ---
+    # --- Step 3: Weighted Grade Score (40 คะแนน) ---
     weight_keys = ['weight_math', 'weight_sci', 'weight_eng',
                    'weight_thai', 'weight_social', 'weight_art']
 
@@ -196,7 +203,8 @@ def calculate_score(branch, grades, mbti):
         weighted_score += (grade / 4.0) * weight  # normalize เป็น 0-1
 
     if total_weight > 0:
-        score += (weighted_score / total_weight) * GRADE_SCORE_MAX
+        ratio = weighted_score / total_weight          # 0-1
+        score += (ratio ** GRADE_CURVE) * GRADE_SCORE_MAX
 
     return round(max(0, min(100, score)), 2)
 

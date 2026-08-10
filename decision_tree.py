@@ -137,55 +137,66 @@ def resolve_mbti_from_answers(answers):
 # ========================================
 # Decision Tree Logic
 # ========================================
+# ----------------------------------------
+# สัดส่วนคะแนน (รวม 100): MBTI เป็นตัวหลัก น้ำหนักเท่ากับเกรด 50:50
+# ในทางปฏิบัติ MBTI จะชี้อันดับมากกว่า เพราะสาขาที่ตรง/ไม่ตรงบุคลิก
+# คะแนนต่างกันได้ถึง ~24 แต้ม ขณะที่ส่วนเกรดต่างกันระหว่างสาขาไม่กี่แต้ม
+# ----------------------------------------
+MBTI_FULL_SCORE    = 50   # MBTI อยู่ในลิสต์ของสาขา = ตรงเต็ม
+MBTI_PARTIAL_MAX   = 35   # ตรงบางส่วน: (ตัวอักษรที่ตรงมากสุด/4) x ค่านี้ (ตรง 3/4 = 26.25)
+GRADE_SCORE_MAX    = 50   # ส่วนเกรดถ่วงน้ำหนัก
+BELOW_MIN_PENALTY  = 10   # หักต่อวิชาที่เกรดต่ำกว่าขั้นต่ำของสาขา
+
+
 def calculate_score(branch, grades, mbti):
     """
     คำนวณคะแนนความเหมาะสมของสาขา (0-100)
-    
-    สูตร:
-    1. เช็ค MBTI match → ถ้าไม่ match หัก 30 คะแนน
-    2. เช็คเกรดขั้นต่ำ → ถ้าไม่ถึงขั้นต่ำ หักคะแนน
-    3. คำนวณ weighted grade score
+
+    สูตร (MBTI เป็นตัวหลัก):
+    1. MBTI match เต็ม 50 / ตรงบางส่วนสูงสุด 26.25
+    2. เกรดถ่วงน้ำหนักตามวิชาเด่นของสาขา เต็ม 50
+    3. เกรดต่ำกว่าขั้นต่ำของสาขา หัก 10 ต่อวิชา
     """
     score = 0
-    
-    # --- Step 1: MBTI Score (40 คะแนน) ---
+
+    # --- Step 1: MBTI Score (ตัวหลัก, 50 คะแนน) ---
     mbti_match = json.loads(branch['mbti_match']) if isinstance(branch['mbti_match'], str) else branch['mbti_match']
-    
+
     if mbti in mbti_match:
-        score += 40  # match เต็ม
+        score += MBTI_FULL_SCORE  # match เต็ม
     else:
         # เช็คว่า match บางมิติไหม
         partial = 0
         for m in mbti_match:
             match_count = sum(1 for a, b in zip(mbti, m) if a == b)
             partial = max(partial, match_count)
-        score += (partial / 4) * 25  # match บางส่วน ได้สูงสุด 25
+        score += (partial / 4) * MBTI_PARTIAL_MAX
 
     # --- Step 2: เช็คเกรดขั้นต่ำ ---
     grade_keys = ['math', 'sci', 'eng', 'thai', 'social', 'art']
     min_keys   = ['min_math', 'min_sci', 'min_eng', 'min_thai', 'min_social', 'min_art']
-    
+
     below_min = False
     for gk, mk in zip(grade_keys, min_keys):
         min_val = float(branch[mk])
         if min_val > 0 and float(grades[gk]) < min_val:
             below_min = True
-            score -= 15  # หักคะแนนถ้าเกรดต่ำกว่าขั้นต่ำ
+            score -= BELOW_MIN_PENALTY  # หักคะแนนถ้าเกรดต่ำกว่าขั้นต่ำ
 
-    # --- Step 3: Weighted Grade Score (60 คะแนน) ---
-    weight_keys = ['weight_math', 'weight_sci', 'weight_eng', 
+    # --- Step 3: Weighted Grade Score (50 คะแนน) ---
+    weight_keys = ['weight_math', 'weight_sci', 'weight_eng',
                    'weight_thai', 'weight_social', 'weight_art']
-    
+
     total_weight    = sum(float(branch[wk]) for wk in weight_keys)
     weighted_score  = 0
-    
+
     for gk, wk in zip(grade_keys, weight_keys):
         grade  = float(grades[gk])
         weight = float(branch[wk])
         weighted_score += (grade / 4.0) * weight  # normalize เป็น 0-1
-    
+
     if total_weight > 0:
-        score += (weighted_score / total_weight) * 60
+        score += (weighted_score / total_weight) * GRADE_SCORE_MAX
 
     return round(max(0, min(100, score)), 2)
 

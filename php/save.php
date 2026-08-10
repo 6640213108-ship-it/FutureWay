@@ -19,6 +19,15 @@ $email     = isset($_POST['email'])      ? trim($_POST['email'])      : '';
 $password1 = isset($_POST['password1'])  ? $_POST['password1']        : '';
 $password2 = isset($_POST['password2'])  ? $_POST['password2']        : '';
 
+// ช่อง "ชื่อผู้ใช้" เปลี่ยนเป็นเบอร์มือถือแล้ว (เก็บลงคอลัมน์ username เดิม
+// เพื่อให้ login.php ใช้เบอร์เข้าสู่ระบบได้โดยไม่ต้องแก้ฐานข้อมูล)
+// ลบอักขระคั่น เช่น ขีด/เว้นวรรค ออกก่อน แล้วตรวจว่าเป็นเบอร์ 10 หลักขึ้นต้นด้วย 0
+$username = preg_replace('/[^0-9]/', '', $username);
+if (!preg_match('/^0[0-9]{9}$/', $username)) {
+    header("Location: ../register.html?status=invalid_phone");
+    exit();
+}
+
 // ตรวจสอบรหัสผ่านตรงกัน
 if ($password1 !== $password2) {
     header("Location: ../register.html?status=password_mismatch");

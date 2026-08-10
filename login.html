@@ -33,11 +33,22 @@
         <a href="register.html" class="btn btn-purple-outline">ยังไม่มีบัญชี? สมัครเลย</a>
         <a href="index.html" class="btn-purple-outline_t">กลับหน้าแรก</a>
       </div>
- 
+
     </form>
+
+    <div class="divider">หรือเข้าสู่ระบบด้วย</div>
+
+    <div class="social-buttons">
+      <button type="button" class="btn-social google">
+        <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" alt="Google">
+        Google
+      </button>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="js/google-login.js"></script>
   <script>
     function togglePassword(inputId, icon) {
       const input = document.getElementById(inputId);

@@ -230,15 +230,25 @@ def run_decision_tree(grades, mbti):
     avg_grade = sum(float(grades[k]) for k in grades) / len(grades)
     
     # ถ้าเกรดเฉลี่ยสูงมาก (≥ 3.5) และ MBTI เป็นสาย T → boost สายวิทย์
+    # รวมชื่อคณะสายวิทย์ของข้อมูลชุด NRRU (004_nrru_branches.sql) ด้วย
+    # ไม่งั้นสาขาใหม่จะไม่เคยเข้าเงื่อนไขนี้เลย
+    science_faculties = [
+        'วิศวกรรมศาสตร์', 'แพทยศาสตร์', 'วิทยาศาสตร์',
+        'วิทยาศาสตร์และเทคโนโลยี', 'เทคโนโลยีอุตสาหกรรม',
+        'สาธารณสุขศาสตร์', 'พยาบาลศาสตร์',
+    ]
     if avg_grade >= 3.5 and mbti[2] == 'T':
         for r in top3:
-            if r['faculty'] in ['วิศวกรรมศาสตร์', 'แพทยศาสตร์', 'วิทยาศาสตร์']:
+            if r['faculty'] in science_faculties:
                 r['score'] = min(100, r['score'] + 5)
                 r['note']  = '⭐ เกรดดีและบุคลิกเหมาะมาก'
 
     return {
         'mbti':      mbti,
         'avg_grade': round(avg_grade, 2),
+        # จำนวนสาขาทั้งหมดที่ถูกคำนวณคะแนนในรอบนี้ (ทุกแถว is_active = 1)
+        # ไว้เช็คได้ว่าข้อมูลสาขาชุดใหม่ถูกนำมาคิดครบจริง
+        'branches_considered': len(results),
         'top3':      top3
     }
 

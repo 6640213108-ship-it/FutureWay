@@ -107,7 +107,7 @@ try {
     gFail(500, 'เชื่อมต่อฐานข้อมูลไม่ได้');
 }
 
-$stmt = $conn->prepare('SELECT id, username FROM users WHERE email = ?');
+$stmt = $conn->prepare('SELECT id, username, gender FROM users WHERE email = ?');
 $stmt->bind_param('s', $email);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
@@ -147,7 +147,7 @@ if (!$user) {
         error_log('google_login.php insert: ' . $err);
         gFail(500, 'สร้างบัญชีใหม่ไม่สำเร็จ กรุณาลองใหม่');
     }
-    $user = ['id' => $stmt->insert_id, 'username' => $username];
+    $user = ['id' => $stmt->insert_id, 'username' => $username, 'gender' => $gender];
     $stmt->close();
 }
 
@@ -158,4 +158,10 @@ $_SESSION['username'] = $user['username'];
 
 $conn->close();
 
-echo json_encode(['success' => true, 'username' => $user['username']], JSON_UNESCAPED_UNICODE);
+// need_gender = ยังไม่เคยเลือกเพศ (บัญชีที่เพิ่งสร้างจาก Google จะเป็น 'ไม่ระบุ')
+// หน้าเว็บใช้ flag นี้ตัดสินใจว่าจะเด้งป็อปอัปให้เลือกเพศก่อนเข้าระบบหรือไม่
+echo json_encode([
+    'success'     => true,
+    'username'    => $user['username'],
+    'need_gender' => ($user['gender'] ?? '') === 'ไม่ระบุ' || ($user['gender'] ?? '') === '',
+], JSON_UNESCAPED_UNICODE);

@@ -34,6 +34,10 @@
       });
       const data = await res.json();
       if (data.success) {
+        // บัญชีที่ยังไม่เคยเลือกเพศ (เช่น เพิ่งสมัครผ่าน Google) → ถามก่อนเข้าระบบ
+        if (data.need_gender && window.Swal) {
+          await askGender();
+        }
         // ไปหน้า login.html?status=success เพื่อใช้ป็อปอัป "เข้าสู่ระบบสำเร็จ" เดิม
         window.location.href = 'login.html?status=success';
       } else {
@@ -41,6 +45,36 @@
       }
     } catch (err) {
       showError('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาลองใหม่');
+    }
+  }
+
+  // ป็อปอัปให้เลือกเพศหลังล็อกอิน Google ครั้งแรก
+  // กด "ข้ามไปก่อน" ได้ (ค่าจะเป็น "ไม่ระบุ" และไปแก้ทีหลังได้ที่หน้าแก้ไขโปรไฟล์)
+  async function askGender() {
+    const result = await Swal.fire({
+      title: 'อีกนิดเดียว!',
+      text: 'กรุณาเลือกเพศของคุณ',
+      icon: 'question',
+      input: 'radio',
+      inputOptions: { 'ชาย': 'ชาย', 'หญิง': 'หญิง', 'อื่นๆ': 'อื่นๆ' },
+      inputValidator: (v) => (!v ? 'กรุณาเลือกเพศ หรือกด "ข้ามไปก่อน"' : undefined),
+      confirmButtonText: 'บันทึก',
+      confirmButtonColor: '#7b2ff7',
+      showCancelButton: true,
+      cancelButtonText: 'ข้ามไปก่อน',
+      allowOutsideClick: false,
+    });
+
+    if (!result.isConfirmed || !result.value) return;
+
+    try {
+      await fetch('php/set_gender.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gender: result.value }),
+      });
+    } catch (err) {
+      /* บันทึกไม่ได้ก็ไม่ขวางการเข้าระบบ — ไปแก้ทีหลังได้ที่หน้าโปรไฟล์ */
     }
   }
 

@@ -248,6 +248,74 @@ img {
    ซึ่ง main.html โหลดต่อจากไฟล์นี้ */
 
 /* ========================================
+   MBTI Menu — เมนูบุคลิกภาพ 16 แบบ (กดแล้วเปิดรูปเต็มจอ)
+   ======================================== */
+.mbti-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mbti-title i { color: var(--primary); }
+
+.mbti-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+/* จอกว้าง: เรียง 4 คอลัมน์ให้เห็นครบ 16 แบบใน 4 แถวพอดี */
+@media (min-width: 600px) {
+  .mbti-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.mbti-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: #f7f3ff;
+  border: 1.5px solid #e5daff;
+  border-radius: 12px;
+  padding: 12px 8px;
+  font-family: 'Kanit', sans-serif;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition),
+              transform var(--transition), box-shadow var(--transition);
+}
+.mbti-item:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(123,47,247,0.35);
+}
+.mbti-item:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.mbti-code {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+.mbti-desc {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #777;
+  text-align: center;
+  line-height: 1.3;
+}
+.mbti-item:hover .mbti-code,
+.mbti-item:hover .mbti-desc {
+  color: var(--white);
+}
+
+/* ========================================
    Bottom Navigation
    ======================================== */
 .bottom-nav {

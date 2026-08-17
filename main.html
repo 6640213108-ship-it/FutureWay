@@ -9,7 +9,7 @@
 
   <!-- ?v= คือเลขรุ่นของไฟล์ CSS บังคับให้เบราว์เซอร์โหลดใหม่แทนตัวที่ cache ไว้
        บวกเลขนี้ขึ้น 1 ทุกครั้งที่แก้ CSS แล้วอยากให้ผู้ใช้เห็นผลทันที -->
-  <link rel="stylesheet" href="css/main.css?v=4">
+  <link rel="stylesheet" href="css/main.css?v=5">
   <link rel="stylesheet" href="css/lightbox.css?v=4">
 </head>
 <body>
@@ -32,6 +32,77 @@
 
       <a href="quiz.html" class="test-btn">คลิ๊ก.. เพื่อทำแบบทดสอบ</a>
 
+    </div>
+
+    <!-- เมนูบุคลิกภาพ MBTI ทั้ง 16 แบบ (กดแล้วเปิดดูรูปเต็มจอ) -->
+    <div class="white-card">
+      <h2 class="mbti-title"><i class="fas fa-brain"></i> บุคลิกภาพ MBTI ทั้ง 16 แบบ</h2>
+      <div class="mbti-grid">
+        <button type="button" class="mbti-item" data-src="images/ENFJ.jpg">
+          <span class="mbti-code">ENFJ</span>
+          <span class="mbti-desc">ผู้นำเชิงบวก</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/ENFP.jpg">
+          <span class="mbti-code">ENFP</span>
+          <span class="mbti-desc">นักสร้างแรงบันดาลใจ</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/ENTJ.jpg">
+          <span class="mbti-code">ENTJ</span>
+          <span class="mbti-desc">ผู้นำเชิงกลยุทธ์</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/ENTP.jpg">
+          <span class="mbti-code">ENTP</span>
+          <span class="mbti-desc">นักโต้วาที</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/ESFJ.jpg">
+          <span class="mbti-code">ESFJ</span>
+          <span class="mbti-desc">ผู้ประสานใจ</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/ESFP.jpg">
+          <span class="mbti-code">ESFP</span>
+          <span class="mbti-desc">ผู้สร้างสีสัน ชอบผู้คน</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/ESTJ.jpg">
+          <span class="mbti-code">ESTJ</span>
+          <span class="mbti-desc">ผู้บริหารจัดการ</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/ESTP.jpg">
+          <span class="mbti-code">ESTP</span>
+          <span class="mbti-desc">นักลุย กล้าตัดสินใจ</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/INFJ.jpg">
+          <span class="mbti-code">INFJ</span>
+          <span class="mbti-desc">ผู้ให้คำปรึกษา</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/INFP.jpg">
+          <span class="mbti-code">INFP</span>
+          <span class="mbti-desc">นักอุดมคติ จินตนาการสูง</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/INTJ.jpg">
+          <span class="mbti-code">INTJ</span>
+          <span class="mbti-desc">นักวางแผนเชิงกลยุทธ์</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/INTP.jpg">
+          <span class="mbti-code">INTP</span>
+          <span class="mbti-desc">นักคิดวิเคราะห์</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/ISFJ.jpg">
+          <span class="mbti-code">ISFJ</span>
+          <span class="mbti-desc">ผู้ดูแลที่ทุ่มเท</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/ISFP.jpg">
+          <span class="mbti-code">ISFP</span>
+          <span class="mbti-desc">ศิลปิน อ่อนโยน</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/ISTJ.jpg">
+          <span class="mbti-code">ISTJ</span>
+          <span class="mbti-desc">นักปฏิบัติผู้มีระเบียบ</span>
+        </button>
+        <button type="button" class="mbti-item" data-src="images/ISTP.jpg">
+          <span class="mbti-code">ISTP</span>
+          <span class="mbti-desc">ชอบลงมือแก้ปัญหา</span>
+        </button>
+      </div>
     </div>
 
     <!-- กล่องสไลด์รูปภาพด้านล่าง (กดที่รูปเพื่อดูเต็มจอ) -->
@@ -104,7 +175,19 @@
     // เลื่อนดูรูปถัดไปได้ด้วยปุ่มลูกศร, คีย์บอร์ด, หรือสไวป์บนมือถือ
     // ========================================
     (function () {
-      const images  = Array.from(document.querySelectorAll('.info-scroll .info-img'));
+      // รูปแบ่งเป็น 2 ชุด: รูปในกล่องสไลด์ กับรูป MBTI จากเมนู
+      // เปิดจากชุดไหน ปุ่มก่อนหน้า/ถัดไปก็วนอยู่ในชุดนั้น ไม่ปนกัน
+      const infoImgs = Array.from(document.querySelectorAll('.info-scroll .info-img'))
+        .map(el => ({ el, src: el.src, alt: el.alt || '' }));
+      const mbtiItems = Array.from(document.querySelectorAll('.mbti-item'))
+        .map(el => ({
+          el,
+          src: el.dataset.src,
+          alt: el.querySelector('.mbti-code').textContent + ' — ' +
+               el.querySelector('.mbti-desc').textContent
+        }));
+      let list = infoImgs;   // ชุดที่กำลังเปิดดูอยู่
+
       const box     = document.getElementById('lightbox');
       const stage   = document.getElementById('lb-stage');
       const bigImg  = document.getElementById('lightbox-img');
@@ -115,12 +198,14 @@
       const counter = document.getElementById('lb-count');
 
       // ถ้าขาดชิ้นไหนไป ให้ฟ้องใน Console ไปเลย จะได้ไม่ต้องเดาว่าทำไมกดรูปแล้วเงียบ
-      if (!images.length || !box || !stage || !bigImg || !btnZoom) {
+      if ((!infoImgs.length && !mbtiItems.length) || !box || !stage || !bigImg || !btnZoom) {
         console.error('[lightbox] เปิดใช้งานไม่ได้ — ' +
-          'รูปในกล่องสไลด์: ' + images.length + ', กล่อง popup: ' + (box ? 'มี' : 'ไม่มี'));
+          'รูปสไลด์: ' + infoImgs.length + ', รูป MBTI: ' + mbtiItems.length +
+          ', กล่อง popup: ' + (box ? 'มี' : 'ไม่มี'));
         return;
       }
-      console.log('[lightbox] พร้อมใช้งาน — พบรูป ' + images.length + ' รูป');
+      console.log('[lightbox] พร้อมใช้งาน — รูปสไลด์ ' + infoImgs.length +
+        ' รูป, รูป MBTI ' + mbtiItems.length + ' รูป');
 
       let index = 0;
       let zoomed = false;
@@ -140,17 +225,17 @@
 
       function show(i) {
         // วนกลับหัวท้าย: รูปสุดท้ายกดถัดไปแล้ววนมารูปแรก
-        index = (i + images.length) % images.length;
-        const src = images[index];
+        index = (i + list.length) % list.length;
+        const item = list[index];
 
         setZoom(false);          // เปลี่ยนรูปแล้วเริ่มที่โหมดพอดีจอเสมอ
-        bigImg.src = src.src;
-        bigImg.alt = src.alt || '';
+        bigImg.src = item.src;
+        bigImg.alt = item.alt;
 
-        counter.textContent = (index + 1) + ' / ' + images.length;
+        counter.textContent = (index + 1) + ' / ' + list.length;
 
         // มีรูปเดียวก็ไม่ต้องมีปุ่มเลื่อนกับตัวนับ
-        const many = images.length > 1;
+        const many = list.length > 1;
         btnPrev.hidden = !many;
         btnNext.hidden = !many;
         counter.hidden = !many;
@@ -162,8 +247,9 @@
                       && bigImg.naturalHeight <= stage.clientHeight;
       });
 
-      function open(i) {
+      function open(itemList, i) {
         lastFocused = document.activeElement;
+        list = itemList;
         show(i);
 
         box.hidden = false;
@@ -180,16 +266,20 @@
         if (lastFocused) lastFocused.focus();
       }
 
-      // ---- เปิดจากรูปเล็ก ----
-      images.forEach((img, i) => {
-        img.addEventListener('click', () => open(i));
-        img.addEventListener('keydown', e => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();       // กัน space เลื่อนหน้าลง
-            open(i);
-          }
+      // ---- เปิดจากรูปเล็กในกล่องสไลด์ และปุ่มเมนู MBTI ----
+      function bindOpeners(itemList) {
+        itemList.forEach((item, i) => {
+          item.el.addEventListener('click', () => open(itemList, i));
+          item.el.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();       // กัน space เลื่อนหน้าลง (และกัน click ซ้ำบนปุ่ม)
+              open(itemList, i);
+            }
+          });
         });
-      });
+      }
+      bindOpeners(infoImgs);
+      bindOpeners(mbtiItems);
 
       // ---- ปุ่มควบคุม ----
       btnClose.addEventListener('click', close);
@@ -222,7 +312,7 @@
 
       box.addEventListener('touchend', e => {
         // ตอนขยายอยู่ไม่ต้องเปลี่ยนรูป เพราะนิ้วกำลังลากเลื่อนดูรูปเดิม
-        if (touchX === null || images.length < 2 || zoomed) { touchX = null; return; }
+        if (touchX === null || list.length < 2 || zoomed) { touchX = null; return; }
         const diff = e.changedTouches[0].clientX - touchX;
         if (Math.abs(diff) > 50) show(diff < 0 ? index + 1 : index - 1);
         touchX = null;

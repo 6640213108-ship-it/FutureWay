@@ -32,6 +32,14 @@ body {
    ต้องบังคับทับ ไม่งั้นสั่ง .hidden = true แล้วของยังโผล่อยู่ */
 [hidden] { display: none !important; }
 
+/* รูปทุกรูปห้ามล้นกล่องที่ห่ออยู่ */
+img { max-width: 100%; }
+
+/* กันมือถือ (Safari) ซูมเด้งตอนแตะช่องกรอกที่ตัวอักษรเล็กกว่า 16px */
+@media (max-width: 767px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
 /* ---- Header ---- */
 .admin-header {
   position: sticky;

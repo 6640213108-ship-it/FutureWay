@@ -12,11 +12,14 @@ require_once __DIR__ . '/db_config.php';
 try {
     $conn = getDbConnection();
 
+    // FIELD() บังคับลำดับหมวดตามเอกสารต้นทาง EI -> SN -> TF -> JP
+    // (ORDER BY category เฉยๆ จะเรียงตามตัวอักษร ได้ JP มาก่อน SN/TF)
+    // ตามด้วย question_no ที่ migration 007 ตั้งให้ต่อเนื่อง 1-7 ในแต่ละหมวด
     $sql = "SELECT id, category, question_no,
                    question_text, option_a_text, option_a_trait,
                    option_b_text, option_b_trait
             FROM mbti_questions
-            ORDER BY category, question_no ASC";
+            ORDER BY FIELD(category, 'EI', 'SN', 'TF', 'JP'), question_no ASC, id ASC";
 
     $result = $conn->query($sql);
     if (!$result) {

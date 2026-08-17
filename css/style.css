@@ -399,6 +399,11 @@ body {
    Responsive — ปรับขนาดตามหน้าจอ
    ======================================== */
 
+/* รูปทุกรูปห้ามล้นกล่องที่ห่ออยู่ */
+img {
+  max-width: 100%;
+}
+
 /* หน้าจอเล็ก (มือถือ) ความกว้างน้อยกว่า 480px */
 @media (max-width: 480px) {
   .box {
@@ -406,5 +411,14 @@ body {
   }
   .title {
     font-size: 1.7rem;   /* ลดขนาดชื่อเว็บ */
+  }
+}
+
+/* iPhone (Safari) จะซูมหน้าจอเข้าเองเวลาแตะช่องกรอกที่ตัวอักษรเล็กกว่า 16px
+   บังคับช่องกรอกบนจอเล็กให้เป็น 16px พอดี จะได้ไม่ซูมเด้งตอนกรอกฟอร์ม
+   (!important เพราะ selector ระดับ element แพ้ class อย่าง .input-box input) */
+@media (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
   }
 }

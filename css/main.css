@@ -19,6 +19,18 @@
   --gray-light:   #f5f5f5;
   --red:          #e74c3c;   /* สีของปุ่ม/ข้อความเตือน ใช้ร่วมกันหลายหน้า */
   --transition:   0.2s ease;
+
+  /* -- ความกว้างสูงสุดของเนื้อหา --
+     มือถือ: เนื้อหากว้างเต็มจอเหมือนเดิม
+     iPad/Desktop: เนื้อหาถูกจำกัดไว้ที่ค่านี้แล้วจัดกึ่งกลาง
+     ทำให้ทุกหน้าดูเป็นคอลัมน์เดียวกันในทุกอุปกรณ์ */
+  --content-max: 640px;
+
+  /* -- ระยะขอบซ้าย-ขวาของแถบที่กว้างเต็มจอ (header ม่วง ฯลฯ) --
+     จอเล็ก: ได้ค่า 20px ตามเดิม (ค่าใน calc ติดลบ max เลยเลือก 20px)
+     จอใหญ่: ดันเนื้อหาในแถบเข้ามาให้ตรงแนวเดียวกับคอลัมน์เนื้อหา 640px
+     (14px คือ padding ข้างในคอลัมน์ .app-content) */
+  --edge-pad: max(20px, calc(50% - var(--content-max) / 2 + 14px));
 }
 
 /* ========================================
@@ -38,7 +50,15 @@ body {
   font-family: 'Kanit', sans-serif;
   background: #f0f0f5;
   min-height: 100vh;
-  padding-bottom: 85px;  /* เว้นด้านล่างเผื่อ bottom nav */
+  /* เว้นด้านล่างเผื่อ bottom nav + แถบขีดล่างของ iPhone (safe area) */
+  padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px));
+}
+
+/* รูปทุกรูปห้ามยืดเกินกล่องที่ห่อมันอยู่ — กันรูปล้นจอ/เบี้ยวบนจอเล็ก
+   (รูปที่กำหนด width/height ไว้ใน class ของตัวเองยังใช้ค่านั้นตามเดิม
+    เพราะ class ชนะ selector ระดับ element) */
+img {
+  max-width: 100%;
 }
 
 /* ========================================
@@ -51,7 +71,8 @@ body {
   display: flex;
   justify-content: space-between;  /* ชื่อซ้าย รูปขวา */
   align-items: center;
-  padding: 16px 20px;
+  /* ซ้าย-ขวาใช้ --edge-pad: จอใหญ่เนื้อหาในแถบจะตรงแนวกับคอลัมน์เนื้อหา */
+  padding: 16px var(--edge-pad);
   background: linear-gradient(135deg, #7b2ff7 0%, #4a0080 100%);
 }
 
@@ -85,7 +106,7 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 20px;
+  padding: 16px var(--edge-pad);  /* จอใหญ่: เนื้อหาตรงแนวกับคอลัมน์เนื้อหา */
   background: linear-gradient(135deg, #7b2ff7 0%, #4a0080 100%);
 }
 .back-header .back-btn {
@@ -113,6 +134,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  /* จอใหญ่: จำกัดความกว้างแล้วจัดกึ่งกลาง มือถือไม่กระทบ (กว้างไม่ถึงอยู่แล้ว) */
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
 }
 
 /* ========================================
@@ -209,6 +234,16 @@ body {
   outline-offset: 2px;
 }
 
+/* จอกว้าง (iPad/Desktop): รูป 2 รูปแบ่งความกว้างคอลัมน์คนละครึ่งพอดี
+   ไม่เหลือช่องว่างท้ายแถวเหมือนตอนใช้ความกว้างตายตัว 240px
+   (ถ้าอนาคตมีรูปมากกว่า 2 รูป ก็ยังเลื่อนซ้าย-ขวาได้ตามเดิม) */
+@media (min-width: 600px) {
+  .info-img {
+    width: calc(50% - 6px);  /* 6px = ครึ่งหนึ่งของ gap 12px */
+    height: 180px;
+  }
+}
+
 /* สไตล์ของ popup ดูรูปเต็มจอ (ตอนกดที่รูปในกล่องสไลด์) อยู่ใน css/lightbox.css
    ซึ่ง main.html โหลดต่อจากไฟล์นี้ */
 
@@ -220,13 +255,26 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 65px;
+  /* เผื่อพื้นที่ safe area ล่างของ iPhone ไม่ให้แถบขีดโฮมทับปุ่มเมนู */
+  height: calc(65px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: var(--white);
   display: flex;
   justify-content: space-around;
   align-items: center;
   box-shadow: 0 -3px 16px rgba(0,0,0,0.1);
   z-index: 100;
+  /* จอใหญ่: แถบเมนูกว้างเท่าคอลัมน์เนื้อหาและอยู่กึ่งกลาง (left+right: 0 + margin auto)
+     มือถือ: กว้างเต็มจอเหมือนเดิม */
+  max-width: var(--content-max);
+  margin: 0 auto;
+}
+
+/* จอใหญ่: ทำแถบเมนูล่างเป็นทรง dock มุมบนโค้ง ดูเป็นแอปมากขึ้น */
+@media (min-width: 700px) {
+  .bottom-nav {
+    border-radius: 18px 18px 0 0;
+  }
 }
 
 .nav-item {
@@ -279,3 +327,23 @@ body {
    ก็โหลดทั้งสองไฟล์ กลายเป็นของซ้ำสองชุด แก้ที่เดียวไม่ครบ
    ตอนนี้ย้ายไปอยู่ใน css/profile.css ที่เดียวแล้ว
    ======================================== */
+
+/* ========================================
+   Mobile Usability — กันปัญหาเฉพาะมือถือ
+   ======================================== */
+
+/* iPhone (Safari) จะซูมหน้าจอเข้าเองเวลาแตะช่องกรอกที่ตัวอักษรเล็กกว่า 16px
+   บังคับช่องกรอกทุกช่องบนจอเล็กให้เป็น 16px พอดี จะได้ไม่ซูมเด้ง
+   (ต้องใช้ !important เพราะ selector ระดับ element แพ้ class ของแต่ละหน้า) */
+@media (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* จอใหญ่: เพิ่มลมหายใจในการ์ดขาวนิดหน่อย ให้ดูไม่อัดแน่น */
+@media (min-width: 700px) {
+  .white-card {
+    padding: 20px;
+  }
+}

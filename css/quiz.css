@@ -70,6 +70,10 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  /* จอใหญ่: จำกัดความกว้างและจัดกึ่งกลาง (--content-max มาจาก main.css) */
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
 }
 
 /* Section Header */
@@ -231,6 +235,10 @@
    ======================================== */
 .quiz-submit-wrap {
   padding: 8px 14px 20px;
+  /* จำกัดความกว้างให้ตรงแนวเดียวกับ .quiz-content ด้านบน */
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
 }
 .quiz-next-btn,
 .quiz-submit-btn {

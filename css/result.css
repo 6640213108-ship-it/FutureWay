@@ -87,26 +87,11 @@
   border-radius: 16px;
   object-fit: cover;
 }
-.mbti-quote-bubble {
-  background: rgba(255,255,255,0.95);
-  color: #4a0080;
-  font-size: 0.78rem;
-  font-weight: 600;
-  line-height: 1.5;
-  padding: 12px 16px;
-  border-radius: 16px;
-  max-width: 260px;
-  margin-bottom: 10px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-}
-.mbti-quote-bubble strong { color: var(--primary); }
 
 @media (min-width: 600px) {
   .mbti-hero { flex-direction: row; justify-content: space-between; text-align: left; gap: 24px; }
   .mbti-hero-text { flex: 1; }
   .mbti-related-badge { margin-left: 0; }
-  .mbti-hero-illustration { flex-direction: row-reverse; align-items: center; gap: 16px; }
-  .mbti-quote-bubble { margin-bottom: 0; text-align: left; }
 }
 
 /* ========================================

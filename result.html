@@ -26,22 +26,45 @@
   <!-- Result (ซ่อนไว้ก่อน JS จะเปิดให้เมื่อโหลดข้อมูลเสร็จ) -->
   <div id="result-wrap" hidden>
 
-    <!-- Hero MBTI -->
-    <div class="result-hero">
-      <p class="result-hero-label">บุคลิกภาพของคุณคือ</p>
-      <div class="mbti-badge" id="mbti-display">—</div>
-      <p class="mbti-name" id="mbti-name"></p>
-      <p class="mbti-desc" id="mbti-desc"></p>
-      <p class="result-hero-sub" id="avg-grade-display"></p>
+    <!-- Hero MBTI: การ์ดข้อมูลบุคลิกภาพ พร้อมภาพประกอบและคำคม -->
+    <div class="result-hero mbti-hero">
+      <div class="mbti-hero-text">
+        <div class="mbti-badge" id="mbti-display">—</div>
+        <p class="mbti-card-title" id="mbti-title"></p>
+        <p class="mbti-card-subtitle" id="mbti-subtitle"></p>
+        <span class="mbti-related-badge" id="mbti-related-badge">
+          <i class="fas fa-graduation-cap"></i> <span id="mbti-related-text"></span>
+        </span>
+      </div>
+      <div class="mbti-hero-illustration">
+        <div class="mbti-quote-bubble" id="mbti-quote"></div>
+        <img id="mbti-illustration" alt="" width="180" height="220">
+      </div>
     </div>
 
     <div class="result-content">
 
-      <!-- Top 3 สาขา -->
-      <p class="result-section-title">🎯 สาขาที่เหมาะกับคุณ</p>
-      <div id="rank-list" class="rank-list"></div>
+      <!-- ลักษณะบุคลิกภาพ / จุดเด่น -->
+      <div class="mbti-info-grid">
+        <div class="mbti-info-box">
+          <p class="mbti-info-title"><i class="fas fa-brain"></i> ลักษณะบุคลิกภาพ</p>
+          <ul id="mbti-traits-list"></ul>
+        </div>
+        <div class="mbti-info-box highlight">
+          <p class="mbti-info-title"><i class="fas fa-star"></i> จุดเด่น</p>
+          <ul id="mbti-strengths-list"></ul>
+        </div>
+      </div>
+
+      <!-- สาขาทั้งหมดที่เหมาะกับบุคลิกภาพนี้ จัดกลุ่มตามคณะ -->
+      <div class="branch-section-head">
+        <p class="result-section-title">🩺 สาขาที่เหมาะสมกับ</p>
+        <span class="branch-total-badge" id="branch-total-badge"></span>
+      </div>
+      <div id="mbti-branch-list" class="mbti-branch-list"></div>
 
       <!-- สรุปเกรด หรือ โปรไฟล์ความสนใจ (RIASEC) แล้วแต่โหมดที่ทำแบบทดสอบ -->
+      <p class="result-hero-sub" id="avg-grade-display"></p>
       <p class="result-section-title" id="summary-title">📊 เกรดของคุณ</p>
       <div class="grade-summary" id="grade-summary"></div>
 
@@ -97,36 +120,105 @@
       div.textContent = str ?? '';
       return div.innerHTML;
     }
-    const RANK_STYLES = [
-      { cls: 'gold',   label: '🥇' },
-      { cls: 'silver', label: '🥈' },
-      { cls: 'bronze', label: '🥉' },
-    ];
-
-    // ชื่อและคำอธิบาย (สไตล์การเรียน) ครบทั้ง 16 แบบ
-    // อ้างอิงจากบทวิเคราะห์ในเอกสารต้นทาง "การใช้ MBTI" (ส่วนที่ 2: 16 บุคลิกภาพ)
+    // ข้อมูลการ์ดบุคลิกภาพครบทั้ง 16 แบบ: ชื่อเรียก, คำโปรย, คำคม, ลักษณะนิสัย, จุดเด่น
     // ใช้แสดงผลตามรหัส MBTI ที่ backend คำนวณได้จริง ไม่ได้ fix ค่าไว้
     const MBTI_INFO = {
-      // กลุ่มนักวิเคราะห์ (NT)
-      INTJ: { name: 'นักออกแบบกลยุทธ์ (INTJ)',          desc: 'ชอบการวางแผนระยะยาว มองภาพรวมเชิงระบบ เกลียดการทำงานซ้ำซากที่ไม่มีประสิทธิภาพ' },
-      INTP: { name: 'นักคิดค้นหลักการ (INTP)',           desc: 'รักความรู้เพื่อความรู้ ชอบตั้งคำถามกับสิ่งรอบตัว สนใจทฤษฎีที่ซับซ้อนมากกว่าความเป็นจริงเฉพาะหน้า' },
-      ENTJ: { name: 'ผู้บัญชาการ (ENTJ)',                desc: 'มีความเป็นผู้นำสูง มุ่งเป้าหมายที่ความสำเร็จ ชอบความท้าทายและการบริหารจัดการคนและทรัพยากร' },
-      ENTP: { name: 'นักโต้วาที / นักนวัตกรรม (ENTP)',   desc: 'เบื่อง่าย ชอบคิดนอกกรอบ สนุกกับการได้ถกเถียงและริเริ่มโปรเจกต์ใหม่ๆ ที่ท้าทาย' },
-      // กลุ่มนักการทูต (NF)
-      INFJ: { name: 'ผู้พิทักษ์อุดมการณ์ (INFJ)',        desc: 'มุ่งมั่น ลึกซึ้ง ชอบทำงานที่มีคุณค่าต่อจิตใจและสร้างความเปลี่ยนแปลงเชิงบวกให้สังคม' },
-      INFP: { name: 'ผู้ไกล่เกลี่ย / นักฝัน (INFP)',     desc: 'รักอิสระ อ่อนโยน มีจินตนาการสูง ทำงานได้ดีที่สุดเมื่อได้แสดงออกถึงตัวตนและค่านิยมภายใน' },
-      ENFJ: { name: 'ผู้สนับสนุน (ENFJ)',                desc: 'เข้าอกเข้าใจคนอื่น เก่งการสื่อสาร สร้างแรงบันดาลใจให้ผู้อื่นได้ดี และชอบบรรยากาศการเรียนที่เป็นมิตร' },
-      ENFP: { name: 'นักรณรงค์ (ENFP)',                  desc: 'พลังงานล้นเหลือ มองโลกในแง่ดี เชื่อมโยงไอเดียเก่ง ชอบความสนุกสนานและผู้คนใหม่ๆ' },
-      // กลุ่มผู้พิทักษ์ (SJ)
-      ISTJ: { name: 'นักตรวจการ (ISTJ)',                 desc: 'มีวินัยสูงมาก ชอบความจริง ความถูกต้อง และทำทุกอย่างตามขั้นตอนระเบียบแบบแผน' },
-      ISFJ: { name: 'ผู้ปกป้อง (ISFJ)',                  desc: 'ใส่ใจรายละเอียด พึ่งพาได้ เสียสละ และมีความสุขกับการได้ช่วยเหลือผู้อื่นอยู่เบื้องหลัง' },
-      ESTJ: { name: 'ผู้บริหารงาน (ESTJ)',               desc: 'ชอบความชัดเจน มีทักษะการจัดการที่ดีเยี่ยม ตรงไปตรงมา และชื่นชอบโครงสร้างองค์กรที่มั่นคง' },
-      ESFJ: { name: 'ผู้ให้คำปรึกษา (ESFJ)',             desc: 'มนุษยสัมพันธ์ดีเลิศ ชอบช่วยเหลือสังคม แคร์ความรู้สึกของกลุ่ม และชอบการทำงานบริการ' },
-      // กลุ่มนักสำรวจ (SP)
-      ISTP: { name: 'ผู้เชี่ยวชาญศิลปะการฝีมือ (ISTP)',  desc: 'รักอิสระ เรียนรู้ได้ดีที่สุดผ่านการลงมือทำ (Hands-on) และแก้ปัญหาเฉพาะหน้าเก่งมาก' },
-      ISFP: { name: 'ศิลปินผู้รักสันโดษ (ISFP)',         desc: 'อ่อนไหวต่อความงดงามรอบตัว ใช้ประสาทสัมผัสได้ดี เรียนรู้ผ่านประสบการณ์ตรง และรักความเงียบสงบ' },
-      ESTP: { name: 'ผู้ประกอบการสายลุย (ESTP)',         desc: 'กล้าเสี่ยง มีพลังงานสูง ชอบความตื่นเต้น และแก้ปัญหาเฉพาะหน้าในโลกจริงได้ยอดเยี่ยม' },
-      ESFP: { name: 'ผู้มอบความบันเทิง (ESFP)',          desc: 'รักความสนุกสนาน มีเสน่ห์ทางสังคม ดึงดูดความสนใจเก่ง และเปลี่ยนเรื่องเครียดให้เป็นเรื่องสนุกได้เสมอ' },
+      ISTJ: {
+        title: 'นักปฏิบัติผู้มีระเบียบ', subtitle: 'ละเอียด เชื่อถือได้',
+        quote: 'ความสำเร็จ เกิดจาก <strong>ความตั้งใจ</strong> <strong>ความละเอียด</strong> และการ <strong>ลงมือทำ</strong> อย่างเป็นระบบ',
+        traits: ['จริงจัง', 'ทำงานเป็นขั้นตอน', 'เชื่อถือได้', 'ให้ความสำคัญกับกฎและความถูกต้อง'],
+        strengths: ['รอบคอบ', 'รับผิดชอบ', 'มีวินัย'],
+      },
+      ISTP: {
+        title: 'ชอบลงมือแก้ปัญหา', subtitle: 'ช่างฝีมือ ถนัดเครื่องมือ',
+        quote: 'เรียนรู้จาก<strong>การลงมือทำ</strong> และเปลี่ยนปัญหาให้กลายเป็นทางออก',
+        traits: ['ชอบทดลอง', 'เรียนรู้จากประสบการณ์จริง', 'รักอิสระ', 'รับมือสถานการณ์เฉพาะหน้าได้ดี'],
+        strengths: ['ลงมือทำเก่ง', 'ไหวพริบดี', 'ปรับตัวเร็ว'],
+      },
+      ENFJ: {
+        title: 'ผู้นำเชิงบวก', subtitle: 'โน้มน้าวและพัฒนาผู้อื่น',
+        quote: 'ผู้นำที่ดี ไม่ได้เดินนำเพียงคนเดียว <strong>แต่พาคนรอบ</strong>',
+        traits: ['อบอุ่น', 'กระตือรือร้น', 'ชอบพัฒนาผู้อื่น', 'เก่งด้านการประสานคน'],
+        strengths: ['สื่อสารเก่ง', 'เข้าใจคน', 'มีภาวะผู้นำ'],
+      },
+      ENFP: {
+        title: 'นักสร้างแรงบันดาลใจ', subtitle: 'ครีเอทีฟ สื่อสารเก่ง',
+        quote: 'โลกกว้างกว่าที่เห็น และความเป็นไปได้<strong>ยังมีมากกว่าที่คิด</strong>',
+        traits: ['เปิดกว้าง ชอบไอเดียใหม่', 'สนใจผู้คน', 'มีพลัง', 'มองเห็นความเป็นไปได้หลากหลาย'],
+        strengths: ['สร้างสรรค์', 'กระตือรือร้น', 'สื่อสารเก่ง'],
+      },
+      ENTJ: {
+        title: 'ผู้นำเชิงกลยุทธ์', subtitle: 'ตัดสินใจฉับไว มุ่งเป้าหมาย',
+        quote: 'มองเป้าหมายให้ชัด ตัดสินใจให้เด็ดขาด <strong>สร้างอนาคตด้วยมือของคุณเอง</strong>',
+        traits: ['มั่นใจ', 'มุ่งเป้าหมาย', 'ชอบความท้าทาย', 'มองหาวิธีเพิ่มประสิทธิภาพของงาน'],
+        strengths: ['เป็นผู้นำ', 'วางกลยุทธ์เก่ง', 'กล้าตัดสินใจ'],
+      },
+      ENTP: {
+        title: '— นักโต้วาที', subtitle: 'ไอเดียแตกฉาน ชอบสิ่งใหม่',
+        quote: "อย่ากลัวที่จะตั้งคำถาม เพราะความคิดใหม่<br><strong>ที่เริ่มต้นจากคำว่า 'ถ้าลองล่ะ?'</strong>",
+        traits: ['ช่างสงสัย', 'ชอบแลกเปลี่ยนความคิดเห็น', 'สนุกกับความท้าทาย', 'ไม่กลัวการเปลี่ยนแปลง'],
+        strengths: ['คิดไว', 'แก้ปัญหาเก่ง', 'ชอบไอเดียใหม่'],
+      },
+      ESFJ: {
+        title: 'ผู้ประสานใจ', subtitle: 'ชอบช่วยเหลือดูแลสังคมรอบตัว',
+        quote: 'ความสำเร็จที่ดีที่สุด คือความสำเร็จที่เราเติบโต<br><strong>ไปพร้อมกับคนรอบข้าง</strong>',
+        traits: ['เป็นมิตร', 'เอาใจใส่ผู้อื่น', 'ชอบทำงานร่วมกับคน', 'ให้ความสำคัญกับความสัมพันธ์'],
+        strengths: ['เข้ากับคนง่าย', 'รับผิดชอบ', 'ประสานงานดี'],
+      },
+      ESFP: {
+        title: 'ผู้สร้างสีสัน ชอบผู้คน', subtitle: 'กิจกรรม และการแสดงออก',
+        quote: 'ใช้ชีวิตให้เต็มที่ ทำให้ช่วงเวลาธรรมดา<br><strong>กลายเป็นความทรงจำที่ดี</strong>',
+        traits: ['เป็นมิตร', 'สนุกสนาน', 'ชอบกิจกรรมและประสบการณ์ใหม่ๆ', 'ใส่ใจคนรอบข้าง'],
+        strengths: ['ร่าเริง', 'เข้ากับคนง่าย', 'สร้างบรรยากาศเก่ง'],
+      },
+      ESTJ: {
+        title: 'ผู้บริหารจัดการ', subtitle: 'เด็ดขาด ยึดระบบและผลลัพธ์',
+        quote: 'เป้าหมายที่ชัดเจน<br>ต้องมาพร้อมการ<strong>ลงมือทำ</strong>ที่จริงจัง',
+        traits: ['เป็นระบบ', 'ตรงไปตรงมา', 'ชอบจัดการงาน', 'ผลักดันทีมให้บรรลุเป้าหมาย'],
+        strengths: ['บริหารเก่ง', 'มีวินัย', 'ตัดสินใจชัดเจน'],
+      },
+      ESTP: {
+        title: 'นักลุย กล้าตัดสินใจ', subtitle: 'ชอบความท้าทายเฉพาะหน้า',
+        quote: 'โอกาสไม่ได้รอคนที่พร้อมที่สุด<br>แต่มักเกิดขึ้น<strong>กับคนที่กล้าลงมือ</strong>',
+        traits: ['กระตือรือร้น', 'ชอบความท้าทาย', 'สนุกกับการลงมือทำ', 'ปรับตัวได้ดี'],
+        strengths: ['กล้าตัดสินใจ', 'แก้ปัญหาเร็ว', 'มีไหวพริบ'],
+      },
+      INFJ: {
+        title: 'ผู้ให้คำปรึกษา', subtitle: 'มีอุดมการณ์ เข้าใจคนลึกซึ้ง',
+        quote: 'เข้าใจผู้คนมองเห็นความหมาย<br><strong>สร้างสิ่งดี ๆ</strong> ในแบบของตัวเอง',
+        traits: ['คิดลึก', 'ช่างสังเกต', 'เห็นอกเห็นใจผู้อื่น', 'มักต้องการสร้างสิ่งที่มีความหมาย'],
+        strengths: ['เข้าใจคน', 'มีวิสัยทัศน์', 'มีอุดมการณ์'],
+      },
+      INFP: {
+        title: 'นักอุดมคติ จินตนาการสูง', subtitle: 'ถ่ายทอดผ่านภาษาและศิลปะ',
+        quote: 'ความฝันของคุณมี<strong>คุณค่า</strong><br>จงใช้ความคิดสร้างสรรค์<strong>เปลี่ยนมันให้เป็นความจริง</strong>',
+        traits: ['อ่อนโยน', 'คิดลึก', 'มีโลกส่วนตัว', 'สนใจความหมายของชีวิตและต้องการทำสิ่งที่ตรงกับความเชื่อ'],
+        strengths: ['มีจินตนาการ', 'เข้าใจผู้อื่น', 'ยึดมั่นในคุณค่า'],
+      },
+      INTJ: {
+        title: 'นักวางแผนเชิงกลยุทธ์', subtitle: 'คิดเป็นระบบ มองการณ์ไกล',
+        quote: 'วางแผนให้ไกล ลงมือให้จริง<br><strong>สร้างอนาคตในแบบที่คุณมองเห็น</strong>',
+        traits: ['เป็นอิสระ', 'ชอบคิดเชิงเหตุผล', 'สนใจความรู้และการแก้ปัญหาที่ซับซ้อน'],
+        strengths: ['วิเคราะห์เก่ง', 'วางแผนเป็นระบบ', 'มองการณ์ไกล'],
+      },
+      INTP: {
+        title: 'นักคิดวิเคราะห์', subtitle: 'รักตรรกะและทฤษฎี',
+        quote: 'คำถามที่ดี<br>อาจพาคุณไปไกล<strong>กว่าคำตอบที่มีอยู่</strong>',
+        traits: ['ชอบค้นคว้า', 'ตั้งคำถาม', 'สนใจแนวคิดใหม่ ๆ', 'และต้องการเข้าใจเหตุผลเบื้องหลังสิ่งต่าง ๆ'],
+        strengths: ['วิเคราะห์เก่ง', 'ช่างสงสัย', 'คิดเป็นระบบ'],
+      },
+      ISFJ: {
+        title: 'ผู้ดูแลที่ทุ่มเท', subtitle: 'ใส่ใจรายละเอียดและผู้อื่น',
+        quote: 'ความใส่ใจเล็ก ๆ ของคุณ<br>อาจเป็นสิ่ง <strong>"สำคัญ"</strong> ที่ยิ่งใหญ่<strong>สำหรับใครบางคน</strong>',
+        traits: ['สุภาพ', 'อบอุ่น', 'ชอบช่วยเหลือผู้อื่น', 'ใส่ใจรายละเอียดและความรู้สึกของคนรอบตัว'],
+        strengths: ['รับผิดชอบ', 'ละเอียด', 'อดทน'],
+      },
+      ISFP: {
+        title: 'ศิลปิน อ่อนโยน', subtitle: 'รักอิสระ มีสุนทรียะ',
+        quote: 'จงสร้างเส้นทางของตัวเอง<br>ด้วยหัวใจที่เป็นอิสระ<br><strong>ความงามในแบบที่คุณมองเห็น</strong>',
+        traits: ['อ่อนโยน', 'รักอิสระ', 'ชอบความสวยงาม', 'มักแสดงออกผ่านผลงาน'],
+        strengths: ['สร้างสรรค์', 'ยืดหยุ่น', 'รสนิยม', 'ใส่ใจความรู้สึก'],
+      },
     };
 
     // ดึง result_id จาก URL
@@ -158,51 +250,39 @@
       }
 
       const info = MBTI_INFO[mbti];
-      document.getElementById('mbti-display').textContent = mbti;
-      document.getElementById('mbti-name').textContent    = info.name;
-      document.getElementById('mbti-desc').textContent    = info.desc;
+      document.getElementById('mbti-display').textContent  = mbti;
+      document.getElementById('mbti-title').textContent    = info.title;
+      document.getElementById('mbti-subtitle').textContent = info.subtitle;
+      document.getElementById('mbti-quote').innerHTML      = info.quote;
+
+      const illus = document.getElementById('mbti-illustration');
+      illus.src = `images/${mbti}.jpg`;
+      illus.alt = `${mbti} - ${info.title}`;
+
+      const total = data.mbti_branches_total || 0;
+      document.getElementById('mbti-related-text').textContent  = `เกี่ยวข้อง ${total} สาขา`;
+      document.getElementById('branch-total-badge').textContent = `เกี่ยวข้อง ${total} สาขา`;
+
+      // ลักษณะบุคลิกภาพ / จุดเด่น
+      document.getElementById('mbti-traits-list').innerHTML =
+        info.traits.map(t => `<li>${escapeHtml(t)}</li>`).join('');
+      document.getElementById('mbti-strengths-list').innerHTML =
+        info.strengths.map(t => `<li>${escapeHtml(t)}</li>`).join('');
 
       const isInterestMode = data.input_mode === 'interest';
       document.getElementById('avg-grade-display').textContent = isInterestMode
         ? 'วิเคราะห์จากความสนใจ/งานอดิเรก (RIASEC) แทนเกรด'
         : `เกรดเฉลี่ย ${data.avg_grade} | วิเคราะห์จาก 6 วิชาหลัก`;
 
-      // Top 3 หมวดหมู่ (คณะ) แต่ละหมวดมีหลายสาขาข้างใน — เพิ่มโอกาสเห็นตัวเลือกที่หลากหลาย
-      // แทนที่จะเห็นแค่ 3 สาขาเดี่ยวๆ ที่อาจกระจุกอยู่คณะเดียวกันหมด
-      const rankList = document.getElementById('rank-list');
-      (data.top_categories || []).forEach((cat, i) => {
-        const style  = RANK_STYLES[i] || RANK_STYLES[RANK_STYLES.length - 1];
-        const best   = cat.branches[0];
-        const card   = document.createElement('div');
-        card.className = 'rank-card category-card';
-        card.innerHTML = `
-          <div class="rank-badge ${style.cls}">${style.label}</div>
-          <div class="rank-info">
-            <p class="rank-name">${escapeHtml(cat.faculty)}</p>
-            <p class="rank-faculty">สาขาที่เข้ากันที่สุดในหมวดนี้: ${escapeHtml(best.name)}</p>
-            <div class="score-bar-wrap">
-              <div class="score-bar-bg">
-                <div class="score-bar-fill" data-score="${cat.best_score}"></div>
-              </div>
-              <p class="score-text">ความเหมาะสม ${cat.best_score}%</p>
-            </div>
-            <div class="category-branch-list">
-              ${cat.branches.map(b => `
-                <div class="category-branch-row">
-                  <span class="cb-name">${escapeHtml(b.name)}</span>
-                  <span class="cb-score">${b.score}%</span>
-                </div>`).join('')}
-            </div>
-          </div>`;
-        rankList.appendChild(card);
-      });
-
-      // animate score bar
-      setTimeout(() => {
-        document.querySelectorAll('.score-bar-fill').forEach(el => {
-          el.style.width = el.dataset.score + '%';
-        });
-      }, 300);
+      // สาขาทั้งหมดที่เข้ากับบุคลิกภาพนี้ จัดกลุ่มตามคณะ (ไม่จำกัดแค่ top 3 คณะ
+      // เหมือนก่อนหน้า — โชว์ทุกสาขาที่เกี่ยวข้องเพื่อให้เห็นตัวเลือกครบถ้วนที่สุด)
+      const branchListEl = document.getElementById('mbti-branch-list');
+      const branchesByFaculty = data.mbti_branches || {};
+      branchListEl.innerHTML = Object.keys(branchesByFaculty).map(faculty => `
+        <div class="mbti-faculty-block">
+          <p class="mbti-faculty-name">${escapeHtml(faculty)}</p>
+          <p class="mbti-faculty-branches">${branchesByFaculty[faculty].map(escapeHtml).join(', ')}</p>
+        </div>`).join('') || '<p class="no-data">ไม่พบสาขาที่เกี่ยวข้อง</p>';
 
       // Grade Summary (โหมดกรอกเกรด) หรือ RIASEC Profile Summary (โหมดไม่ทราบเกรด)
       const gradeWrap = document.getElementById('grade-summary');

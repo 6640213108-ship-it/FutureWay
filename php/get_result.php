@@ -61,6 +61,27 @@ $riasecScores = isset($result['riasec_scores']) ? json_decode($result['riasec_sc
 $mbti = $result['mbti_type'];
 
 // ========================================
+// สาขาทั้งหมดที่เข้ากับ MBTI นี้ (ไม่จำกัดแค่ top 3 คณะ) จัดกลุ่มตามคณะ
+// ใช้แสดงในหน้าผลลัพธ์แบบ "การ์ดข้อมูล MBTI" — ดึงสดจากตาราง branches ปัจจุบัน
+// เสมอ (ไม่ใช่ snapshot) เพราะเป็นข้อมูลอ้างอิงทั่วไปของ MBTI แบบนี้ ไม่ผูกกับ
+// รอบทำแบบทดสอบใดรอบหนึ่งโดยเฉพาะ
+// ========================================
+$mbtiBranchesByFaculty = [];
+$mbtiBranchesTotal     = 0;
+if ($resAll = $conn->query("SELECT name, faculty, mbti_match FROM branches WHERE is_active = 1 ORDER BY faculty, name")) {
+    while ($row = $resAll->fetch_assoc()) {
+        $match = json_decode($row['mbti_match'], true);
+        if (!is_array($match) || !in_array($mbti, $match, true)) {
+            continue;
+        }
+        $fac = $row['faculty'] ?: 'ไม่ระบุคณะ';
+        $mbtiBranchesByFaculty[$fac][] = $row['name'];
+        $mbtiBranchesTotal++;
+    }
+    $resAll->free();
+}
+
+// ========================================
 // อ่านสาขาที่แนะนำ (จัดเป็นหมวดหมู่/คณะ) จาก snapshot ที่บันทึกไว้ตอนทำแบบทดสอบรอบนั้น
 // -> ผลที่ผู้ใช้เห็นย้อนหลังตรงกับตอนทำจริงเสมอ ถึงจะแก้ข้อมูล branches ทีหลัง
 //    และไม่ต้องรัน python ซ้ำทุกครั้งที่เปิดหน้านี้
@@ -165,16 +186,18 @@ if (isset($result['avg_grade']) && $result['avg_grade'] !== null) {
 }
 
 echo json_encode([
-    'success'        => true,
-    'result_id'      => $resultId,
-    'mbti'           => $mbti,
-    'mbti_detail'    => isset($result['mbti_detail']) ? json_decode($result['mbti_detail'], true) : null,
-    'input_mode'     => $inputMode,
-    'avg_grade'      => $avgGrade,
-    'grades'         => $grades,
-    'riasec_scores'  => $riasecScores,
-    'top_categories' => $topCategories,
-    'answers'        => $answers,
-    'created_at'     => $result['created_at'],
+    'success'             => true,
+    'result_id'           => $resultId,
+    'mbti'                => $mbti,
+    'mbti_detail'         => isset($result['mbti_detail']) ? json_decode($result['mbti_detail'], true) : null,
+    'input_mode'          => $inputMode,
+    'avg_grade'           => $avgGrade,
+    'grades'              => $grades,
+    'riasec_scores'       => $riasecScores,
+    'top_categories'      => $topCategories,
+    'mbti_branches'       => $mbtiBranchesByFaculty,
+    'mbti_branches_total' => $mbtiBranchesTotal,
+    'answers'             => $answers,
+    'created_at'          => $result['created_at'],
 ], JSON_UNESCAPED_UNICODE);
 ?>

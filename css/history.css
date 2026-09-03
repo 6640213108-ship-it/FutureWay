@@ -115,75 +115,16 @@
 }
 .category-block:last-child { border-bottom: none; }
 
-.category-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-}
 .cat-faculty {
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--primary-dark);
+  margin-bottom: 3px;
 }
-.cat-best-score {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--primary);
-}
-
-.rank-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 0;
-}
-
-.rank-num {
-  flex: none;
-  width: 24px; height: 24px;
-  border-radius: 50%;
-  background: var(--primary);
-  color: var(--white);
-  font-size: 0.76rem;
-  font-weight: 600;
-  display: flex; align-items: center; justify-content: center;
-}
-.rank-num.n2 { background: #9d6bfb; }
-.rank-num.n3 { background: #c0a5fc; }
-
-.rank-body { flex: 1; min-width: 0; }
-.rank-body .rname {
-  font-size: 0.87rem;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.rank-body .rfac { font-size: 0.72rem; color: var(--gray); }
-
-.bar-bg {
-  height: 6px;
-  background: #eeeef4;
-  border-radius: 4px;
-  margin-top: 5px;
-  overflow: hidden;
-}
-.bar-fill {
-  height: 100%;
-  border-radius: 4px;
-  background: linear-gradient(90deg, #7b2ff7, #b07bff);
-  width: 0;
-  transition: width 0.7s ease;
-}
-
-.rank-score {
-  flex: none;
+.cat-branches {
   font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--primary-dark);
-  min-width: 46px;
-  text-align: right;
+  color: #444;
+  line-height: 1.5;
 }
 
 /* ---- ปุ่มดูผลเต็ม ---- */

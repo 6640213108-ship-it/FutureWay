@@ -138,19 +138,8 @@
                 <h4>หมวดหมู่ที่แนะนำ${h.top_categories.length ? ` ${categories.length} หมวด` : ''}</h4>
                 ${categories.map(cat => `
                   <div class="category-block">
-                    <div class="category-head">
-                      <span class="cat-faculty">${esc(cat.faculty) || 'ไม่ระบุคณะ'}</span>
-                      <span class="cat-best-score">${cat.best_score}%</span>
-                    </div>
-                    ${cat.branches.map((b, bi) => `
-                      <div class="rank-item">
-                        <span class="rank-num n${bi + 1}">${bi + 1}</span>
-                        <div class="rank-body">
-                          <div class="rname">${esc(b.name)}</div>
-                          <div class="bar-bg"><div class="bar-fill" data-score="${b.score}"></div></div>
-                        </div>
-                        <span class="rank-score">${b.score}%</span>
-                      </div>`).join('')}
+                    <p class="cat-faculty">${esc(cat.faculty) || 'ไม่ระบุคณะ'}</p>
+                    <p class="cat-branches">${cat.branches.map(b => esc(b.name)).join(', ')}</p>
                   </div>`).join('')}
                 ${!h.top_categories.length ? '<p class="rfac note-old">ผลรอบนี้บันทึกไว้ก่อนระบบเก็บเป็นหมวดหมู่</p>' : ''}
               ` : ''}
@@ -161,13 +150,6 @@
             </div>
           </div>`;
       }).join('');
-
-      // ให้แถบคะแนนวิ่งหลัง render เสร็จ ไม่งั้น transition ไม่ทำงาน
-      setTimeout(() => {
-        document.querySelectorAll('.bar-fill').forEach(el => {
-          el.style.width = el.dataset.score + '%';
-        });
-      }, 60);
     }
   </script>
 

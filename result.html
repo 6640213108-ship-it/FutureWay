@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="css/main.css?v=4">
-  <link rel="stylesheet" href="css/result.css?v=4">
+  <link rel="stylesheet" href="css/result.css?v=5">
 </head>
 <body>
 
@@ -58,11 +58,12 @@
       <!-- สาขาทั้งหมดที่เหมาะกับบุคลิกภาพนี้ จัดกลุ่มตามคณะ -->
       <div class="branch-section-head">
         <p class="result-section-title">
-          <img id="branch-section-icon" class="branch-section-icon" alt="">
-          สาขาที่เหมาะสมกับ
+          <i class="fas fa-briefcase"></i> สาขาที่เหมาะสมกับ
         </p>
         <span class="branch-total-badge" id="branch-total-badge"></span>
       </div>
+      <!-- ภาพโปสเตอร์ MBTI (images/XXXX.jpg) เปลี่ยนตามรหัสที่คำนวณได้ -->
+      <img id="mbti-branch-image" class="mbti-branch-image" alt="" loading="lazy" hidden>
       <div id="mbti-branch-list" class="mbti-branch-list"></div>
 
       <!-- สรุปเกรด หรือ โปรไฟล์ความสนใจ (RIASEC) แล้วแต่โหมดที่ทำแบบทดสอบ -->
@@ -244,9 +245,11 @@
       illus.src = `images/${mbti}.jpg`;
       illus.alt = `${mbti} - ${info.title}`;
 
-      const branchIcon = document.getElementById('branch-section-icon');
-      branchIcon.src = `images/${mbti}.jpg`;
-      branchIcon.alt = mbti;
+      const branchImg = document.getElementById('mbti-branch-image');
+      branchImg.hidden = false;
+      branchImg.onerror = () => { branchImg.hidden = true; };
+      branchImg.src = `images/${mbti}.jpg`;
+      branchImg.alt = `${mbti} - ${info.title} สาขาที่เหมาะสม`;
 
       const total = data.mbti_branches_total || 0;
       document.getElementById('mbti-related-text').textContent  = `เกี่ยวข้อง ${total} สาขา`;

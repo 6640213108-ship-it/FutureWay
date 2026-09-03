@@ -43,6 +43,8 @@ const ALREADY_APPLIED = [
     1022, // duplicate key (FK)
     1826, // duplicate foreign key constraint name
     1091, // can't DROP; check that it exists
+    1062, // duplicate entry (เช่น INSERT ที่มี PK/unique key ซ้ำกับแถวที่มีอยู่แล้ว)
+    1068, // multiple primary key defined (ตารางมี PRIMARY KEY อยู่แล้ว)
 ];
 
 /**

@@ -43,8 +43,11 @@ const ALREADY_APPLIED = [
     1022, // duplicate key (FK)
     1826, // duplicate foreign key constraint name
     1091, // can't DROP; check that it exists
-    1062, // duplicate entry (เช่น INSERT ที่มี PK/unique key ซ้ำกับแถวที่มีอยู่แล้ว)
-    1068, // multiple primary key defined (ตารางมี PRIMARY KEY อยู่แล้ว)
+    1068, // multiple primary key defined (ตารางมี PRIMARY KEY อยู่แล้ว — เป็นไปได้แค่แบบเดียวเสมอ)
+    // ไม่ใส่ 1062 (duplicate entry) ไว้ที่นี่ — ความหมายกำกวมเกินไป: INSERT ที่ชน
+    // PK เดิมตรงๆ ปลอดภัยที่จะข้าม แต่ ALTER ... ADD UNIQUE KEY ที่ชน 1062 แปลว่า
+    // "ข้อมูลที่มีอยู่จริงละเมิดกฎที่กำลังจะเพิ่ม" ซึ่งเป็นปัญหาจริงที่ต้องเห็น
+    // ไม่ควรถูกกลืนเงียบๆ (ดู sql/010_dedupe_branches.sql)
 ];
 
 /**

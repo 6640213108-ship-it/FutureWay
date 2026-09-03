@@ -31,23 +31,42 @@ try {
     }
 
     // รับ JSON จาก quiz.html
+    // โหมดกรอกเกรด: ต้องมี 'grades' (dict 6 วิชา)
+    // โหมดไม่ทราบเกรด: ต้องมี 'interests' แทน (list ของ riasec_questions.id ที่เลือก)
     $input = json_decode(file_get_contents('php://input'), true);
-    if (!$input || !isset($input['grades']) || !isset($input['answers']) || !is_array($input['answers'])) {
+    if (!$input || !isset($input['answers']) || !is_array($input['answers'])) {
         echo json_encode(['success' => false, 'error' => 'ข้อมูลไม่ครบ']);
         exit;
     }
 
-    $grades  = $input['grades'];
-    $answers = $input['answers'];
+    $answers   = $input['answers'];
+    $grades    = null;
+    $interests = null;
 
-    // ตรวจสอบว่ามี key ของเกรดครบ และมีคำตอบอย่างน้อย 1 ข้อ
-    $requiredSubjects = ['math', 'sci', 'eng', 'thai', 'social', 'art'];
-    foreach ($requiredSubjects as $subj) {
-        if (!isset($grades[$subj])) {
-            echo json_encode(['success' => false, 'error' => "ขาดเกรดวิชา: $subj"]);
+    if (isset($input['grades']) && is_array($input['grades'])) {
+        $grades = $input['grades'];
+        $inputMode = 'grade';
+
+        $requiredSubjects = ['math', 'sci', 'eng', 'thai', 'social', 'art'];
+        foreach ($requiredSubjects as $subj) {
+            if (!isset($grades[$subj])) {
+                echo json_encode(['success' => false, 'error' => "ขาดเกรดวิชา: $subj"]);
+                exit;
+            }
+        }
+    } elseif (isset($input['interests']) && is_array($input['interests'])) {
+        $interests = $input['interests'];
+        $inputMode = 'interest';
+
+        if (count($interests) === 0) {
+            echo json_encode(['success' => false, 'error' => 'กรุณาเลือกความชอบ/งานอดิเรกอย่างน้อย 1 ข้อ']);
             exit;
         }
+    } else {
+        echo json_encode(['success' => false, 'error' => 'ข้อมูลไม่ครบ (ต้องมี grades หรือ interests)']);
+        exit;
     }
+
     if (count($answers) === 0) {
         echo json_encode(['success' => false, 'error' => 'ไม่พบคำตอบแบบทดสอบ']);
         exit;
@@ -90,10 +109,10 @@ try {
     // Step 1: เรียก Python Decision Tree ก่อน
     // (mbti ยังไม่รู้ค่า จนกว่า python จะคำนวณจาก answers ให้)
     // ========================================
-    $pythonInput = json_encode([
-        'grades'  => $grades,
-        'answers' => $answers
-    ]);
+    $pythonInput = json_encode($inputMode === 'grade'
+        ? ['grades' => $grades, 'answers' => $answers]
+        : ['interests' => $interests, 'answers' => $answers]
+    );
 
     require_once __DIR__ . '/python_config.php';
     $pythonPath = getPythonPath();
@@ -182,7 +201,19 @@ try {
     $mbtiDetail   = isset($pyResult['mbti_detail'])
         ? json_encode($pyResult['mbti_detail'], JSON_UNESCAPED_UNICODE)
         : null;
+    // โหมดไม่ทราบเกรด: บันทึกโปรไฟล์ RIASEC ที่คำนวณได้ไว้ด้วย (แสดงผลย้อนหลังได้)
+    $riasecScores = isset($pyResult['riasec_detail']['scores'])
+        ? json_encode($pyResult['riasec_detail']['scores'], JSON_UNESCAPED_UNICODE)
+        : null;
     $answersTotal = count($answers);
+
+    // โหมดไม่ทราบเกรด: ไม่มีค่าเกรดเลย ส่ง NULL เข้า DB (คอลัมน์ grade_* เป็น nullable แล้ว)
+    $gMath   = $grades['math']   ?? null;
+    $gSci    = $grades['sci']    ?? null;
+    $gEng    = $grades['eng']    ?? null;
+    $gThai   = $grades['thai']   ?? null;
+    $gSocial = $grades['social'] ?? null;
+    $gArt    = $grades['art']    ?? null;
 
     // เก็บทั้ง 3 ตารางให้เป็นก้อนเดียวกัน ถ้าพังกลางทางต้องไม่เหลือแถวค้าง
     $conn->begin_transaction();
@@ -190,28 +221,28 @@ try {
     try {
         $stmt = $conn->prepare("
             INSERT INTO quiz_results
-                (user_id, grade_math, grade_sci, grade_eng, grade_thai, grade_social, grade_art,
+                (user_id, input_mode, grade_math, grade_sci, grade_eng, grade_thai, grade_social, grade_art,
                  avg_grade,
                  mbti_type, mbti_e_i, mbti_s_n, mbti_t_f, mbti_j_p,
-                 mbti_detail, answers_total,
+                 mbti_detail, riasec_scores, answers_total,
                  branch_id, branch_name, score)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         if (!$stmt) {
             throw new Exception('Prepare (INSERT quiz_results) ล้มเหลว: ' . $conn->error);
         }
 
-        // i=user_id, d×7=เกรด6วิชา+avg, s×6=mbti_type+4มิติ+mbti_detail,
-        // i=answers_total, i=branch_id, s=branch_name, d=score  (รวม 18 ค่า)
+        // i=user_id, s=input_mode, d×7=เกรด6วิชา+avg (NULL ได้ในโหมด interest),
+        // s×7=mbti_type+4มิติ+mbti_detail+riasec_scores,
+        // i=answers_total, i=branch_id, s=branch_name, d=score  (รวม 20 ค่า)
         $stmt->bind_param(
-            'idddddddssssssiisd',
-            $userId,
-            $grades['math'], $grades['sci'], $grades['eng'],
-            $grades['thai'], $grades['social'], $grades['art'],
+            'isdddddddsssssssiisd',
+            $userId, $inputMode,
+            $gMath, $gSci, $gEng, $gThai, $gSocial, $gArt,
             $avgGrade,
             $mbti,
             $mbtiEI, $mbtiSN, $mbtiTF, $mbtiJP,
-            $mbtiDetail, $answersTotal,
+            $mbtiDetail, $riasecScores, $answersTotal,
             $branchId, $branchName, $score
         );
 

@@ -21,7 +21,7 @@
   <div class="step-bar">
     <div class="step active" id="step1">
       <div class="step-circle">1</div>
-      <span class="step-label">กรอกเกรด</span>
+      <span class="step-label" id="step1-label">กรอกเกรด</span>
     </div>
     <div class="step-line" id="line1"></div>
     <div class="step" id="step2">
@@ -30,64 +30,93 @@
     </div>
   </div>
 
-  <!-- ===== SECTION 1: กรอกเกรด ===== -->
+  <!-- ===== SECTION 1: กรอกเกรด / ความชอบ-งานอดิเรก ===== -->
   <div id="section-grade">
     <div class="quiz-content">
-      <p class="quiz-section-title">📝 กรอกเกรดวิชาของคุณ</p>
 
-      <div class="grade-card">
-
-        <div class="grade-row">
-          <div class="grade-subject">
-            <div class="subject-icon math"><i class="fas fa-square-root-alt"></i></div>
-            <span class="subject-name">คณิตศาสตร์</span>
-          </div>
-          <input class="grade-input" type="number" id="g-math" min="0" max="4" step="0.01" placeholder="0.00">
-        </div>
-
-        <div class="grade-row">
-          <div class="grade-subject">
-            <div class="subject-icon sci"><i class="fas fa-flask"></i></div>
-            <span class="subject-name">วิทยาศาสตร์</span>
-          </div>
-          <input class="grade-input" type="number" id="g-sci" min="0" max="4" step="0.01" placeholder="0.00">
-        </div>
-
-        <div class="grade-row">
-          <div class="grade-subject">
-            <div class="subject-icon eng"><i class="fas fa-language"></i></div>
-            <span class="subject-name">ภาษาอังกฤษ</span>
-          </div>
-          <input class="grade-input" type="number" id="g-eng" min="0" max="4" step="0.01" placeholder="0.00">
-        </div>
-
-        <div class="grade-row">
-          <div class="grade-subject">
-            <div class="subject-icon thai"><i class="fas fa-book"></i></div>
-            <span class="subject-name">ภาษาไทย</span>
-          </div>
-          <input class="grade-input" type="number" id="g-thai" min="0" max="4" step="0.01" placeholder="0.00">
-        </div>
-
-        <div class="grade-row">
-          <div class="grade-subject">
-            <div class="subject-icon social"><i class="fas fa-globe-asia"></i></div>
-            <span class="subject-name">สังคมศึกษา</span>
-          </div>
-          <input class="grade-input" type="number" id="g-social" min="0" max="4" step="0.01" placeholder="0.00">
-        </div>
-
-        <div class="grade-row">
-          <div class="grade-subject">
-            <div class="subject-icon art"><i class="fas fa-paint-brush"></i></div>
-            <span class="subject-name">ศิลปะ</span>
-          </div>
-          <input class="grade-input" type="number" id="g-art" min="0" max="4" step="0.01" placeholder="0.00">
-        </div>
-
+      <!-- สลับโหมด: กรอกเกรด (ปกติ) หรือไม่ทราบเกรด ให้เลือกความชอบ/งานอดิเรกแทน -->
+      <div class="mode-toggle">
+        <button type="button" class="mode-btn active" id="mode-grade-btn" onclick="setInputMode('grade')">
+          📝 กรอกเกรด
+        </button>
+        <button type="button" class="mode-btn" id="mode-interest-btn" onclick="setInputMode('interest')">
+          💡 ไม่ทราบเกรด? เลือกความชอบแทน
+        </button>
       </div>
 
-      <p class="error-msg" id="grade-error">⚠️ กรุณากรอกเกรดให้ครบทุกวิชา (0.00 - 4.00)</p>
+      <!-- ---- โหมดกรอกเกรด ---- -->
+      <div id="grade-mode-wrap">
+        <p class="quiz-section-title">📝 กรอกเกรดวิชาของคุณ</p>
+
+        <div class="grade-card">
+
+          <div class="grade-row">
+            <div class="grade-subject">
+              <div class="subject-icon math"><i class="fas fa-square-root-alt"></i></div>
+              <span class="subject-name">คณิตศาสตร์</span>
+            </div>
+            <input class="grade-input" type="number" id="g-math" min="0" max="4" step="0.01" placeholder="0.00">
+          </div>
+
+          <div class="grade-row">
+            <div class="grade-subject">
+              <div class="subject-icon sci"><i class="fas fa-flask"></i></div>
+              <span class="subject-name">วิทยาศาสตร์</span>
+            </div>
+            <input class="grade-input" type="number" id="g-sci" min="0" max="4" step="0.01" placeholder="0.00">
+          </div>
+
+          <div class="grade-row">
+            <div class="grade-subject">
+              <div class="subject-icon eng"><i class="fas fa-language"></i></div>
+              <span class="subject-name">ภาษาอังกฤษ</span>
+            </div>
+            <input class="grade-input" type="number" id="g-eng" min="0" max="4" step="0.01" placeholder="0.00">
+          </div>
+
+          <div class="grade-row">
+            <div class="grade-subject">
+              <div class="subject-icon thai"><i class="fas fa-book"></i></div>
+              <span class="subject-name">ภาษาไทย</span>
+            </div>
+            <input class="grade-input" type="number" id="g-thai" min="0" max="4" step="0.01" placeholder="0.00">
+          </div>
+
+          <div class="grade-row">
+            <div class="grade-subject">
+              <div class="subject-icon social"><i class="fas fa-globe-asia"></i></div>
+              <span class="subject-name">สังคมศึกษา</span>
+            </div>
+            <input class="grade-input" type="number" id="g-social" min="0" max="4" step="0.01" placeholder="0.00">
+          </div>
+
+          <div class="grade-row">
+            <div class="grade-subject">
+              <div class="subject-icon art"><i class="fas fa-paint-brush"></i></div>
+              <span class="subject-name">ศิลปะ</span>
+            </div>
+            <input class="grade-input" type="number" id="g-art" min="0" max="4" step="0.01" placeholder="0.00">
+          </div>
+
+        </div>
+
+        <p class="error-msg" id="grade-error">⚠️ กรุณากรอกเกรดให้ครบทุกวิชา (0.00 - 4.00)</p>
+      </div>
+
+      <!-- ---- โหมดความชอบ/งานอดิเรก (RIASEC) ---- -->
+      <div id="interest-mode-wrap" hidden>
+        <p class="quiz-section-title">💡 เลือกสิ่งที่ใช่ตัวคุณ (เลือกได้หลายข้อ)</p>
+        <p class="interest-hint">
+          ไม่ต้องรู้เกรดก็ได้ — ระบบจะวิเคราะห์จากความสนใจ/งานอดิเรกของคุณแทน
+          โดยอิงทฤษฎี RIASEC (Holland Code) ซึ่งเป็นแนวคิดด้านจิตวิทยาอาชีพที่ใช้กันแพร่หลายทั่วโลก
+        </p>
+
+        <div id="interest-questions-container">
+          <p class="quiz-loading">กำลังโหลดคำถาม...</p>
+        </div>
+
+        <p class="error-msg" id="interest-error">⚠️ กรุณาเลือกอย่างน้อย 1 ข้อ</p>
+      </div>
     </div>
 
     <div class="quiz-submit-wrap">
@@ -140,11 +169,102 @@
     let totalQuestions = 0;  // จะถูกตั้งค่าหลังโหลดคำถามจาก DB สำเร็จ
     let questionIds = [];    // เก็บ id จริงของคำถามในตาราง questions เรียงตามลำดับที่แสดง (index 0 = ข้อ 1)
 
+    // โหมดของ step 1: 'grade' (ปกติ) หรือ 'interest' (ไม่ทราบเกรด เลือกความชอบแทน)
+    let inputMode = 'grade';
+    let interestQuestionsLoaded = false;
+    const selectedInterests = new Set();  // เก็บ id ของ riasec_questions ที่ผู้ใช้เลือก
+
     // กัน HTML injection จากข้อความที่มาจาก DB
     function escapeHtml(str) {
       const div = document.createElement('div');
       div.textContent = str ?? '';
       return div.innerHTML;
+    }
+
+    // สลับโหมด step 1 ระหว่างกรอกเกรด กับเลือกความชอบ/งานอดิเรก
+    function setInputMode(mode) {
+      inputMode = mode;
+
+      document.getElementById('mode-grade-btn').classList.toggle('active', mode === 'grade');
+      document.getElementById('mode-interest-btn').classList.toggle('active', mode === 'interest');
+      document.getElementById('grade-mode-wrap').hidden    = mode !== 'grade';
+      document.getElementById('interest-mode-wrap').hidden = mode !== 'interest';
+      document.getElementById('step1-label').textContent   = mode === 'grade' ? 'กรอกเกรด' : 'ความชอบ';
+
+      document.getElementById('grade-error').classList.remove('show');
+      document.getElementById('interest-error').classList.remove('show');
+
+      if (mode === 'interest' && !interestQuestionsLoaded) {
+        loadInterestQuestions();
+      }
+    }
+
+    // ดึงคำถามความสนใจ/งานอดิเรก (RIASEC) จาก DB มา render เป็น chip ให้ติ๊กเลือกได้หลายข้อ
+    async function loadInterestQuestions() {
+      const container = document.getElementById('interest-questions-container');
+
+      try {
+        const res = await fetch('php/get_riasec_questions.php', { credentials: 'include' });
+        const data = await res.json();
+
+        if (!data.success || !data.questions || data.questions.length === 0) {
+          container.innerHTML = '<p class="error-msg show">⚠️ ' + escapeHtml(data.error || 'ไม่สามารถโหลดคำถามได้') + '</p>';
+          return;
+        }
+
+        const dimensionTitles = {
+          R: 'Realistic — ลงมือทำ/เชิงช่าง',
+          I: 'Investigative — คิดวิเคราะห์/ค้นคว้า',
+          A: 'Artistic — ความคิดสร้างสรรค์',
+          S: 'Social — ช่วยเหลือ/เข้าสังคม',
+          E: 'Enterprising — นำ/โน้มน้าว',
+          C: 'Conventional — ระเบียบ/จัดการข้อมูล',
+        };
+
+        // จัดกลุ่มคำถามตามมิติ (R/I/A/S/E/C) ก่อน แล้วค่อย render ทีละกลุ่ม
+        const groups = {};
+        data.questions.forEach((q) => {
+          (groups[q.letter] ??= []).push(q);
+        });
+
+        let html = '';
+        Object.keys(groups).forEach((letter) => {
+          html += `
+            <div class="dimension-label">
+              <span class="dimension-badge">${escapeHtml(letter)}</span>
+              <span class="dimension-title">${escapeHtml(dimensionTitles[letter] || letter)}</span>
+            </div>
+            <div class="interest-grid">`;
+
+          groups[letter].forEach((q) => {
+            html += `
+              <div class="interest-chip" data-id="${q.id}" onclick="toggleInterest(this)">
+                <div class="chip-check"><i class="fas fa-check"></i></div>
+                <span class="chip-text">${escapeHtml(q.text)}</span>
+              </div>`;
+          });
+
+          html += `</div>`;
+        });
+
+        container.innerHTML = html;
+        interestQuestionsLoaded = true;
+
+      } catch (err) {
+        container.innerHTML = '<p class="error-msg show">⚠️ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้: ' + escapeHtml(err.message) + '</p>';
+      }
+    }
+
+    // ติ๊ก/ยกเลิกความชอบข้อหนึ่ง (เลือกได้หลายข้อพร้อมกัน ไม่เหมือน MBTI ที่เป็น A/B)
+    function toggleInterest(chip) {
+      const id = Number(chip.dataset.id);
+      if (selectedInterests.has(id)) {
+        selectedInterests.delete(id);
+        chip.classList.remove('selected');
+      } else {
+        selectedInterests.add(id);
+        chip.classList.add('selected');
+      }
     }
 
     // ดึงคำถามจาก DB มา render แทนคำถาม hardcode เดิม
@@ -236,26 +356,36 @@
 
     // ไปหน้า MBTI
     function goToMBTI() {
-      const subjects = ['g-math','g-sci','g-eng','g-thai','g-social','g-art'];
       let valid = true;
 
-      subjects.forEach(id => {
-        const el = document.getElementById(id);
-        const val = parseFloat(el.value);
-        if (el.value === '' || isNaN(val) || val < 0 || val > 4) {
-          el.classList.add('error');
-          valid = false;
-        } else {
-          el.classList.remove('error');
-        }
-      });
+      if (inputMode === 'grade') {
+        const subjects = ['g-math','g-sci','g-eng','g-thai','g-social','g-art'];
 
-      if (!valid) {
-        document.getElementById('grade-error').classList.add('show');
-        return;
+        subjects.forEach(id => {
+          const el = document.getElementById(id);
+          const val = parseFloat(el.value);
+          if (el.value === '' || isNaN(val) || val < 0 || val > 4) {
+            el.classList.add('error');
+            valid = false;
+          } else {
+            el.classList.remove('error');
+          }
+        });
+
+        if (!valid) {
+          document.getElementById('grade-error').classList.add('show');
+          return;
+        }
+        document.getElementById('grade-error').classList.remove('show');
+
+      } else {
+        if (selectedInterests.size === 0) {
+          document.getElementById('interest-error').classList.add('show');
+          return;
+        }
+        document.getElementById('interest-error').classList.remove('show');
       }
 
-      document.getElementById('grade-error').classList.remove('show');
       document.getElementById('section-grade').hidden = true;
       document.getElementById('section-mbti').hidden  = false;
 
@@ -310,15 +440,6 @@
       document.getElementById('mbti-error').classList.remove('show');
       document.querySelectorAll('.mbti-card').forEach(c => c.style.border = '');
 
-      const grades = {
-        math:   parseFloat(document.getElementById('g-math').value),
-        sci:    parseFloat(document.getElementById('g-sci').value),
-        eng:    parseFloat(document.getElementById('g-eng').value),
-        thai:   parseFloat(document.getElementById('g-thai').value),
-        social: parseFloat(document.getElementById('g-social').value),
-        art:    parseFloat(document.getElementById('g-art').value),
-      };
-
       // ส่งคำตอบดิบ (question_id + selected 'A'/'B') ไปให้ backend คำนวณ MBTI เอง
       // แทนที่จะคำนวณเสร็จแล้วส่งแค่ผลลัพธ์ — กันผู้ใช้แก้ค่าจาก dev console
       // และให้ตรงกับ logic การนับคะแนนที่ decision_tree.py ใช้อยู่จุดเดียว
@@ -330,7 +451,26 @@
         });
       }
 
-      sessionStorage.setItem('grades', JSON.stringify(grades));
+      // โหมดกรอกเกรด: ส่ง grades | โหมดไม่ทราบเกรด: ส่ง interests (id ที่ติ๊กไว้) แทน
+      let payload;
+      if (inputMode === 'grade') {
+        const grades = {
+          math:   parseFloat(document.getElementById('g-math').value),
+          sci:    parseFloat(document.getElementById('g-sci').value),
+          eng:    parseFloat(document.getElementById('g-eng').value),
+          thai:   parseFloat(document.getElementById('g-thai').value),
+          social: parseFloat(document.getElementById('g-social').value),
+          art:    parseFloat(document.getElementById('g-art').value),
+        };
+        sessionStorage.setItem('grades', JSON.stringify(grades));
+        sessionStorage.removeItem('interests');
+        payload = { grades, answers: answersPayload };
+      } else {
+        const interests = Array.from(selectedInterests);
+        sessionStorage.setItem('interests', JSON.stringify(interests));
+        sessionStorage.removeItem('grades');
+        payload = { interests, answers: answersPayload };
+      }
 
       const btn = document.querySelector('.quiz-submit-btn');
       btn.disabled = true;
@@ -340,7 +480,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ grades, answers: answersPayload })
+        body: JSON.stringify(payload)
       })
       .then(r => r.json())
       .then(data => {

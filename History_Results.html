@@ -124,7 +124,9 @@
                   <div class="cap">${esc(MBTI_NAME[h.mbti_type] || 'บุคลิกภาพ')}</div>
                 </div>
                 <div class="summary-text">
-                  เกรดเฉลี่ยที่กรอก <strong>${Number(h.avg_grade).toFixed(2)}</strong><br>
+                  ${h.input_mode === 'interest'
+                    ? 'วิเคราะห์จาก <strong>ความสนใจ/งานอดิเรก</strong> (ไม่ได้กรอกเกรด)'
+                    : `เกรดเฉลี่ยที่กรอก <strong>${Number(h.avg_grade).toFixed(2)}</strong>`}<br>
                   ${ranks.length
                     ? `สาขาที่เหมาะที่สุดคือ <strong>${esc(ranks[0].name)}</strong>`
                     : '<span class="no-data">ไม่มีข้อมูลสาขาที่แนะนำ</span>'}

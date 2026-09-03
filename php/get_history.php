@@ -39,7 +39,7 @@ if ($stmtT) {
 }
 
 $stmt = $conn->prepare("
-    SELECT qr.id, qr.mbti_type, qr.avg_grade, qr.created_at,
+    SELECT qr.id, qr.input_mode, qr.mbti_type, qr.avg_grade, qr.created_at,
            qr.grade_math, qr.grade_sci, qr.grade_eng,
            qr.grade_thai, qr.grade_social, qr.grade_art,
            qr.branch_id, qr.branch_name, qr.score,
@@ -61,25 +61,32 @@ $result = $stmt->get_result();
 $history = [];
 $ids     = [];
 while ($row = $result->fetch_assoc()) {
-    $grades = [
-        'math'   => (float)$row['grade_math'],
-        'sci'    => (float)$row['grade_sci'],
-        'eng'    => (float)$row['grade_eng'],
-        'thai'   => (float)$row['grade_thai'],
-        'social' => (float)$row['grade_social'],
-        'art'    => (float)$row['grade_art'],
-    ];
+    $inputMode = $row['input_mode'] ?? 'grade';
 
-    // แถวเก่าก่อน migration 002 ยังไม่มี avg_grade -> คำนวณให้ตอนแสดงผล
-    $avg = $row['avg_grade'] !== null
-        ? (float)$row['avg_grade']
-        : round(array_sum($grades) / count($grades), 2);
+    // โหมด interest ไม่มีเกรดเลย (grade_* เป็น NULL ทั้งชุด) -> grades/avg เป็น null
+    $grades = null;
+    $avg    = null;
+    if ($inputMode !== 'interest' && $row['grade_math'] !== null) {
+        $grades = [
+            'math'   => (float)$row['grade_math'],
+            'sci'    => (float)$row['grade_sci'],
+            'eng'    => (float)$row['grade_eng'],
+            'thai'   => (float)$row['grade_thai'],
+            'social' => (float)$row['grade_social'],
+            'art'    => (float)$row['grade_art'],
+        ];
+        // แถวเก่าก่อน migration 002 ยังไม่มี avg_grade -> คำนวณให้ตอนแสดงผล
+        $avg = $row['avg_grade'] !== null
+            ? (float)$row['avg_grade']
+            : round(array_sum($grades) / count($grades), 2);
+    }
 
     $id    = (int)$row['id'];
     $ids[] = $id;
 
     $history[] = [
         'id'          => $id,
+        'input_mode'  => $inputMode,
         'mbti_type'   => $row['mbti_type'],
         'avg_grade'   => $avg,
         'grades'      => $grades,

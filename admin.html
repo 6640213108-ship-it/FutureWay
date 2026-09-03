@@ -232,14 +232,18 @@
                 : '<p class="muted note-old">ผลลัพธ์รอบนี้บันทึกไว้ก่อนระบบเก็บครบ 3 อันดับ</p>'}
               </div>
               <div class="detail-block">
-                <h4>เกรดที่กรอก</h4>
+                <h4>${r.grades ? 'เกรดที่กรอก' : 'โปรไฟล์ความสนใจ (RIASEC)'}</h4>
                 <div class="grade-chips">
-                  <span>คณิต: ${Number(r.grades.math).toFixed(2)}</span>
-                  <span>วิทย์: ${Number(r.grades.sci).toFixed(2)}</span>
-                  <span>อังกฤษ: ${Number(r.grades.eng).toFixed(2)}</span>
-                  <span>ไทย: ${Number(r.grades.thai).toFixed(2)}</span>
-                  <span>สังคม: ${Number(r.grades.social).toFixed(2)}</span>
-                  <span>ศิลปะ: ${Number(r.grades.art).toFixed(2)}</span>
+                  ${r.grades ? `
+                    <span>คณิต: ${Number(r.grades.math).toFixed(2)}</span>
+                    <span>วิทย์: ${Number(r.grades.sci).toFixed(2)}</span>
+                    <span>อังกฤษ: ${Number(r.grades.eng).toFixed(2)}</span>
+                    <span>ไทย: ${Number(r.grades.thai).toFixed(2)}</span>
+                    <span>สังคม: ${Number(r.grades.social).toFixed(2)}</span>
+                    <span>ศิลปะ: ${Number(r.grades.art).toFixed(2)}</span>
+                  ` : r.riasec_scores ? Object.entries(r.riasec_scores).map(([letter, val]) =>
+                    `<span>${esc(letter)}: ${Math.round(val * 100)}%</span>`
+                  ).join('') : '<span class="muted">ไม่มีข้อมูล</span>'}
                 </div>
               </div>
             </div>

@@ -44,14 +44,20 @@ if (!$result) {
     exit;
 }
 
-$grades = [
-    'math'   => $result['grade_math'],
-    'sci'    => $result['grade_sci'],
-    'eng'    => $result['grade_eng'],
-    'thai'   => $result['grade_thai'],
-    'social' => $result['grade_social'],
-    'art'    => $result['grade_art'],
-];
+// โหมดไม่ทราบเกรด (input_mode = 'interest'): grade_* เป็น NULL ทั้งชุด ไม่ต้องสร้าง $grades
+$inputMode = $result['input_mode'] ?? 'grade';
+$grades    = null;
+if ($inputMode !== 'interest' && $result['grade_math'] !== null) {
+    $grades = [
+        'math'   => $result['grade_math'],
+        'sci'    => $result['grade_sci'],
+        'eng'    => $result['grade_eng'],
+        'thai'   => $result['grade_thai'],
+        'social' => $result['grade_social'],
+        'art'    => $result['grade_art'],
+    ];
+}
+$riasecScores = isset($result['riasec_scores']) ? json_decode($result['riasec_scores'], true) : null;
 $mbti = $result['mbti_type'];
 
 // ========================================
@@ -137,19 +143,26 @@ if ($stmtA) {
 $conn->close();
 
 // avg_grade ใช้ค่าที่บันทึกไว้ก่อน ถ้าเป็นแถวเก่าที่ยังไม่มีค่อยคำนวณเอง
-$avgGrade = isset($result['avg_grade']) && $result['avg_grade'] !== null
-    ? (float)$result['avg_grade']
-    : round(array_sum($grades) / count($grades), 2);
+// (โหมด interest ไม่มีเกรดเลย -> ไม่มี avg_grade ให้คำนวณ เป็น null เสมอ)
+if (isset($result['avg_grade']) && $result['avg_grade'] !== null) {
+    $avgGrade = (float)$result['avg_grade'];
+} elseif ($grades !== null) {
+    $avgGrade = round(array_sum($grades) / count($grades), 2);
+} else {
+    $avgGrade = null;
+}
 
 echo json_encode([
-    'success'     => true,
-    'result_id'   => $resultId,
-    'mbti'        => $mbti,
-    'mbti_detail' => isset($result['mbti_detail']) ? json_decode($result['mbti_detail'], true) : null,
-    'avg_grade'   => $avgGrade,
-    'grades'      => $grades,
-    'top3'        => $top3,
-    'answers'     => $answers,
-    'created_at'  => $result['created_at'],
+    'success'       => true,
+    'result_id'     => $resultId,
+    'mbti'          => $mbti,
+    'mbti_detail'   => isset($result['mbti_detail']) ? json_decode($result['mbti_detail'], true) : null,
+    'input_mode'    => $inputMode,
+    'avg_grade'     => $avgGrade,
+    'grades'        => $grades,
+    'riasec_scores' => $riasecScores,
+    'top3'          => $top3,
+    'answers'       => $answers,
+    'created_at'    => $result['created_at'],
 ], JSON_UNESCAPED_UNICODE);
 ?>

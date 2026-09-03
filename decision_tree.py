@@ -141,6 +141,63 @@ def resolve_mbti_from_answers(answers):
 
 
 # ========================================
+# RIASEC (Holland Code) — โหมด "ไม่ทราบเกรด" ใช้ความสนใจ/งานอดิเรกแทน
+# ========================================
+RIASEC_LETTERS = ['R', 'I', 'A', 'S', 'E', 'C']
+
+
+def get_riasec_questions():
+    """ดึงคำถามความสนใจ/งานอดิเรกทั้งหมดจากตาราง riasec_questions"""
+    conn   = mysql.connector.connect(**DB_CONFIG)
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM riasec_questions ORDER BY letter, question_no")
+    questions = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return questions
+
+
+def resolve_riasec_from_selection(selected_ids):
+    """
+    รับ id ของข้อที่ผู้ใช้ติ๊กว่า "ใช่/ชอบ" แล้วคำนวณโปรไฟล์ RIASEC
+
+    selected_ids: list ของ id ในตาราง riasec_questions ที่ผู้ใช้เลือก
+
+    คืนค่า: {
+        'scores':  {'R': 0.83, 'I': 0.17, ...}  # สัดส่วนที่เลือกในแต่ละมิติ 0-1
+        'matched': จำนวน id ที่ตรงกับคำถามในฐานข้อมูลจริง
+        'total_questions': จำนวนคำถามทั้งหมด
+    }
+    """
+    questions = get_riasec_questions()
+
+    selected_set = {str(i).strip() for i in selected_ids}
+
+    total_per_letter    = {L: 0 for L in RIASEC_LETTERS}
+    selected_per_letter = {L: 0 for L in RIASEC_LETTERS}
+    matched = 0
+
+    for q in questions:
+        letter = str(q.get('letter') or '').strip().upper()
+        if letter not in total_per_letter:
+            continue
+        total_per_letter[letter] += 1
+        if str(q['id']) in selected_set:
+            selected_per_letter[letter] += 1
+            matched += 1
+
+    scores = {}
+    for L in RIASEC_LETTERS:
+        scores[L] = (selected_per_letter[L] / total_per_letter[L]) if total_per_letter[L] > 0 else 0.0
+
+    return {
+        'scores':          scores,
+        'matched':         matched,
+        'total_questions': len(questions),
+    }
+
+
+# ========================================
 # Decision Tree Logic
 # ========================================
 # ----------------------------------------
@@ -151,84 +208,108 @@ def resolve_mbti_from_answers(answers):
 # ส่วนเกรดใช้เลขชี้กำลัง (GRADE_CURVE) ถ่างคะแนนให้ต่างกันชัดขึ้น
 # ผลคือ % อันดับ 1-2-3 ห่างกันอย่างมีความหมาย ไม่ใช่ 98.3/98.3/98.2
 # ----------------------------------------
-MBTI_POSITION_SCORES = [60, 56, 52, 48, 44]  # คะแนนตามลำดับใน mbti_match
-MBTI_PARTIAL_MAX     = 40   # ไม่อยู่ในลิสต์: (ตัวอักษรตรงมากสุด/4) x ค่านี้ (ตรง 3/4 = 30)
-GRADE_SCORE_MAX      = 40   # ส่วนเกรดถ่วงน้ำหนัก
-GRADE_CURVE          = 1.5  # เลขชี้กำลังถ่างช่วงคะแนนเกรด (1.0 = เส้นตรงแบบเดิม)
-BELOW_MIN_PENALTY    = 8    # หักต่อวิชาที่เกรดต่ำกว่าขั้นต่ำของสาขา
+MBTI_POSITION_SCORES      = [60, 56, 52, 48, 44]  # คะแนนตามลำดับใน mbti_match (โหมดเกรด)
+MBTI_PARTIAL_MAX          = 40   # ไม่อยู่ในลิสต์: (ตัวอักษรตรงมากสุด/4) x ค่านี้ (ตรง 3/4 = 30)
+GRADE_SCORE_MAX           = 40   # ส่วนเกรดถ่วงน้ำหนัก
+GRADE_CURVE               = 1.5  # เลขชี้กำลังถ่างช่วงคะแนนเกรด (1.0 = เส้นตรงแบบเดิม)
+BELOW_MIN_PENALTY         = 8    # หักต่อวิชาที่เกรดต่ำกว่าขั้นต่ำของสาขา
+
+# โหมด "ไม่ทราบเกรด" (ใช้ความสนใจ/งานอดิเรกแทน): MBTI 50 : RIASEC 50
+# ไม่มีเกรด ไม่มีขั้นต่ำวิชาให้เช็ค เลยไม่มี below-min penalty ในโหมดนี้
+MBTI_POSITION_SCORES_I    = [50, 46, 42, 38, 34]  # โหมด interest: สัดส่วนลดลงจาก 60 เหลือ 50
+MBTI_PARTIAL_MAX_I        = 34
+RIASEC_SCORE_MAX          = 50
+RIASEC_CURVE              = 1.3
 
 
-def calculate_score(branch, grades, mbti):
+def calculate_score(branch, grades, mbti, riasec=None):
     """
     คำนวณคะแนนความเหมาะสมของสาขา (0-100)
 
-    สูตร (MBTI เป็นตัวหลัก 60:40):
+    โหมดกรอกเกรด (grades ไม่ใช่ None) — MBTI เป็นตัวหลัก 60:40:
     1. MBTI อยู่ในลิสต์ของสาขา ได้ตามลำดับความเข้ากัน 60/56/52/48/44
        ไม่อยู่ในลิสต์ ได้ตามตัวอักษรที่ตรงบางส่วน สูงสุด 30
     2. เกรดถ่วงน้ำหนักตามวิชาเด่นของสาขา เต็ม 40 (ยกกำลัง 1.5 ให้คะแนนถ่างขึ้น)
     3. เกรดต่ำกว่าขั้นต่ำของสาขา หัก 8 ต่อวิชา
+
+    โหมดไม่ทราบเกรด (riasec ไม่ใช่ None, grades เป็น None) — MBTI 50 : RIASEC 50:
+    1. MBTI เหมือนโหมดเกรดแต่สเกลคะแนนลดลง (50/46/42/38/34)
+    2. RIASEC: dot product ระหว่างโปรไฟล์ผู้ใช้ (0-1 ต่อมิติ) กับน้ำหนัก riasec_*
+       ของสาขา (0.00-3.00 ต่อมิติ) แล้ว normalize เป็นสัดส่วน 0-1 ก่อนยกกำลังถ่างคะแนน
     """
     score = 0
-
-    # --- Step 1: MBTI Score (ตัวหลัก, สูงสุด 60 คะแนน) ---
     mbti_match = json.loads(branch['mbti_match']) if isinstance(branch['mbti_match'], str) else branch['mbti_match']
 
+    position_scores = MBTI_POSITION_SCORES if grades is not None else MBTI_POSITION_SCORES_I
+    partial_max      = MBTI_PARTIAL_MAX     if grades is not None else MBTI_PARTIAL_MAX_I
+
+    # --- Step 1: MBTI Score (ตัวหลัก) ---
     if mbti in mbti_match:
-        # ยิ่งอยู่ต้นลิสต์ = สาขานั้นเข้ากับบุคลิกนี้มากที่สุด ได้คะแนนสูงสุด
         idx = mbti_match.index(mbti)
-        score += MBTI_POSITION_SCORES[min(idx, len(MBTI_POSITION_SCORES) - 1)]
+        score += position_scores[min(idx, len(position_scores) - 1)]
     else:
-        # เช็คว่า match บางมิติไหม
         partial = 0
         for m in mbti_match:
             match_count = sum(1 for a, b in zip(mbti, m) if a == b)
             partial = max(partial, match_count)
-        score += (partial / 4) * MBTI_PARTIAL_MAX
+        score += (partial / 4) * partial_max
 
-    # --- Step 2: เช็คเกรดขั้นต่ำ ---
-    grade_keys = ['math', 'sci', 'eng', 'thai', 'social', 'art']
-    min_keys   = ['min_math', 'min_sci', 'min_eng', 'min_thai', 'min_social', 'min_art']
+    if grades is not None:
+        # --- Step 2: เช็คเกรดขั้นต่ำ ---
+        grade_keys = ['math', 'sci', 'eng', 'thai', 'social', 'art']
+        min_keys   = ['min_math', 'min_sci', 'min_eng', 'min_thai', 'min_social', 'min_art']
 
-    below_min = False
-    for gk, mk in zip(grade_keys, min_keys):
-        min_val = float(branch[mk])
-        if min_val > 0 and float(grades[gk]) < min_val:
-            below_min = True
-            score -= BELOW_MIN_PENALTY  # หักคะแนนถ้าเกรดต่ำกว่าขั้นต่ำ
+        for gk, mk in zip(grade_keys, min_keys):
+            min_val = float(branch[mk])
+            if min_val > 0 and float(grades[gk]) < min_val:
+                score -= BELOW_MIN_PENALTY  # หักคะแนนถ้าเกรดต่ำกว่าขั้นต่ำ
 
-    # --- Step 3: Weighted Grade Score (40 คะแนน) ---
-    weight_keys = ['weight_math', 'weight_sci', 'weight_eng',
-                   'weight_thai', 'weight_social', 'weight_art']
+        # --- Step 3: Weighted Grade Score (40 คะแนน) ---
+        weight_keys = ['weight_math', 'weight_sci', 'weight_eng',
+                       'weight_thai', 'weight_social', 'weight_art']
 
-    total_weight    = sum(float(branch[wk]) for wk in weight_keys)
-    weighted_score  = 0
+        total_weight   = sum(float(branch[wk]) for wk in weight_keys)
+        weighted_score = 0
 
-    for gk, wk in zip(grade_keys, weight_keys):
-        grade  = float(grades[gk])
-        weight = float(branch[wk])
-        weighted_score += (grade / 4.0) * weight  # normalize เป็น 0-1
+        for gk, wk in zip(grade_keys, weight_keys):
+            grade  = float(grades[gk])
+            weight = float(branch[wk])
+            weighted_score += (grade / 4.0) * weight  # normalize เป็น 0-1
 
-    if total_weight > 0:
-        ratio = weighted_score / total_weight          # 0-1
-        score += (ratio ** GRADE_CURVE) * GRADE_SCORE_MAX
+        if total_weight > 0:
+            ratio = weighted_score / total_weight
+            score += (ratio ** GRADE_CURVE) * GRADE_SCORE_MAX
+
+    elif riasec is not None:
+        # --- RIASEC Score (50 คะแนน) ---
+        riasec_keys = {L: f'riasec_{L.lower()}' for L in RIASEC_LETTERS}
+        total_weight   = sum(float(branch[riasec_keys[L]]) for L in RIASEC_LETTERS)
+        weighted_score = sum(float(riasec.get(L, 0)) * float(branch[riasec_keys[L]]) for L in RIASEC_LETTERS)
+
+        if total_weight > 0:
+            ratio = weighted_score / total_weight
+            score += (ratio ** RIASEC_CURVE) * RIASEC_SCORE_MAX
 
     return round(max(0, min(100, score)), 2)
 
 
-def run_decision_tree(grades, mbti):
+def run_decision_tree(grades, mbti, riasec=None):
     """
     รัน Decision Tree หลัก
     ส่งคืน top 3 สาขาที่เหมาะสมที่สุด
+
+    grades: dict เกรด 6 วิชา (โหมดกรอกเกรด) หรือ None (โหมดไม่ทราบเกรด)
+    riasec: dict โปรไฟล์ RIASEC 0-1 ต่อมิติ (ใช้เมื่อ grades เป็น None) หรือ None
     """
     try:
         conn   = mysql.connector.connect(**DB_CONFIG)
         cursor = conn.cursor(dictionary=True)
-        
+
         cursor.execute("SELECT * FROM branches WHERE is_active = 1")
         branches = cursor.fetchall()
         cursor.close()
         conn.close()
-        
+
     except Exception as e:
         return {"error": str(e)}
 
@@ -238,7 +319,7 @@ def run_decision_tree(grades, mbti):
     # คำนวณคะแนนทุกสาขา
     results = []
     for branch in branches:
-        score = calculate_score(branch, grades, mbti)
+        score = calculate_score(branch, grades, mbti, riasec)
         results.append({
             'id':          branch['id'],
             'name':        branch['name'],
@@ -251,26 +332,28 @@ def run_decision_tree(grades, mbti):
     results.sort(key=lambda x: x['score'], reverse=True)
     top3 = results[:3]
 
-    # Decision Tree Rule เพิ่มเติม (ปรับ label)
-    avg_grade = sum(float(grades[k]) for k in grades) / len(grades)
-    
-    # ถ้าเกรดเฉลี่ยสูงมาก (≥ 3.5) และ MBTI เป็นสาย T → boost สายวิทย์
-    # รวมชื่อคณะสายวิทย์ของข้อมูลชุด NRRU (004_nrru_branches.sql) ด้วย
-    # ไม่งั้นสาขาใหม่จะไม่เคยเข้าเงื่อนไขนี้เลย
-    science_faculties = [
-        'วิศวกรรมศาสตร์', 'แพทยศาสตร์', 'วิทยาศาสตร์',
-        'วิทยาศาสตร์และเทคโนโลยี', 'เทคโนโลยีอุตสาหกรรม',
-        'สาธารณสุขศาสตร์', 'พยาบาลศาสตร์',
-    ]
-    if avg_grade >= 3.5 and mbti[2] == 'T':
-        for r in top3:
-            if r['faculty'] in science_faculties:
-                r['score'] = min(100, r['score'] + 5)
-                r['note']  = '⭐ เกรดดีและบุคลิกเหมาะมาก'
+    avg_grade = None
+    if grades is not None:
+        avg_grade = sum(float(grades[k]) for k in grades) / len(grades)
+
+        # ถ้าเกรดเฉลี่ยสูงมาก (≥ 3.5) และ MBTI เป็นสาย T → boost สายวิทย์
+        # รวมชื่อคณะสายวิทย์ของข้อมูลชุด NRRU (004_nrru_branches.sql) ด้วย
+        # ไม่งั้นสาขาใหม่จะไม่เคยเข้าเงื่อนไขนี้เลย (โหมดไม่ทราบเกรดไม่มี avg_grade
+        # จึงข้ามกฎนี้ไปเสมอ — ไม่มีเกรดให้ boost)
+        science_faculties = [
+            'วิศวกรรมศาสตร์', 'แพทยศาสตร์', 'วิทยาศาสตร์',
+            'วิทยาศาสตร์และเทคโนโลยี', 'เทคโนโลยีอุตสาหกรรม',
+            'สาธารณสุขศาสตร์', 'พยาบาลศาสตร์',
+        ]
+        if avg_grade >= 3.5 and mbti[2] == 'T':
+            for r in top3:
+                if r['faculty'] in science_faculties:
+                    r['score'] = min(100, r['score'] + 5)
+                    r['note']  = '⭐ เกรดดีและบุคลิกเหมาะมาก'
 
     return {
         'mbti':      mbti,
-        'avg_grade': round(avg_grade, 2),
+        'avg_grade': round(avg_grade, 2) if avg_grade is not None else None,
         # จำนวนสาขาทั้งหมดที่ถูกคำนวณคะแนนในรอบนี้ (ทุกแถว is_active = 1)
         # ไว้เช็คได้ว่าข้อมูลสาขาชุดใหม่ถูกนำมาคิดครบจริง
         'branches_considered': len(results),
@@ -286,8 +369,30 @@ if __name__ == '__main__':
         # รับ JSON จาก PHP ผ่าน stdin
         input_data = sys.stdin.read()
         data       = json.loads(input_data)
-        
-        grades = data['grades']  # {'math': 3.5, 'sci': 3.0, ...}
+
+        # โหมดกรอกเกรด: มี key 'grades' (dict 6 วิชา)
+        # โหมดไม่ทราบเกรด: มี key 'interests' แทน (list ของ riasec_questions.id ที่เลือก)
+        grades  = data.get('grades')
+        riasec  = None
+        riasec_detail = None
+
+        if grades is None:
+            if 'interests' not in data:
+                print(json.dumps({
+                    'error': 'ไม่พบทั้งข้อมูลเกรดและความสนใจ (ต้องมี grades หรือ interests อย่างใดอย่างหนึ่ง)'
+                }, ensure_ascii=False))
+                sys.exit(0)
+
+            riasec_result = resolve_riasec_from_selection(data['interests'])
+            if riasec_result['matched'] == 0:
+                print(json.dumps({
+                    'error': 'ไม่สามารถจับคู่ความสนใจที่เลือกกับคำถามในฐานข้อมูลได้ '
+                             '(id ที่ส่งมาไม่ตรงกับตาราง riasec_questions)',
+                }, ensure_ascii=False))
+                sys.exit(0)
+
+            riasec        = riasec_result['scores']
+            riasec_detail = riasec_result
 
         mbti_detail = None
 
@@ -313,11 +418,13 @@ if __name__ == '__main__':
             # โหมดเดิม: รับรหัส MBTI ที่คำนวณมาแล้ว เช่น 'INTJ'
             mbti = data['mbti']
 
-        result = run_decision_tree(grades, mbti)
+        result = run_decision_tree(grades, mbti, riasec)
 
         if mbti_detail is not None:
             result['mbti_detail'] = mbti_detail
-        
+        if riasec_detail is not None:
+            result['riasec_detail'] = riasec_detail
+
         # ส่ง JSON กลับไปให้ PHP
         print(json.dumps(result, ensure_ascii=False))
         

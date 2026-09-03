@@ -59,7 +59,7 @@ try {
 
     // ---- ดึงผลทุกแถว ----
     $sql = "
-        SELECT qr.id, qr.user_id, qr.created_at,
+        SELECT qr.id, qr.user_id, qr.created_at, qr.input_mode,
                qr.mbti_type, qr.avg_grade,
                qr.grade_math, qr.grade_sci, qr.grade_eng,
                qr.grade_thai, qr.grade_social, qr.grade_art,
@@ -114,7 +114,7 @@ try {
 
     // ---- ชีตที่ 1: ผลการทำแบบทดสอบ ----
     $header = array_merge(
-        ['ลำดับ', 'วันที่ทำ', 'ชื่อผู้ใช้', 'ชื่อ-นามสกุล', 'เพศ', 'อีเมล', 'ผล MBTI', 'เกรดเฉลี่ย'],
+        ['ลำดับ', 'วันที่ทำ', 'ชื่อผู้ใช้', 'ชื่อ-นามสกุล', 'เพศ', 'อีเมล', 'ผล MBTI', 'ประเภทข้อมูล', 'เกรดเฉลี่ย'],
         array_values(GRADE_LABELS),
         ['สาขาอันดับ 1', 'คณะอันดับ 1', 'คะแนน 1 (%)',
          'สาขาอันดับ 2', 'คณะอันดับ 2', 'คะแนน 2 (%)',
@@ -126,18 +126,26 @@ try {
 
     foreach ($rows as $r) {
         $no++;
+        $inputMode  = $r['input_mode'] ?? 'grade';
+        $isInterest = $inputMode === 'interest' || $r['grade_math'] === null;
+
+        // โหมด interest ไม่มีเกรดเลย -> ปล่อยช่องว่างไว้ ไม่ใส่ 0.00 ที่ทำให้เข้าใจผิดว่าสอบตกทุกวิชา
         $grades = [];
         $sum    = 0;
         foreach (array_keys(GRADE_LABELS) as $col) {
-            $g        = (float)$r[$col];
+            $g        = $isInterest ? '' : (float)$r[$col];
             $grades[] = $g;
-            $sum     += $g;
+            $sum     += $isInterest ? 0 : $g;
         }
 
-        // แถวเก่าก่อน migration 002 ไม่มี avg_grade เก็บไว้ -> คำนวณให้ตอน export
-        $avg = $r['avg_grade'] !== null
-            ? (float)$r['avg_grade']
-            : round($sum / count(GRADE_LABELS), 2);
+        if ($isInterest) {
+            $avg = '';
+        } elseif ($r['avg_grade'] !== null) {
+            $avg = (float)$r['avg_grade'];
+        } else {
+            // แถวเก่าก่อน migration 002 ไม่มี avg_grade เก็บไว้ -> คำนวณให้ตอน export
+            $avg = round($sum / count(GRADE_LABELS), 2);
+        }
 
         $rankCells = [];
         for ($rank = 1; $rank <= 3; $rank++) {
@@ -169,6 +177,7 @@ try {
                 (string)$r['gender'],
                 (string)$r['email'],
                 (string)$r['mbti_type'],
+                $isInterest ? 'ความสนใจ/งานอดิเรก' : 'เกรด',
                 $avg,
             ],
             $grades,
@@ -239,7 +248,7 @@ try {
         [
             'name'   => 'ผลการทำแบบทดสอบ',
             'rows'   => $sheet1,
-            'widths' => [7, 17, 14, 24, 8, 26, 10, 11,
+            'widths' => [7, 17, 14, 24, 8, 26, 10, 16, 11,
                          12, 12, 12, 11, 12, 9,
                          24, 22, 12, 24, 22, 12, 24, 22, 12],
         ],

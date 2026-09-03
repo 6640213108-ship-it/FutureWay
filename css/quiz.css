@@ -86,6 +86,92 @@
 }
 
 /* ========================================
+   Mode Toggle (กรอกเกรด / เลือกความชอบแทน)
+   ======================================== */
+.mode-toggle {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mode-btn {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 14px;
+  border: 2px solid rgba(123,47,247,0.2);
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--gray);
+  font-family: 'Kanit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+.mode-btn.active {
+  border-color: var(--primary);
+  background: rgba(123,47,247,0.08);
+  color: var(--primary);
+}
+
+.interest-hint {
+  font-size: 0.78rem;
+  color: var(--gray);
+  line-height: 1.5;
+}
+
+/* ========================================
+   Interest / Hobby Chips (RIASEC)
+   ======================================== */
+.interest-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.interest-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 2px solid #e8e8e8;
+  border-radius: 12px;
+  background: var(--white);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.interest-chip:hover {
+  border-color: rgba(123,47,247,0.4);
+  background: rgba(123,47,247,0.04);
+}
+.interest-chip.selected {
+  border-color: var(--primary);
+  background: rgba(123,47,247,0.08);
+}
+.chip-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid #ccc;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  font-size: 0.68rem;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+.interest-chip.selected .chip-check {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--white);
+}
+.chip-text {
+  font-size: 0.85rem;
+  color: #333;
+  line-height: 1.4;
+}
+
+/* ========================================
    Grade Card
    ======================================== */
 .grade-card {

@@ -52,8 +52,8 @@ try {
 
     // ---- ดึงรายการของหน้านี้ ----
     $stmt = $conn->prepare("
-        SELECT qr.id, qr.user_id, qr.created_at,
-               qr.mbti_type, qr.avg_grade,
+        SELECT qr.id, qr.user_id, qr.created_at, qr.input_mode,
+               qr.mbti_type, qr.avg_grade, qr.riasec_scores,
                qr.grade_math, qr.grade_sci, qr.grade_eng,
                qr.grade_thai, qr.grade_social, qr.grade_art,
                qr.branch_name, qr.score,
@@ -79,19 +79,25 @@ try {
     $rows = [];
     $ids  = [];
     while ($row = $res->fetch_assoc()) {
-        $grades = [
-            'math'   => (float)$row['grade_math'],
-            'sci'    => (float)$row['grade_sci'],
-            'eng'    => (float)$row['grade_eng'],
-            'thai'   => (float)$row['grade_thai'],
-            'social' => (float)$row['grade_social'],
-            'art'    => (float)$row['grade_art'],
-        ];
+        $inputMode = $row['input_mode'] ?? 'grade';
 
-        // แถวเก่าก่อน migration 002 ยังไม่มี avg_grade -> คำนวณให้ตอนแสดงผล
-        $avg = $row['avg_grade'] !== null
-            ? (float)$row['avg_grade']
-            : round(array_sum($grades) / count($grades), 2);
+        // โหมด interest ไม่มีเกรดเลย -> grades/avg เป็น null (ไม่ใช่ 0.00 ที่ทำให้เข้าใจผิด)
+        $grades = null;
+        $avg    = null;
+        if ($inputMode !== 'interest' && $row['grade_math'] !== null) {
+            $grades = [
+                'math'   => (float)$row['grade_math'],
+                'sci'    => (float)$row['grade_sci'],
+                'eng'    => (float)$row['grade_eng'],
+                'thai'   => (float)$row['grade_thai'],
+                'social' => (float)$row['grade_social'],
+                'art'    => (float)$row['grade_art'],
+            ];
+            // แถวเก่าก่อน migration 002 ยังไม่มี avg_grade -> คำนวณให้ตอนแสดงผล
+            $avg = $row['avg_grade'] !== null
+                ? (float)$row['avg_grade']
+                : round(array_sum($grades) / count($grades), 2);
+        }
 
         $id     = (int)$row['id'];
         $ids[]  = $id;
@@ -103,8 +109,10 @@ try {
             'gender'     => $row['gender'],
             'email'      => $row['email'],
             'mbti'       => $row['mbti_type'],
-            'avg_grade'  => $avg,
-            'grades'     => $grades,
+            'input_mode'    => $inputMode,
+            'avg_grade'     => $avg,
+            'grades'        => $grades,
+            'riasec_scores' => isset($row['riasec_scores']) ? json_decode($row['riasec_scores'], true) : null,
             'top_branch' => $row['branch_name'],
             'top_score'  => $row['score'] !== null ? (float)$row['score'] : null,
             'created_at' => $row['created_at'],

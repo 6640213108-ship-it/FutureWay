@@ -41,8 +41,8 @@
       <p class="result-section-title">🎯 สาขาที่เหมาะกับคุณ</p>
       <div id="rank-list" class="rank-list"></div>
 
-      <!-- สรุปเกรด -->
-      <p class="result-section-title">📊 เกรดของคุณ</p>
+      <!-- สรุปเกรด หรือ โปรไฟล์ความสนใจ (RIASEC) แล้วแต่โหมดที่ทำแบบทดสอบ -->
+      <p class="result-section-title" id="summary-title">📊 เกรดของคุณ</p>
       <div class="grade-summary" id="grade-summary"></div>
 
       <!-- ปุ่มทำใหม่ -->
@@ -85,6 +85,10 @@
       math: 'คณิตศาสตร์', sci: 'วิทยาศาสตร์',
       eng: 'อังกฤษ', thai: 'ไทย',
       social: 'สังคม', art: 'ศิลปะ'
+    };
+    const RIASEC_LABELS = {
+      R: 'Realistic', I: 'Investigative', A: 'Artistic',
+      S: 'Social', E: 'Enterprising', C: 'Conventional'
     };
     const RANK_STYLES = [
       { cls: 'gold',   label: '🥇' },
@@ -150,8 +154,11 @@
       document.getElementById('mbti-display').textContent = mbti;
       document.getElementById('mbti-name').textContent    = info.name;
       document.getElementById('mbti-desc').textContent    = info.desc;
-      document.getElementById('avg-grade-display').textContent =
-        `เกรดเฉลี่ย ${data.avg_grade} | วิเคราะห์จาก 6 วิชาหลัก`;
+
+      const isInterestMode = data.input_mode === 'interest';
+      document.getElementById('avg-grade-display').textContent = isInterestMode
+        ? 'วิเคราะห์จากความสนใจ/งานอดิเรก (RIASEC) แทนเกรด'
+        : `เกรดเฉลี่ย ${data.avg_grade} | วิเคราะห์จาก 6 วิชาหลัก`;
 
       // Top 3 สาขา
       const rankList = document.getElementById('rank-list');
@@ -181,14 +188,24 @@
         });
       }, 300);
 
-      // Grade Summary
+      // Grade Summary (โหมดกรอกเกรด) หรือ RIASEC Profile Summary (โหมดไม่ทราบเกรด)
       const gradeWrap = document.getElementById('grade-summary');
-      Object.entries(data.grades).forEach(([key, val]) => {
-        const chip = document.createElement('div');
-        chip.className = 'grade-chip';
-        chip.innerHTML = `${GRADE_LABELS[key]}: <span>${parseFloat(val).toFixed(2)}</span>`;
-        gradeWrap.appendChild(chip);
-      });
+      if (isInterestMode && data.riasec_scores) {
+        document.getElementById('summary-title').textContent = '💡 โปรไฟล์ความสนใจของคุณ (RIASEC)';
+        Object.entries(data.riasec_scores).forEach(([letter, val]) => {
+          const chip = document.createElement('div');
+          chip.className = 'grade-chip';
+          chip.innerHTML = `${RIASEC_LABELS[letter] || letter}: <span>${Math.round(val * 100)}%</span>`;
+          gradeWrap.appendChild(chip);
+        });
+      } else if (data.grades) {
+        Object.entries(data.grades).forEach(([key, val]) => {
+          const chip = document.createElement('div');
+          chip.className = 'grade-chip';
+          chip.innerHTML = `${GRADE_LABELS[key]}: <span>${parseFloat(val).toFixed(2)}</span>`;
+          gradeWrap.appendChild(chip);
+        });
+      }
 
       // แสดงผล — ใช้ attribute hidden แทนการสั่ง style.display จาก JS
       // สไตล์ทั้งหมดจึงอยู่ในไฟล์ CSS ที่เดียว ไม่กระจายอยู่ใน JS

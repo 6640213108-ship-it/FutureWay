@@ -21,13 +21,20 @@ import mysql.connector
 
 # ========================================
 # ตั้งค่าเชื่อมต่อ Database
+#
+# อ่านจาก environment variable เท่านั้น (ตรงกับที่ php/db_config.php ใช้)
+# ห้าม hardcode รหัสผ่านจริงไว้ในไฟล์นี้เด็ดขาด — ไฟล์นี้อยู่ใน git repo (public)
 # ========================================
+_db_password = os.environ.get('MYSQLPASSWORD', '')
+if not _db_password:
+    raise RuntimeError('MYSQLPASSWORD environment variable ยังไม่ได้ตั้งค่า')
+
 DB_CONFIG = {
-    'host':     'mysql.railway.internal',
-    'port':     3306,
-    'user':     'root',
-    'password': 'REDACTED_DB_PASSWORD',
-    'database': 'railway'      # ต้องตรงกับ DB ที่ไฟล์ PHP ทุกไฟล์ใช้ (railway)
+    'host':     os.environ.get('MYSQLHOST', 'mysql.railway.internal'),
+    'port':     int(os.environ.get('MYSQLPORT', 3306)),
+    'user':     os.environ.get('MYSQLUSER', 'root'),
+    'password': _db_password,
+    'database': os.environ.get('MYSQLDATABASE', 'railway'),  # ต้องตรงกับ DB ที่ไฟล์ PHP ทุกไฟล์ใช้ (railway)
 }
 
 # ========================================

@@ -9,14 +9,22 @@
 // ไม่งั้นบนเซิร์ฟเวอร์ที่เดินเวลาเป็น UTC จะได้เวลาช้ากว่าจริง 7 ชม.
 date_default_timezone_set('Asia/Bangkok');
 
-// อ่านจาก environment variable ก่อน (Railway จะ inject ให้อัตโนมัติ
-// ถ้า service เชื่อมกันในโปรเจกต์เดียวกัน) ถ้าไม่มีให้ fallback
-// ไปใช้ค่า internal host ที่ใช้งานอยู่ตอนนี้
+// อ่านจาก environment variable เท่านั้น (Railway จะ inject ให้อัตโนมัติ
+// ถ้า service เชื่อมกันในโปรเจกต์เดียวกัน)
+//
+// ห้าม hardcode รหัสผ่านจริงไว้เป็นค่า fallback ในไฟล์นี้เด็ดขาด — ไฟล์นี้อยู่ใน
+// git repo (public) รหัสผ่านที่ hardcode ไว้เท่ากับเปิดเผยสู่สาธารณะทันที
+// ต้องตั้ง MYSQLHOST/MYSQLUSER/MYSQLPASSWORD/MYSQLDATABASE เป็น environment
+// variable บน Railway (หรือ .env ในเครื่อง dev ที่ไม่ commit เข้า repo) เสมอ
 define('DB_HOST', getenv('MYSQLHOST') ?: 'mysql.railway.internal');
 define('DB_USER', getenv('MYSQLUSER') ?: 'root');
-define('DB_PASS', getenv('MYSQLPASSWORD') ?: 'REDACTED_DB_PASSWORD');
+define('DB_PASS', getenv('MYSQLPASSWORD') ?: '');
 define('DB_NAME', getenv('MYSQLDATABASE') ?: 'railway');
 define('DB_PORT', (int)(getenv('MYSQLPORT') ?: 3306));
+
+if (DB_PASS === '') {
+    throw new Exception('MYSQLPASSWORD environment variable ยังไม่ได้ตั้งค่า');
+}
 
 /**
  * เปิดการเชื่อมต่อ Database ใหม่ 1 connection

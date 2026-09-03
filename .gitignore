@@ -12,3 +12,8 @@ venv/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# ห้าม commit database dump — มีข้อมูลผู้ใช้จริง (อีเมล/ชื่อ/password hash)
+# ใช้ sql/*.sql (migration) แทนถ้าต้องแชร์โครงสร้างตาราง
+project1.sql
+*.sql.bak

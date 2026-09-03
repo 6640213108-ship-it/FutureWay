@@ -57,7 +57,10 @@
 
       <!-- สาขาทั้งหมดที่เหมาะกับบุคลิกภาพนี้ จัดกลุ่มตามคณะ -->
       <div class="branch-section-head">
-        <p class="result-section-title">🩺 สาขาที่เหมาะสมกับ</p>
+        <p class="result-section-title">
+          <img id="branch-section-icon" class="branch-section-icon" alt="">
+          สาขาที่เหมาะสมกับ
+        </p>
         <span class="branch-total-badge" id="branch-total-badge"></span>
       </div>
       <div id="mbti-branch-list" class="mbti-branch-list"></div>
@@ -240,6 +243,10 @@
       const illus = document.getElementById('mbti-illustration');
       illus.src = `images/${mbti}.jpg`;
       illus.alt = `${mbti} - ${info.title}`;
+
+      const branchIcon = document.getElementById('branch-section-icon');
+      branchIcon.src = `images/${mbti}.jpg`;
+      branchIcon.alt = mbti;
 
       const total = data.mbti_branches_total || 0;
       document.getElementById('mbti-related-text').textContent  = `เกี่ยวข้อง ${total} สาขา`;

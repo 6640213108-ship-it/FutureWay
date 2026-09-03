@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="css/main.css?v=4">
-  <link rel="stylesheet" href="css/result.css?v=5">
+  <link rel="stylesheet" href="css/result.css?v=6">
 </head>
 <body>
 
@@ -26,7 +26,7 @@
   <!-- Result (ซ่อนไว้ก่อน JS จะเปิดให้เมื่อโหลดข้อมูลเสร็จ) -->
   <div id="result-wrap" hidden>
 
-    <!-- Hero MBTI: การ์ดข้อมูลบุคลิกภาพ พร้อมภาพประกอบ -->
+    <!-- Hero MBTI: การ์ดข้อมูลบุคลิกภาพ -->
     <div class="result-hero mbti-hero">
       <div class="mbti-hero-text">
         <div class="mbti-badge" id="mbti-display">—</div>
@@ -35,9 +35,6 @@
         <span class="mbti-related-badge" id="mbti-related-badge">
           <i class="fas fa-graduation-cap"></i> <span id="mbti-related-text"></span>
         </span>
-      </div>
-      <div class="mbti-hero-illustration">
-        <img id="mbti-illustration" alt="" width="180" height="220">
       </div>
     </div>
 
@@ -240,10 +237,6 @@
       document.getElementById('mbti-display').textContent  = mbti;
       document.getElementById('mbti-title').textContent    = info.title;
       document.getElementById('mbti-subtitle').textContent = info.subtitle;
-
-      const illus = document.getElementById('mbti-illustration');
-      illus.src = `images/${mbti}.jpg`;
-      illus.alt = `${mbti} - ${info.title}`;
 
       const branchImg = document.getElementById('mbti-branch-image');
       branchImg.hidden = false;

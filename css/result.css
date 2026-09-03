@@ -75,19 +75,6 @@
   margin-top: 12px;
 }
 
-.mbti-hero-illustration {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  margin-top: 6px;
-}
-.mbti-hero-illustration img {
-  width: 160px;
-  height: auto;
-  border-radius: 16px;
-  object-fit: cover;
-}
-
 @media (min-width: 600px) {
   .mbti-hero { flex-direction: row; justify-content: space-between; text-align: left; gap: 24px; }
   .mbti-hero-text { flex: 1; }

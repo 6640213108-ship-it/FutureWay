@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="css/main.css?v=4">
-  <link rel="stylesheet" href="css/result.css?v=7">
+  <link rel="stylesheet" href="css/result.css?v=8">
 </head>
 <body>
 
@@ -32,9 +32,6 @@
         <div class="mbti-badge" id="mbti-display">—</div>
         <p class="mbti-card-title" id="mbti-title"></p>
         <p class="mbti-card-subtitle" id="mbti-subtitle"></p>
-        <span class="mbti-related-badge" id="mbti-related-badge">
-          <i class="fas fa-graduation-cap"></i> <span id="mbti-related-text"></span>
-        </span>
       </div>
     </div>
 
@@ -52,16 +49,12 @@
         </div>
       </div>
 
-      <!-- สาขาทั้งหมดที่เหมาะกับบุคลิกภาพนี้ จัดกลุ่มตามคณะ -->
-      <div class="branch-section-head">
-        <p class="result-section-title">
-          <i class="fas fa-briefcase"></i> สาขาที่เหมาะสมกับ
-        </p>
-        <span class="branch-total-badge" id="branch-total-badge"></span>
-      </div>
+      <!-- สาขาที่เหมาะสม: แสดงเป็นภาพโปสเตอร์ MBTI -->
+      <p class="result-section-title">
+        <i class="fas fa-briefcase"></i> สาขาที่เหมาะสมกับ
+      </p>
       <!-- ภาพโปสเตอร์ MBTI (images/XXXX.jpg) เปลี่ยนตามรหัสที่คำนวณได้ -->
       <img id="mbti-branch-image" class="mbti-branch-image" alt="" loading="lazy" hidden>
-      <div id="mbti-branch-list" class="mbti-branch-list"></div>
 
       <!-- สรุปเกรด หรือ โปรไฟล์ความสนใจ (RIASEC) แล้วแต่โหมดที่ทำแบบทดสอบ -->
       <p class="result-hero-sub" id="avg-grade-display"></p>
@@ -244,10 +237,6 @@
       branchImg.src = `images/${mbti}.jpg`;
       branchImg.alt = `${mbti} - ${info.title} สาขาที่เหมาะสม`;
 
-      const total = data.mbti_branches_total || 0;
-      document.getElementById('mbti-related-text').textContent  = `เกี่ยวข้อง ${total} สาขา`;
-      document.getElementById('branch-total-badge').textContent = `เกี่ยวข้อง ${total} สาขา`;
-
       // ลักษณะบุคลิกภาพ / จุดเด่น
       document.getElementById('mbti-traits-list').innerHTML =
         info.traits.map(t => `<li>${escapeHtml(t)}</li>`).join('');
@@ -258,16 +247,6 @@
       document.getElementById('avg-grade-display').textContent = isInterestMode
         ? 'วิเคราะห์จากความสนใจ/งานอดิเรก (RIASEC) แทนเกรด'
         : `เกรดเฉลี่ย ${data.avg_grade} | วิเคราะห์จาก 6 วิชาหลัก`;
-
-      // สาขาทั้งหมดที่เข้ากับบุคลิกภาพนี้ จัดกลุ่มตามคณะ (ไม่จำกัดแค่ top 3 คณะ
-      // เหมือนก่อนหน้า — โชว์ทุกสาขาที่เกี่ยวข้องเพื่อให้เห็นตัวเลือกครบถ้วนที่สุด)
-      const branchListEl = document.getElementById('mbti-branch-list');
-      const branchesByFaculty = data.mbti_branches || {};
-      branchListEl.innerHTML = Object.keys(branchesByFaculty).map(faculty => `
-        <div class="mbti-faculty-block">
-          <p class="mbti-faculty-name">${escapeHtml(faculty)}</p>
-          <p class="mbti-faculty-branches">${branchesByFaculty[faculty].map(escapeHtml).join(', ')}</p>
-        </div>`).join('') || '<p class="no-data">ไม่พบสาขาที่เกี่ยวข้อง</p>';
 
       // Grade Summary (โหมดกรอกเกรด) หรือ RIASEC Profile Summary (โหมดไม่ทราบเกรด)
       const gradeWrap = document.getElementById('grade-summary');

@@ -1,37 +1,14 @@
 /* ========================================
-   FutureWay - main.css
-   ไฟล์ฐานของหน้าที่ล็อกอินแล้วทุกหน้า — โหลดเป็นไฟล์แรกเสมอ แล้วค่อยตามด้วย
+   FutureWay - app.css
+   ไฟล์ฐานของหน้าที่ล็อกอินแล้วทุกหน้า — โหลดถัดจาก tokens.css แล้วค่อยตามด้วย
    ไฟล์เฉพาะหน้า (profile.css, history.css, settings.css, result.css,
-   quiz.css, chat.css, admin.css, lightbox.css)
+   quiz.css, lightbox.css)
 
-   ในนี้มี: ตัวแปรสี, reset, หัวเพจทั้งสองแบบ, กล่องขาว, แถบเมนูล่าง
+   ในนี้มี: reset, หัวเพจทั้งสองแบบ, กล่องขาว, แถบเมนูล่าง
             และสไตล์เฉพาะของหน้า main.html
-   ไฟล์นี้ standalone ไม่ต้องโหลด style.css (style.css ใช้กับหน้า
-   index/login/register ที่ยังไม่ได้ล็อกอิน ซึ่งไม่ได้โหลด main.css)
    ======================================== */
 
-/* -- ตัวแปรสี (copy จาก style.css เพื่อใช้ได้อิสระ) -- */
-:root {
-  --primary:      #7b2ff7;
-  --primary-dark: #4a0080;
-  --white:        #ffffff;
-  --gray:         #aaaaaa;
-  --gray-light:   #f5f5f5;
-  --red:          #e74c3c;   /* สีของปุ่ม/ข้อความเตือน ใช้ร่วมกันหลายหน้า */
-  --transition:   0.2s ease;
-
-  /* -- ความกว้างสูงสุดของเนื้อหา --
-     มือถือ: เนื้อหากว้างเต็มจอเหมือนเดิม
-     iPad/Desktop: เนื้อหาถูกจำกัดไว้ที่ค่านี้แล้วจัดกึ่งกลาง
-     ทำให้ทุกหน้าดูเป็นคอลัมน์เดียวกันในทุกอุปกรณ์ */
-  --content-max: 640px;
-
-  /* -- ระยะขอบซ้าย-ขวาของแถบที่กว้างเต็มจอ (header ม่วง ฯลฯ) --
-     จอเล็ก: ได้ค่า 20px ตามเดิม (ค่าใน calc ติดลบ max เลยเลือก 20px)
-     จอใหญ่: ดันเนื้อหาในแถบเข้ามาให้ตรงแนวเดียวกับคอลัมน์เนื้อหา 640px
-     (14px คือ padding ข้างในคอลัมน์ .app-content) */
-  --edge-pad: max(20px, calc(50% - var(--content-max) / 2 + 14px));
-}
+/* ตัวแปรสี/ระยะทั้งหมดอยู่ใน tokens.css (โหลดก่อนไฟล์นี้เสมอ) */
 
 /* ========================================
    Reset & Base
@@ -95,7 +72,7 @@ img {
    ใช้ใน: result.html, quiz.html, History_Results.html,
           edit_profile.html, change_password.html,
           notifications.html, privacy.html
-   อยู่ในไฟล์นี้เพราะทุกหน้าโหลด main.css อยู่แล้ว
+   อยู่ในไฟล์นี้เพราะทุกหน้าโหลด app.css อยู่แล้ว
    (เดิมประกาศซ้ำ 3 ไฟล์ ทำให้หน้าที่ไม่ได้โหลดไฟล์พวกนั้น
     เช่น result.html กับ quiz.html ได้หัวเพจที่ไม่มีสไตล์)
    ======================================== */
@@ -415,3 +392,33 @@ img {
     padding: 20px;
   }
 }
+
+/* ========================================
+   Toast — แถบแจ้งเตือนเล็ก ๆ ด้านล่างจอ (สร้างโดย FW.showToast ใน js/common.js)
+   ======================================== */
+/* แถบเด้งมุมล่างเวลาบันทึกสำเร็จ */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 20px);
+  background: #2c2c34;
+  color: var(--white);
+  font-size: 0.85rem;
+  padding: 11px 18px;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition), transform var(--transition);
+  z-index: 200;
+  max-width: 90vw;
+}
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.toast.err { background: #c0392b; }

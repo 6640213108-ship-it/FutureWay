@@ -10,9 +10,7 @@
 // กันกรณีเครื่องถูกเปิดทิ้งไว้แล้วมีคนมาเปลี่ยนรหัสยึดบัญชีไป
 // ========================================
 
-session_start();
-header('Content-Type: application/json; charset=utf-8');
-
+require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/user_session.php';
 
 $input = requireJsonPost();
@@ -34,7 +32,6 @@ if (mb_strlen($new) < 6) {
 }
 if (strlen($new) > 72) {
     // bcrypt (PASSWORD_DEFAULT) อ่านแค่ 72 byte แรก ที่เกินจะถูกตัดทิ้งเงียบ ๆ
-    // ตัดจบตั้งแต่ตรงนี้ดีกว่าปล่อยให้ผู้ใช้เข้าใจผิดว่ารหัสยาวกว่านั้นมีผล
     jsonFail(400, 'รหัสผ่านใหม่ยาวเกินไป (ไม่เกิน 72 ตัวอักษร)');
 }
 if ($new === $current) {
@@ -42,8 +39,7 @@ if ($new === $current) {
 }
 
 if (!password_verify($current, $user['password'])) {
-    // หน่วงนิดหนึ่งกันคนไล่เดารหัสเดิมรัว ๆ จากหน้าที่ล็อกอินค้างไว้
-    usleep(300000);
+    usleep(300000);   // หน่วงนิดหนึ่งกันคนไล่เดารหัสเดิมรัว ๆ จากหน้าที่ล็อกอินค้างไว้
     jsonFail(401, 'รหัสผ่านเดิมไม่ถูกต้อง');
 }
 
@@ -52,21 +48,20 @@ $userId = (int)$user['id'];
 
 $stmt = $conn->prepare('UPDATE users SET password = ? WHERE id = ?');
 if (!$stmt) {
-    jsonFail(500, 'เปลี่ยนรหัสผ่านไม่สำเร็จ: ' . $conn->error);
+    jsonServerError('change_password', $conn->error, 'เปลี่ยนรหัสผ่านไม่สำเร็จ');
 }
 $stmt->bind_param('si', $hash, $userId);
-
 if (!$stmt->execute()) {
     $err = $stmt->error;
     $stmt->close();
-    jsonFail(500, 'เปลี่ยนรหัสผ่านไม่สำเร็จ: ' . $err);
+    jsonServerError('change_password', $err, 'เปลี่ยนรหัสผ่านไม่สำเร็จ');
 }
 $stmt->close();
+$conn->close();
 
 // ออก session id ใหม่หลังเปลี่ยนรหัส (ข้อมูลใน session ยังอยู่ครบ ไม่ต้องล็อกอินใหม่)
-// ถ้ามีใครขโมย session id เดิมไป อันนั้นจะใช้ไม่ได้อีกต่อไป
 session_regenerate_id(true);
 
-error_log(sprintf('change_password.php: user "%s" (id=%d) changed password', $user['username'], $userId));
+error_log(sprintf('change_password: user "%s" (id=%d) changed password', $user['username'], $userId));
 
 jsonOk(['message' => 'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว']);

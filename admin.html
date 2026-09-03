@@ -6,19 +6,20 @@
   <title>FutureWay - ผู้ดูแลระบบ</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="css/admin.css?v=4">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
 
   <header class="admin-header">
-    <a href="main.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    <a href="main.html" class="back-btn" aria-label="ย้อนกลับ"><i class="fas fa-arrow-left"></i></a>
     <span class="title"><i class="fas fa-user-shield"></i> ผลการทำแบบทดสอบทั้งหมด</span>
     <span class="who" id="who"></span>
   </header>
 
   <div class="admin-wrap">
 
-    <!-- การ์ดกันคนที่ไม่ใช่แอดมิน — โผล่แทนหน้าทั้งหมด ไม่ให้เห็นแม้แต่โครงตาราง -->
+    <!-- การ์ดกันคนที่ไม่ใช่แอดมิน — โผล่แทนหน้าทั้งหมด -->
     <div class="denied-card" id="denied" hidden>
       <i class="fas fa-lock"></i>
       <h2 id="denied-title">ไม่มีสิทธิ์เข้าถึง</h2>
@@ -26,10 +27,8 @@
       <a href="main.html" class="denied-btn"><i class="fas fa-arrow-left"></i> กลับหน้าหลัก</a>
     </div>
 
-    <!-- สถิติรวม -->
     <div class="stat-grid" id="stat-grid"></div>
 
-    <!-- ตัวกรอง -->
     <form class="filter-bar" id="filter-form" autocomplete="off">
       <input type="search" id="f-q" placeholder="ค้นหาชื่อ นามสกุล username หรืออีเมล">
       <select id="f-gender"><option value="">ทุกเพศ</option></select>
@@ -37,14 +36,12 @@
       <button type="submit"><i class="fas fa-search"></i> ค้นหา</button>
     </form>
 
-    <!-- ส่งออกข้อมูล -->
     <div class="export-bar" id="export-bar">
       <div class="export-info">
         <i class="fas fa-file-excel"></i>
         <span>ส่งออกข้อมูลเป็นไฟล์ Excel (.xlsx) — มีชีตผลการทำแบบทดสอบและชีตสรุปสถิติ</span>
       </div>
       <div class="export-actions">
-        <!-- ปุ่มนี้โผล่เฉพาะตอนมีตัวกรองอยู่ เพราะไม่มีตัวกรองก็ได้ผลเท่ากับปุ่มทั้งหมด -->
         <button type="button" class="export-btn ghost" id="export-filtered" hidden>
           <i class="fas fa-filter"></i> เฉพาะที่กรองอยู่
         </button>
@@ -54,7 +51,6 @@
       </div>
     </div>
 
-    <!-- ตาราง -->
     <div class="table-card">
       <div class="table-scroll">
         <table class="admin-table">
@@ -85,369 +81,8 @@
 
   </div>
 
-  <script>
-    let page = 1;
-    let totalPages = 1;
-    let filtersLoaded = false;
-
-    // ตัวกรองที่กรอกอยู่ตอนนี้ — ใช้ทั้งตอนโหลดตารางและตอนส่งออกไฟล์ Excel
-    // ประกาศไว้บนสุดเพราะ load() เรียกใช้ ต้องมีค่าก่อนถูกเรียกครั้งแรก
-    const currentFilters = () => ({
-      q:      document.getElementById('f-q').value.trim(),
-      gender: document.getElementById('f-gender').value,
-      mbti:   document.getElementById('f-mbti').value,
-    });
-
-    // กันข้อมูลจากผู้ใช้ (ชื่อ อีเมล ชื่อสาขา) ยิง HTML เข้ามาตอน render
-    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    })[c]);
-
-    const fmtDate = (s) => {
-      if (!s) return '-';
-      const d = new Date(String(s).replace(' ', 'T'));
-      if (isNaN(d)) return esc(s);
-      return d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })
-           + ' ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-    };
-
-    const COLS = 9;   // จำนวนคอลัมน์ในตาราง ใช้กับ colspan
-
-    const showState = (html, isError = false) => {
-      document.getElementById('tbody').innerHTML =
-        `<tr><td colspan="${COLS}"><div class="state-box${isError ? ' error' : ''}">${html}</div></td></tr>`;
-      document.getElementById('pager').hidden = true;
-    };
-
-    /**
-     * ช่องแสดงหมวดหมู่ (คณะ) ที่แนะนำอันดับที่ n พร้อมสาขาเด่นในหมวดนั้น
-     * แถวเก่าก่อน migration 009 ยังไม่ได้จัดเป็นหมวดหมู่ -> ยังพอแสดงอันดับ 1
-     * จาก branch_name/score ที่เก็บไว้ในตาราง quiz_results ได้
-     */
-    const rankCell = (r, n) => {
-      const cat = (r.top_categories || [])[n - 1];
-      if (cat && cat.branches && cat.branches[0]) {
-        return `<div class="branch-cell">${esc(cat.faculty) || 'ไม่ระบุคณะ'}<small>${esc(cat.branches[0].name)} · ${cat.best_score}%</small></div>`;
-      }
-      if (n === 1 && r.top_branch) {
-        return `<div class="branch-cell">${esc(r.top_branch)}<small>${r.top_score !== null ? r.top_score + '%' : ''}</small></div>`;
-      }
-      return '<span class="muted">-</span>';
-    };
-
-    /**
-     * ไม่ใช่แอดมิน -> ซ่อนทั้งหน้า เหลือแค่การ์ดแจ้งเตือน
-     * ไม่ให้เห็นแม้แต่หัวตารางหรือช่องค้นหา เพราะโครงหน้าเองก็บอกใบ้ว่าระบบเก็บอะไรไว้บ้าง
-     */
-    function showDenied(msg, needLogin = false) {
-      ['stat-grid', 'filter-form', 'export-bar'].forEach(id => document.getElementById(id).hidden = true);
-      document.querySelector('.table-card').hidden = true;
-      document.getElementById('who').textContent = '';
-
-      const card = document.getElementById('denied');
-      document.getElementById('denied-title').textContent = needLogin ? 'กรุณาเข้าสู่ระบบ' : 'ไม่มีสิทธิ์เข้าถึง';
-      document.getElementById('denied-msg').textContent   = msg;
-
-      const btn = card.querySelector('.denied-btn');
-      btn.setAttribute('href', needLogin ? 'login.html' : 'main.html');
-      btn.innerHTML = needLogin
-        ? '<i class="fas fa-right-to-bracket"></i> ไปหน้าเข้าสู่ระบบ'
-        : '<i class="fas fa-arrow-left"></i> กลับหน้าหลัก';
-
-      card.hidden = false;
-    }
-
-    function load() {
-      const params = new URLSearchParams({ page, ...currentFilters() });
-
-      showState('<i class="fas fa-spinner fa-spin"></i>กำลังโหลด...');
-
-      fetch('php/get_admin_results.php?' + params, { credentials: 'include', cache: 'no-store' })
-        .then(async (r) => {
-          const data = await r.json().catch(() => null);
-          if (r.status === 401) {
-            showDenied('ต้องเข้าสู่ระบบก่อนจึงจะดูหน้านี้ได้', true);
-            return null;
-          }
-          if (r.status === 403) {
-            showDenied(data?.error || 'หน้านี้สำหรับผู้ดูแลระบบเท่านั้น');
-            return null;
-          }
-          if (!data || !data.success) {
-            showState('<i class="fas fa-triangle-exclamation"></i>' + esc(data?.error || 'โหลดข้อมูลไม่สำเร็จ'), true);
-            return null;
-          }
-          return data;
-        })
-        .then((data) => { if (data) render(data); })
-        .catch((err) => showState('<i class="fas fa-plug-circle-xmark"></i>เชื่อมต่อไม่ได้: ' + esc(err.message), true));
-    }
-
-    function render(data) {
-      renderStats(data.stats);
-      if (!filtersLoaded) { renderFilters(data.filters); filtersLoaded = true; }
-
-      totalPages = Math.max(1, data.total_pages);
-      const tbody = document.getElementById('tbody');
-
-      if (!data.results.length) {
-        showState('<i class="fas fa-inbox"></i>ยังไม่มีผลการทำแบบทดสอบที่ตรงกับเงื่อนไข');
-        return;
-      }
-
-      tbody.innerHTML = data.results.map(r => `
-        <tr class="row-main" data-id="${r.result_id}">
-          <td class="name-cell">
-            ${esc(r.fullname) || '<span class="muted">ไม่ระบุชื่อ</span>'}
-            <small>${esc(r.username)}${r.email ? ' · ' + esc(r.email) : ''}</small>
-          </td>
-          <td><span class="badge gender">${esc(r.gender) || '-'}</span></td>
-          <td><span class="badge">${esc(r.mbti)}</span></td>
-          <td>${rankCell(r, 1)}</td>
-          <td>${rankCell(r, 2)}</td>
-          <td>${rankCell(r, 3)}</td>
-          <td>${r.avg_grade != null ? Number(r.avg_grade).toFixed(2) : '-'}</td>
-          <td class="muted">${fmtDate(r.created_at)}</td>
-          <td class="action-cell">
-            <button type="button" class="del-btn" title="ลบผลลัพธ์รอบนี้"
-                    data-id="${r.result_id}"
-                    data-who="${esc(r.fullname) || esc(r.username)}"
-                    data-when="${fmtDate(r.created_at)}">
-              <i class="fas fa-trash-can"></i>
-            </button>
-            <i class="fas fa-chevron-down muted chev"></i>
-          </td>
-        </tr>
-        <tr class="detail-row" id="d-${r.result_id}" hidden>
-          <td colspan="${COLS}">
-            <div class="detail-grid">
-              <div class="detail-block">
-                <h4>หมวดหมู่ (คณะ) ที่แนะนำ</h4>
-                ${(r.top_categories || []).length ? r.top_categories.map((cat, ci) => `
-                  <p class="cat-heading"><strong>${esc(cat.faculty) || 'ไม่ระบุคณะ'}</strong> (${cat.best_score}%)</p>
-                  ${cat.branches.map((b, bi) => `
-                    <div class="rank-line">
-                      <span class="rank-no n${bi + 1}">${bi + 1}</span>
-                      <span class="grow">${esc(b.name)}</span>
-                      <span class="score-pill">${b.score}%</span>
-                    </div>`).join('')}`).join('')
-                : '<p class="muted note-old">ผลลัพธ์รอบนี้บันทึกไว้ก่อนระบบเก็บเป็นหมวดหมู่</p>'}
-              </div>
-              <div class="detail-block">
-                <h4>${r.grades ? 'เกรดที่กรอก' : 'โปรไฟล์ความสนใจ (RIASEC)'}</h4>
-                <div class="grade-chips">
-                  ${r.grades ? `
-                    <span>คณิต: ${Number(r.grades.math).toFixed(2)}</span>
-                    <span>วิทย์: ${Number(r.grades.sci).toFixed(2)}</span>
-                    <span>อังกฤษ: ${Number(r.grades.eng).toFixed(2)}</span>
-                    <span>ไทย: ${Number(r.grades.thai).toFixed(2)}</span>
-                    <span>สังคม: ${Number(r.grades.social).toFixed(2)}</span>
-                    <span>ศิลปะ: ${Number(r.grades.art).toFixed(2)}</span>
-                  ` : r.riasec_scores ? Object.entries(r.riasec_scores).map(([letter, val]) =>
-                    `<span>${esc(letter)}: ${Math.round(val * 100)}%</span>`
-                  ).join('') : '<span class="muted">ไม่มีข้อมูล</span>'}
-                </div>
-              </div>
-            </div>
-          </td>
-        </tr>`).join('');
-
-      tbody.querySelectorAll('tr.row-main').forEach(tr => {
-        tr.addEventListener('click', () => {
-          const d    = document.getElementById('d-' + tr.dataset.id);
-          const icon = tr.querySelector('.chev');
-          d.hidden = !d.hidden;
-          icon.className = d.hidden ? 'fas fa-chevron-down muted chev' : 'fas fa-chevron-up muted chev';
-        });
-      });
-
-      // ปุ่มลบอยู่ในแถวที่คลิกแล้วกางรายละเอียด ต้อง stopPropagation
-      // ไม่งั้นกดลบทีนึงรายละเอียดจะกางขึ้นมาด้วยทุกครั้ง
-      tbody.querySelectorAll('.del-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          deleteResult(btn, data.results.length);
-        });
-      });
-
-      const pager = document.getElementById('pager');
-      pager.hidden = false;
-      document.getElementById('pager-info').textContent =
-        `หน้า ${data.page} / ${totalPages} · ทั้งหมด ${data.total} รายการ`;
-      document.getElementById('prev').disabled = data.page <= 1;
-      document.getElementById('next').disabled = data.page >= totalPages;
-    }
-
-    /**
-     * ลบผลลัพธ์ 1 รอบ
-     * ข้อมูลในตาราง quiz_result_branches / quiz_answers ของรอบนั้นหายตามเอง
-     * เพราะผูก FK ON DELETE CASCADE ไว้ ฝั่งนี้จึงสั่งลบแค่แถวเดียว
-     */
-    function deleteResult(btn, rowsOnPage) {
-      const id   = btn.dataset.id;
-      const who  = btn.dataset.who;
-      const when = btn.dataset.when;
-
-      if (!confirm(`ลบผลการทำแบบทดสอบของ "${who}"\nเมื่อ ${when} ใช่หรือไม่?\n\nข้อมูลคำตอบและสาขาที่แนะนำของรอบนี้จะถูกลบไปด้วย และกู้คืนไม่ได้`)) {
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-      fetch('php/delete_result.php', {
-        method:      'POST',
-        headers:     { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body:        JSON.stringify({ result_id: Number(id) })
-      })
-        .then(async (r) => {
-          const data = await r.json().catch(() => null);
-          if (!r.ok || !data || !data.success) {
-            throw new Error(data?.error || 'ลบไม่สำเร็จ (HTTP ' + r.status + ')');
-          }
-          // ถ้าลบรายการสุดท้ายของหน้า ให้ถอยไปหน้าก่อนหน้า จะได้ไม่ค้างอยู่หน้าว่าง
-          if (rowsOnPage === 1 && page > 1) { page--; }
-          load();
-        })
-        .catch((err) => {
-          alert('ลบไม่สำเร็จ: ' + err.message);
-          btn.disabled  = false;
-          btn.innerHTML = '<i class="fas fa-trash-can"></i>';
-        });
-    }
-
-    function renderStats(s) {
-      const genderText = s.by_gender.length
-        ? s.by_gender.map(g => `${esc(g.gender) || 'ไม่ระบุ'} ${g.count}`).join(' · ')
-        : '-';
-      const topMbti   = s.top_mbti[0];
-      const topBranch = s.top_branch[0];
-
-      document.getElementById('stat-grid').innerHTML = `
-        <div class="stat-tile">
-          <div class="label">จำนวนครั้งที่ทำแบบทดสอบ</div>
-          <div class="value">${s.total_attempts}</div>
-          <div class="sub">${genderText}</div>
-        </div>
-        <div class="stat-tile">
-          <div class="label">ผู้ใช้ที่เคยทำแบบทดสอบ</div>
-          <div class="value">${s.total_users}</div>
-          <div class="sub">คน</div>
-        </div>
-        <div class="stat-tile">
-          <div class="label">MBTI ที่พบบ่อยที่สุด</div>
-          <div class="value">${topMbti ? esc(topMbti.mbti) : '-'}</div>
-          <div class="sub">${topMbti ? topMbti.count + ' ครั้ง' : 'ยังไม่มีข้อมูล'}</div>
-        </div>
-        <div class="stat-tile">
-          <div class="label">สาขาที่ถูกแนะนำบ่อยที่สุด</div>
-          <div class="value value-text">${topBranch ? esc(topBranch.name) : '-'}</div>
-          <div class="sub">${topBranch ? topBranch.count + ' ครั้ง' : 'ยังไม่มีข้อมูล'}</div>
-        </div>`;
-    }
-
-    function renderFilters(f) {
-      const gsel = document.getElementById('f-gender');
-      f.genders.forEach(g => gsel.insertAdjacentHTML('beforeend', `<option value="${esc(g)}">${esc(g)}</option>`));
-      const msel = document.getElementById('f-mbti');
-      f.mbti.forEach(m => msel.insertAdjacentHTML('beforeend', `<option value="${esc(m)}">${esc(m)}</option>`));
-    }
-
-    document.getElementById('filter-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      page = 1;
-      load();
-    });
-    document.getElementById('f-gender').addEventListener('change', () => { page = 1; load(); });
-    document.getElementById('f-mbti').addEventListener('change',   () => { page = 1; load(); });
-    document.getElementById('prev').addEventListener('click', () => { if (page > 1)          { page--; load(); window.scrollTo(0, 0); } });
-    document.getElementById('next').addEventListener('click', () => { if (page < totalPages) { page++; load(); window.scrollTo(0, 0); } });
-
-    /* ========================================
-       ส่งออกเป็นไฟล์ Excel
-       ======================================== */
-
-    // ปุ่ม "เฉพาะที่กรองอยู่" ไม่มีประโยชน์ถ้ายังไม่ได้กรองอะไร -> ซ่อนไว้
-    function syncExportButtons() {
-      const f = currentFilters();
-      document.getElementById('export-filtered').hidden = !(f.q || f.gender || f.mbti);
-    }
-
-    /**
-     * ดาวน์โหลดไฟล์ Excel
-     *
-     * ใช้ fetch แล้วแปลงเป็น blob แทนการ set window.location เพราะถ้า session หมดอายุ
-     * หรือ server พัง ฝั่งนั้นจะตอบ JSON กลับมา ถ้าปล่อยให้เบราว์เซอร์เปิด URL ตรง ๆ
-     * ผู้ใช้จะเจอหน้าขาวที่มีข้อความ JSON ดิบ แทนที่จะได้ข้อความบอกว่าเกิดอะไรขึ้น
-     */
-    function exportExcel(scope, btn) {
-      const params = new URLSearchParams({ scope });
-      if (scope === 'filtered') {
-        const f = currentFilters();
-        Object.entries(f).forEach(([k, v]) => { if (v) params.set(k, v); });
-      }
-
-      const original = btn.innerHTML;
-      btn.disabled  = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังสร้างไฟล์...';
-
-      fetch('php/export_admin_results.php?' + params, { credentials: 'include', cache: 'no-store' })
-        .then(async (r) => {
-          const type = r.headers.get('Content-Type') || '';
-
-          // ตอบเป็น JSON = มีปัญหา (ไม่มีสิทธิ์ / session หมดอายุ / server error)
-          if (type.includes('application/json')) {
-            const data = await r.json().catch(() => null);
-            throw new Error(data?.error || 'ส่งออกไม่สำเร็จ');
-          }
-          if (!r.ok) {
-            throw new Error('ส่งออกไม่สำเร็จ (HTTP ' + r.status + ')');
-          }
-
-          const blob = await r.blob();
-          const now  = new Date();
-          const pad  = (n) => String(n).padStart(2, '0');
-          const stamp = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate())
-                      + '-' + pad(now.getHours()) + pad(now.getMinutes());
-
-          const url = URL.createObjectURL(blob);
-          const a   = document.createElement('a');
-          a.href    = url;
-          a.download = 'FutureWay-ผลแบบทดสอบ-' + stamp + '.xlsx';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          // คืนหน่วยความจำที่จองไว้ให้ blob หลังเบราว์เซอร์เริ่มดาวน์โหลดแล้ว
-          setTimeout(() => URL.revokeObjectURL(url), 1000);
-        })
-        .catch((err) => alert(err.message || 'ส่งออกไม่สำเร็จ'))
-        .finally(() => {
-          btn.disabled  = false;
-          btn.innerHTML = original;
-        });
-    }
-
-    document.getElementById('export-all').addEventListener('click', function () {
-      exportExcel('all', this);
-    });
-    document.getElementById('export-filtered').addEventListener('click', function () {
-      exportExcel('filtered', this);
-    });
-
-    ['f-q', 'f-gender', 'f-mbti'].forEach(id => {
-      document.getElementById(id).addEventListener('input',  syncExportButtons);
-      document.getElementById(id).addEventListener('change', syncExportButtons);
-    });
-
-    // แสดงชื่อผู้ใช้ที่ login อยู่บน header
-    fetch('php/get_user.php', { cache: 'no-store' })
-      .then(r => r.json())
-      .then(d => { if (d.success) document.getElementById('who').textContent = d.fullname; })
-      .catch(() => {});
-
-    load();
-  </script>
-
+  <script src="js/common.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/admin.js"></script>
 </body>
 </html>

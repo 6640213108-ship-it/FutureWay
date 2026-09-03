@@ -1,7 +1,7 @@
 /* ========================================
    FutureWay - quiz.css
    ใช้เฉพาะหน้า quiz.html
-   ต้องโหลด main.css ก่อนไฟล์นี้เสมอ
+   ต้องโหลด app.css ก่อนไฟล์นี้เสมอ
    ======================================== */
 
 /* ========================================
@@ -70,7 +70,7 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  /* จอใหญ่: จำกัดความกว้างและจัดกึ่งกลาง (--content-max มาจาก main.css) */
+  /* จอใหญ่: จำกัดความกว้างและจัดกึ่งกลาง (--content-max มาจาก tokens.css) */
   width: 100%;
   max-width: var(--content-max);
   margin: 0 auto;
@@ -132,10 +132,14 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   padding: 12px 14px;
   border: 2px solid #e8e8e8;
   border-radius: 12px;
   background: var(--white);
+  font: inherit;
+  color: inherit;
+  text-align: left;
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
 }
@@ -239,6 +243,11 @@
 /* ========================================
    MBTI Question Card
    ======================================== */
+/* ข้อที่ยังไม่ได้ตอบตอนกดส่ง (js/quiz.js เติม class นี้ให้) */
+.mbti-card.missing {
+  border: 2px solid var(--red);
+  border-radius: 16px;
+}
 .mbti-card {
   background: var(--white);
   border-radius: 16px;

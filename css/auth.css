@@ -1,6 +1,6 @@
 /* ========================================
-   FutureWay - Global Stylesheet
-   ใช้กับทุกหน้าในโปรเจกต์
+   FutureWay - auth.css
+   หน้าก่อนล็อกอิน: index / login / register
    ======================================== */
 
 /* โหลดฟอนต์จาก Google Fonts
@@ -9,44 +9,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=Prompt:wght@600;700;800&display=swap');
 
 
-/* ========================================
-   CSS Variables — ตัวแปรสีและค่าต่างๆ
-   เปลี่ยนที่นี่ที่เดียว กระทบทุกหน้าเลย
-   ======================================== */
-:root {
-  /* -- สีหลัก -- */
-  --primary:       #7b2ff7;  /* ม่วงสด → ปุ่มหลัก, border */
-  --primary-dark:  #5a1bbf;  /* ม่วงเข้ม → ปุ่มตอน hover */
-  --primary-light: #b66fe9;  /* ม่วงอ่อน → ใช้ใน gradient พื้นหลัง */
-  --accent:        #6b0763;  /* ม่วงแดงเข้ม → ชื่อเว็บ, subtitle */
-
-  /* -- พื้นหลัง -- */
-  --bg-gradient: linear-gradient(135deg, #b66fe9 0%, #7b2ff7 50%, #5a1bbf 100%);
-  /* ไล่สีพื้นหลังทั้งหน้า จากซ้ายบน → ขวาล่าง */
-
-  /* -- สีขาวและเทา -- */
-  --white:      #ffffff;  /* สีขาวบริสุทธิ์ → พื้นกล่อง, ข้อความบนปุ่มม่วง */
-  --gray-light: #f5f5f5;  /* เทาอ่อนมาก → พื้นปุ่มตอน hover */
-  --gray:       #888888;  /* เทากลาง → ไอคอน, ข้อความเล็ก */
-  --gray-dark:  #4e4d4d;  /* เทาเข้ม → ข้อความ desc */
-  --border:     #dddddd;  /* เทาอ่อน → เส้นขอบ input */
-
-  /* -- สีสถานะ -- */
-  --error:   #d63031;  /* แดง → แจ้งเตือน error */
-  --success: #00b894;  /* เขียว → แจ้งเตือนสำเร็จ */
-
-  /* -- ขนาดมุมโค้ง (border-radius) -- */
-  --radius-sm: 8px;   /* เล็ก → input, select */
-  --radius-md: 12px;  /* กลาง → ปุ่ม */
-  --radius-lg: 16px;  /* ใหญ่ → กล่องหลัก (.box) */
-
-  /* -- เงา -- */
-  --shadow: 0 8px 32px rgba(123, 47, 247, 0.18);
-  /* เงาสีม่วงจาง → ทำให้กล่องดูลอยออกมา */
-
-  /* -- ความเร็ว animation -- */
-  --transition: 0.25s ease;  /* ใช้กับ hover ทุกที่ */
-}
+/* ตัวแปรสี/ระยะทั้งหมดอยู่ใน tokens.css (โหลดก่อนไฟล์นี้เสมอ) */
 
 
 /* ========================================
@@ -142,7 +105,7 @@ body {
 .note {
   display: block;        /* บังคับขึ้นบรรทัดใหม่ */
   font-size: 0.8rem;
-  color: var(--gray);
+  color: var(--gray-mid);
   text-align: left;
   margin-bottom: 16px;   /* เว้นระยะก่อนถึง form */
 }
@@ -175,8 +138,8 @@ body {
   border-color: var(--primary);
 }
 .btn-purple:hover {
-  background: var(--primary-dark);  /* ม่วงเข้มขึ้นตอน hover */
-  border-color: var(--primary-dark);
+  background: var(--primary-hover);  /* ม่วงเข้มขึ้นตอน hover */
+  border-color: var(--primary-hover);
 }
 
 /* ปุ่มกรอบม่วง พื้นขาว → ปุ่มรอง เช่น "สมัครใช้งาน" */
@@ -276,7 +239,7 @@ body {
   left: 13px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--gray);
+  color: var(--gray-mid);
   font-size: 14px;
   pointer-events: none;
 }
@@ -288,7 +251,7 @@ body {
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;   /* เมาส์เป็นรูปมือ (กดได้) */
-  color: var(--gray);
+  color: var(--gray-mid);
   font-size: 14px;
 }
 
@@ -357,7 +320,7 @@ body {
   align-items: center;
   gap: 10px;
   margin: 16px 0;
-  color: var(--gray);
+  color: var(--gray-mid);
   font-size: 0.8rem;
 }
 /* เส้นซ้าย-ขวาของข้อความ divider */

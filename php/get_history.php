@@ -1,36 +1,22 @@
 <?php
 // ========================================
 // FutureWay - get_history.php
-// ดึงประวัติผลลัพธ์ของผู้ใช้ที่ login อยู่ (ใหม่ล่าสุดก่อน)
-// ใช้โดย History_Results.html
+// ดึงประวัติผลลัพธ์ของผู้ใช้ที่ล็อกอินอยู่ (ใหม่ล่าสุดก่อน) ใช้โดย history.html
 //
 // query string:
-//   limit = จำนวนรอบที่ต้องการ (ค่าเริ่มต้น 3 = 3 รอบล่าสุด, สูงสุด 50)
+//   limit = จำนวนรอบที่ต้องการ (ค่าเริ่มต้น 3, สูงสุด 50)
 // ========================================
 
-session_start();
-header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/bootstrap.php';
 
-if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['success' => false, 'error' => 'กรุณาเข้าสู่ระบบก่อน'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-require_once __DIR__ . '/db_config.php';
-
-try {
-    $conn = getDbConnection();
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'error' => 'DB connection failed: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
+$userId = requireLoginJson();
 $limit  = isset($_GET['limit']) ? max(1, min(50, (int)$_GET['limit'])) : 3;
-$userId = $_SESSION['user_id'];
+
+$conn = connectOrFailJson();
 
 // นับจำนวนรอบทั้งหมดที่เคยทำ เพื่อบอกผู้ใช้ว่ากำลังดูแค่ส่วนหนึ่ง
 $totalRounds = 0;
-$stmtT = $conn->prepare("SELECT COUNT(*) AS c FROM quiz_results WHERE user_id = ?");
+$stmtT = $conn->prepare('SELECT COUNT(*) AS c FROM quiz_results WHERE user_id = ?');
 if ($stmtT) {
     $stmtT->bind_param('i', $userId);
     $stmtT->execute();
@@ -51,8 +37,7 @@ $stmt = $conn->prepare("
     LIMIT ?
 ");
 if (!$stmt) {
-    echo json_encode(['success' => false, 'error' => 'Prepare ล้มเหลว: ' . $conn->error], JSON_UNESCAPED_UNICODE);
-    exit;
+    jsonServerError('get_history', $conn->error);
 }
 $stmt->bind_param('ii', $userId, $limit);
 $stmt->execute();
@@ -85,24 +70,22 @@ while ($row = $result->fetch_assoc()) {
     $ids[] = $id;
 
     $history[] = [
-        'id'          => $id,
-        'input_mode'  => $inputMode,
-        'mbti_type'   => $row['mbti_type'],
-        'avg_grade'   => $avg,
-        'grades'      => $grades,
-        'branch_name' => $row['branch_name'],
-        'faculty'     => $row['faculty'],
-        'description' => $row['description'],
-        'score'       => $row['score'] !== null ? (float)$row['score'] : null,
-        'created_at'  => $row['created_at'],
+        'id'             => $id,
+        'input_mode'     => $inputMode,
+        'mbti_type'      => $row['mbti_type'],
+        'avg_grade'      => $avg,
+        'grades'         => $grades,
+        'branch_name'    => $row['branch_name'],
+        'faculty'        => $row['faculty'],
+        'description'    => $row['description'],
+        'score'          => $row['score'] !== null ? (float)$row['score'] : null,
+        'created_at'     => $row['created_at'],
         'top_categories' => [],   // เติมด้านล่าง
     ];
 }
 $stmt->close();
 
 // ดึงสาขาที่แนะนำ (จัดเป็นหมวดหมู่/คณะ) ของทุกรอบในครั้งเดียว
-// (ถ้าตารางยังไม่ถูกสร้าง หรือยังไม่มี category_rank -> prepare คืน false
-//  ข้ามไป หน้าเว็บยังแสดงอันดับ 1 จาก branch_name เดี่ยวๆ ได้)
 if ($ids) {
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
     $stmtB = $conn->prepare("
@@ -148,9 +131,8 @@ if ($ids) {
 
 $conn->close();
 
-echo json_encode([
-    'success'      => true,
+jsonOk([
     'history'      => $history,
     'limit'        => $limit,
     'total_rounds' => $totalRounds,
-], JSON_UNESCAPED_UNICODE);
+]);

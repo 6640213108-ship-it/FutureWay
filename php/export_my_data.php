@@ -6,14 +6,11 @@
 //
 // รวม: ข้อมูลบัญชี (ไม่รวมรหัสผ่าน), การตั้งค่า, ผลการทำแบบทดสอบทุกรอบ
 //       พร้อมสาขาที่แนะนำและคำตอบรายข้อของแต่ละรอบ
+// ถ้ามีปัญหา jsonFail จะตอบ JSON ธรรมดา (ไม่ใช่ไฟล์ดาวน์โหลด)
 // ========================================
 
-session_start();
-
+require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/user_session.php';
-
-// ถ้ามีปัญหา ฟังก์ชัน jsonFail จะตอบเป็น JSON ธรรมดา (ไม่ใช่ไฟล์ดาวน์โหลด)
-header('Content-Type: application/json; charset=utf-8');
 
 $conn   = connectOrFailJson();
 $user   = requireUserJson($conn);
@@ -21,12 +18,12 @@ $userId = (int)$user['id'];
 
 $profile = [
     'username'   => $user['username'],
-    'firstname'  => $user['firstname'] ?? '',
-    'lastname'   => $user['lastname']  ?? '',
-    'gender'     => $user['gender']    ?? '',
-    'email'      => $user['email']     ?? '',
-    'phone'      => $user['phone']     ?? '',
-    'address'    => $user['address']   ?? '',
+    'firstname'  => $user['firstname']  ?? '',
+    'lastname'   => $user['lastname']   ?? '',
+    'gender'     => $user['gender']     ?? '',
+    'email'      => $user['email']      ?? '',
+    'phone'      => $user['phone']      ?? '',
+    'address'    => $user['address']    ?? '',
     'created_at' => $user['created_at'] ?? null,
 ];
 
@@ -41,54 +38,40 @@ if ($stmt) {
     $stmt->execute();
     $res = $stmt->get_result();
     while ($row = $res->fetch_assoc()) {
-        unset($row['user_id']);          // รู้อยู่แล้วว่าเป็นของตัวเอง ไม่ต้องซ้ำทุกแถว
-        $id           = (int)$row['id'];
-        $ids[]        = $id;
+        unset($row['user_id']);
+        $id              = (int)$row['id'];
+        $ids[]           = $id;
         $row['branches'] = [];
         $row['answers']  = [];
-        $results[$id] = $row;
+        $results[$id]    = $row;
     }
     $stmt->close();
 }
 
-// ---- ข้อมูลลูกของแต่ละรอบ (ตารางจาก migration 002 อาจยังไม่มีในบาง DB) ----
-// ดึงทีเดียวทุกรอบด้วย IN (...) ไม่ยิงทีละรอบ
-$existingTables = [];
-if ($res = $conn->query("SHOW TABLES LIKE 'quiz\\_%'")) {
-    while ($r = $res->fetch_row()) { $existingTables[] = $r[0]; }
-    $res->free();
-}
-
+// ---- ข้อมูลลูกของแต่ละรอบ ดึงทีเดียวด้วย IN (...) ----
 if ($ids) {
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
     $types        = str_repeat('i', count($ids));
 
-    if (in_array('quiz_result_branches', $existingTables, true)) {
-        $q = $conn->prepare("SELECT * FROM quiz_result_branches WHERE result_id IN ($placeholders) ORDER BY result_id, rank_no");
-        if ($q) {
-            $q->bind_param($types, ...$ids);
-            $q->execute();
-            $r = $q->get_result();
-            while ($row = $r->fetch_assoc()) {
-                $rid = (int)$row['result_id'];
-                if (isset($results[$rid])) { $results[$rid]['branches'][] = $row; }
-            }
-            $q->close();
+    $children = [
+        'branches' => "SELECT * FROM quiz_result_branches WHERE result_id IN ($placeholders) ORDER BY result_id, category_rank, rank_no",
+        'answers'  => "SELECT * FROM quiz_answers WHERE result_id IN ($placeholders) ORDER BY result_id, id",
+    ];
+    foreach ($children as $key => $sql) {
+        $q = $conn->prepare($sql);
+        if (!$q) {
+            continue;
         }
-    }
-
-    if (in_array('quiz_answers', $existingTables, true)) {
-        $q = $conn->prepare("SELECT * FROM quiz_answers WHERE result_id IN ($placeholders) ORDER BY result_id, id");
-        if ($q) {
-            $q->bind_param($types, ...$ids);
-            $q->execute();
-            $r = $q->get_result();
-            while ($row = $r->fetch_assoc()) {
-                $rid = (int)$row['result_id'];
-                if (isset($results[$rid])) { $results[$rid]['answers'][] = $row; }
+        $q->bind_param($types, ...$ids);
+        $q->execute();
+        $r = $q->get_result();
+        while ($row = $r->fetch_assoc()) {
+            $rid = (int)$row['result_id'];
+            if (isset($results[$rid])) {
+                $results[$rid][$key][] = $row;
             }
-            $q->close();
         }
+        $q->close();
     }
 }
 

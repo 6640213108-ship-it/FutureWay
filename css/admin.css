@@ -1,19 +1,10 @@
 /* ========================================
    FutureWay - admin.css
    ใช้เฉพาะหน้า admin.html
-   ไฟล์นี้ standalone ไม่ต้องโหลด main.css
+   ไฟล์นี้ standalone ไม่ต้องโหลด app.css
    ======================================== */
 
-:root {
-  --primary:      #7b2ff7;
-  --primary-dark: #4a0080;
-  --white:        #ffffff;
-  --gray:         #888888;
-  --gray-light:   #f5f5f5;
-  --border:       #e5e5ec;
-  --danger:       #d93025;
-  --transition:   0.2s ease;
-}
+/* ตัวแปรสี/ระยะทั้งหมดอยู่ใน tokens.css (โหลดก่อนไฟล์นี้เสมอ) */
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -97,7 +88,7 @@ img { max-width: 100%; }
 
 .stat-tile .label {
   font-size: 0.8rem;
-  color: var(--gray);
+  color: var(--gray-mid);
   margin-bottom: 6px;
 }
 
@@ -110,7 +101,7 @@ img { max-width: 100%; }
 
 .stat-tile .sub {
   font-size: 0.78rem;
-  color: var(--gray);
+  color: var(--gray-mid);
   margin-top: 4px;
 }
 
@@ -174,7 +165,7 @@ img { max-width: 100%; }
   align-items: center;
   gap: 10px;
   font-size: 0.85rem;
-  color: var(--gray);
+  color: var(--gray-mid);
   min-width: 0;
   flex: 1;
 }
@@ -245,7 +236,7 @@ table.admin-table {
   text-align: left;
   font-weight: 600;
   font-size: 0.82rem;
-  color: var(--gray);
+  color: var(--gray-mid);
   background: var(--gray-light);
   padding: 12px 14px;
   white-space: nowrap;
@@ -262,7 +253,7 @@ table.admin-table {
 .admin-table tbody tr.row-main:hover { background: #faf7ff; }
 
 .name-cell { font-weight: 500; }
-.name-cell small { display: block; font-weight: 400; color: var(--gray); font-size: 0.76rem; }
+.name-cell small { display: block; font-weight: 400; color: var(--gray-mid); font-size: 0.76rem; }
 
 .badge {
   display: inline-block;
@@ -294,7 +285,7 @@ table.admin-table {
   color: var(--primary);
 }
 
-.muted { color: var(--gray); }
+.muted { color: var(--gray-mid); }
 
 /* ---- ช่องปุ่มท้ายแถว ---- */
 .action-cell {
@@ -334,13 +325,13 @@ table.admin-table {
 .detail-block h4 {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--gray);
+  color: var(--gray-mid);
   margin-bottom: 8px;
 }
 
 .cat-heading {
   font-size: 0.82rem;
-  color: var(--gray);
+  color: var(--gray-mid);
   margin: 10px 0 2px;
 }
 .cat-heading:first-child { margin-top: 0; }
@@ -367,7 +358,7 @@ table.admin-table {
 .rank-no.n3 { background: #c0a5fc; }
 
 .rank-line .grow { flex: 1; }
-.rank-line .fac  { color: var(--gray); font-size: 0.78rem; }
+.rank-line .fac  { color: var(--gray-mid); font-size: 0.78rem; }
 
 .grade-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .grade-chips span {
@@ -405,7 +396,7 @@ table.admin-table {
 
 .denied-card p {
   font-size: 0.88rem;
-  color: var(--gray);
+  color: var(--gray-mid);
   line-height: 1.6;
   margin-bottom: 22px;
 }
@@ -427,7 +418,7 @@ table.admin-table {
 .state-box {
   padding: 40px 20px;
   text-align: center;
-  color: var(--gray);
+  color: var(--gray-mid);
 }
 .state-box.error { color: var(--danger); }
 .state-box i { font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.5; }
@@ -452,7 +443,7 @@ table.admin-table {
 }
 .pager button:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
 .pager button:disabled { opacity: 0.4; cursor: default; }
-.pager .info { font-size: 0.85rem; color: var(--gray); }
+.pager .info { font-size: 0.85rem; color: var(--gray-mid); }
 
 @media (max-width: 600px) {
   .admin-wrap { padding: 14px 10px 40px; }

@@ -12,30 +12,17 @@
 //   4. set session แบบเดียวกับ login.php แล้วตอบ JSON ให้หน้าเว็บ redirect เอง
 // ========================================
 
-session_start();
-header('Content-Type: application/json; charset=utf-8');
-
-require_once __DIR__ . '/db_config.php';
+require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/google_config.php';
 
-function gFail(int $status, string $message): void {
-    http_response_code($status);
-    echo json_encode(['success' => false, 'error' => $message], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    gFail(405, 'ต้องเรียกด้วยวิธี POST เท่านั้น');
-}
-
-$input = json_decode(file_get_contents('php://input'), true);
-$accessToken = is_array($input) ? trim($input['access_token'] ?? '') : '';
+$input       = requireJsonPost();
+$accessToken = trim((string)($input['access_token'] ?? ''));
 
 if ($accessToken === '') {
-    gFail(400, 'ไม่พบ access token');
+    jsonFail(400, 'ไม่พบ access token');
 }
-if (GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com') {
-    gFail(500, 'ยังไม่ได้ตั้งค่า Google Client ID (ดูวิธีใน php/google_config.php)');
+if (GOOGLE_CLIENT_ID === GOOGLE_CLIENT_ID_PLACEHOLDER) {
+    jsonFail(500, 'ระบบยังไม่ได้ตั้งค่า Google Client ID');
 }
 
 /**
@@ -68,27 +55,22 @@ function googleApiGet(string $url, array $headers = []): ?array {
 }
 
 // ---- 1) ตรวจว่า token นี้ Google ออกให้ "แอปเรา" จริง ----
-$tokenInfo = googleApiGet(
-    'https://oauth2.googleapis.com/tokeninfo?access_token=' . urlencode($accessToken)
-);
+$tokenInfo = googleApiGet('https://oauth2.googleapis.com/tokeninfo?access_token=' . urlencode($accessToken));
 if (!$tokenInfo || isset($tokenInfo['error']) || empty($tokenInfo['aud'])) {
-    gFail(401, 'Token ไม่ถูกต้องหรือหมดอายุ กรุณาลองใหม่');
+    jsonFail(401, 'Token ไม่ถูกต้องหรือหมดอายุ กรุณาลองใหม่');
 }
 if ($tokenInfo['aud'] !== GOOGLE_CLIENT_ID) {
     // token ของแอปอื่น — ปฏิเสธ ไม่งั้นเว็บอื่นเอา token ผู้ใช้ตัวเองมาสวมรอยได้
-    gFail(401, 'Token นี้ไม่ได้ออกให้แอปพลิเคชันนี้');
+    jsonFail(401, 'Token นี้ไม่ได้ออกให้แอปพลิเคชันนี้');
 }
 
 // ---- 2) ดึงโปรไฟล์จาก Google ----
-$profile = googleApiGet(
-    'https://www.googleapis.com/oauth2/v3/userinfo',
-    ['Authorization: Bearer ' . $accessToken]
-);
+$profile = googleApiGet('https://www.googleapis.com/oauth2/v3/userinfo', ['Authorization: Bearer ' . $accessToken]);
 if (!$profile || empty($profile['email'])) {
-    gFail(401, 'ดึงข้อมูลบัญชี Google ไม่สำเร็จ กรุณาลองใหม่');
+    jsonFail(401, 'ดึงข้อมูลบัญชี Google ไม่สำเร็จ กรุณาลองใหม่');
 }
 if (empty($profile['email_verified'])) {
-    gFail(401, 'อีเมลของบัญชี Google นี้ยังไม่ได้รับการยืนยัน');
+    jsonFail(401, 'อีเมลของบัญชี Google นี้ยังไม่ได้รับการยืนยัน');
 }
 
 $email     = mb_strtolower(trim($profile['email']));
@@ -100,14 +82,12 @@ if ($firstname === '') {
 }
 
 // ---- 3) หา user จาก email ถ้าไม่มีก็สมัครให้อัตโนมัติ ----
-try {
-    $conn = getDbConnection();
-} catch (Exception $e) {
-    error_log('google_login.php: ' . $e->getMessage());
-    gFail(500, 'เชื่อมต่อฐานข้อมูลไม่ได้');
-}
+$conn = connectOrFailJson();
 
 $stmt = $conn->prepare('SELECT id, username, gender FROM users WHERE email = ?');
+if (!$stmt) {
+    jsonServerError('google_login', $conn->error);
+}
 $stmt->bind_param('s', $email);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
@@ -134,34 +114,31 @@ if (!$user) {
     // บัญชี Google ไม่มีรหัสผ่านของระบบเรา — ใส่รหัสสุ่มยาว ๆ ที่เดาไม่ได้ไว้แทน
     // (ผู้ใช้ไปตั้งรหัสจริงทีหลังได้ที่หน้าเปลี่ยนรหัสผ่าน)
     $randomPassword = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
-    $gender = 'ไม่ระบุ';
+    $gender         = 'ไม่ระบุ';
 
     $stmt = $conn->prepare(
-        'INSERT INTO users (username, firstname, lastname, gender, email, password)
-         VALUES (?, ?, ?, ?, ?, ?)'
+        'INSERT INTO users (username, firstname, lastname, gender, email, password) VALUES (?, ?, ?, ?, ?, ?)'
     );
     $stmt->bind_param('ssssss', $username, $firstname, $lastname, $gender, $email, $randomPassword);
     if (!$stmt->execute()) {
         $err = $stmt->error;
         $stmt->close();
-        error_log('google_login.php insert: ' . $err);
-        gFail(500, 'สร้างบัญชีใหม่ไม่สำเร็จ กรุณาลองใหม่');
+        jsonServerError('google_login insert', $err, 'สร้างบัญชีใหม่ไม่สำเร็จ กรุณาลองใหม่');
     }
     $user = ['id' => $stmt->insert_id, 'username' => $username, 'gender' => $gender];
     $stmt->close();
 }
+
+$conn->close();
 
 // ---- 4) set session แบบเดียวกับ login.php ----
 session_regenerate_id(true);
 $_SESSION['user_id']  = (int)$user['id'];
 $_SESSION['username'] = $user['username'];
 
-$conn->close();
-
 // need_gender = ยังไม่เคยเลือกเพศ (บัญชีที่เพิ่งสร้างจาก Google จะเป็น 'ไม่ระบุ')
-// หน้าเว็บใช้ flag นี้ตัดสินใจว่าจะเด้งป็อปอัปให้เลือกเพศก่อนเข้าระบบหรือไม่
-echo json_encode([
-    'success'     => true,
+$gender = (string)($user['gender'] ?? '');
+jsonOk([
     'username'    => $user['username'],
-    'need_gender' => ($user['gender'] ?? '') === 'ไม่ระบุ' || ($user['gender'] ?? '') === '',
-], JSON_UNESCAPED_UNICODE);
+    'need_gender' => $gender === 'ไม่ระบุ' || $gender === '',
+]);

@@ -1,31 +1,37 @@
 #!/bin/bash
-set -e
-echo "=== Checking MPM modules ==="
-ls -la /etc/apache2/mods-enabled/ | grep -i mpm
-rm -f /etc/apache2/mods-enabled/mpm_event.load
-rm -f /etc/apache2/mods-enabled/mpm_event.conf
-rm -f /etc/apache2/mods-enabled/mpm_worker.load
-rm -f /etc/apache2/mods-enabled/mpm_worker.conf
+# ========================================
+# FutureWay - entrypoint.sh
+# ปรับ Apache ใน image php:8.3-apache ให้พร้อมสำหรับ Railway ก่อนเริ่มทำงาน
+#   1) ใช้ mpm_prefork (mod_php ต้องการ) แทน mpm_event ที่ image เปิดมาให้
+#   2) ฟังพอร์ตตาม $PORT ที่ Railway กำหนด (ค่าเริ่มต้น 80)
+#   3) เปิด AllowOverride ให้ .htaccess มีผล
+# ตั้ง DEBUG_ENTRYPOINT=1 ถ้าอยากเห็นค่าที่ตั้งไว้ใน log ตอนบูต
+# ========================================
+set -euo pipefail
+
+PORT="${PORT:-80}"
+
+log() {
+  if [ -n "${DEBUG_ENTRYPOINT:-}" ]; then
+    echo "[entrypoint] $*"
+  fi
+}
+
+# ---- 1) MPM ----
+rm -f /etc/apache2/mods-enabled/mpm_event.load  /etc/apache2/mods-enabled/mpm_event.conf
+rm -f /etc/apache2/mods-enabled/mpm_worker.load /etc/apache2/mods-enabled/mpm_worker.conf
 ln -sf /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load
 ln -sf /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf
-echo "=== After fix ==="
-ls -la /etc/apache2/mods-enabled/ | grep -i mpm
-echo "=== Setting PORT to ${PORT:-80} ==="
-# ใช้ ^Listen .*$ แทน "Listen 80" ตรงๆ เพื่อให้ idempotent
-# ไม่ว่า container จะ restart กี่ครั้ง ก็จะ set ค่าตรงตาม $PORT เสมอ
-# ไม่ใช่ไป match ทับค่าที่เคยแก้ไปแล้ว (เช่น "Listen 8080" ที่ดันมี "Listen 80" ซ้อนอยู่ข้างใน)
-sed -i "s/^Listen .*/Listen ${PORT:-80}/" /etc/apache2/ports.conf
 
-# เช่นเดียวกัน match เฉพาะ pattern ทั้งก้อน *:PORT> กันไม่ให้ไป match ทับค่าที่แก้ไปแล้ว
-sed -i "s/<VirtualHost \*:[0-9]*>/<VirtualHost *:${PORT:-80}>/" /etc/apache2/sites-available/000-default.conf
+# ---- 2) พอร์ต ----
+# match ทั้งบรรทัด/ทั้ง pattern เพื่อให้ idempotent: restart กี่ครั้งก็ได้ค่าตาม $PORT เสมอ
+sed -i "s/^Listen .*/Listen ${PORT}/" /etc/apache2/ports.conf
+sed -i "s/<VirtualHost \*:[0-9]*>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/000-default.conf
 
-# image php:8.3-apache ตั้ง AllowOverride None ไว้เป็นค่าเริ่มต้น
-# ทำให้ .htaccess ถูกเมินทั้งไฟล์ ต้องเปิดให้อ่านก่อน กฎใน .htaccess ถึงจะมีผลจริง
+# ---- 3) .htaccess ----
 sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
-echo "=== ports.conf now ==="
-cat /etc/apache2/ports.conf
-echo "=== 000-default.conf VirtualHost line ==="
-grep VirtualHost /etc/apache2/sites-available/000-default.conf
+log "listening on port ${PORT}"
+log "$(ls /etc/apache2/mods-enabled/ | grep -i mpm | tr '\n' ' ')"
 
 exec apache2-foreground

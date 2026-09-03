@@ -4,16 +4,11 @@
 // บันทึกการตั้งค่าการแจ้งเตือน / ความเป็นส่วนตัว
 // ใช้โดย notifications.html และ privacy.html
 //
-// รับเฉพาะ POST + body เป็น JSON เช่น
-//   {"notify_result":true, "notify_news":false}
-//
+// รับเฉพาะ POST + body เป็น JSON เช่น {"notify_result":true, "notify_news":false}
 // key ไหนไม่ส่งมาก็คงค่าเดิมไว้ ทำให้หน้าเว็บส่งมาแค่ปุ่มที่เพิ่งกดสลับก็พอ
-// (แต่ละหน้าดูแลคนละกลุ่ม key ถ้าส่งทั้งชุดจะเผลอทับค่าของอีกหน้า)
 // ========================================
 
-session_start();
-header('Content-Type: application/json; charset=utf-8');
-
+require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/user_session.php';
 
 $input = requireJsonPost();

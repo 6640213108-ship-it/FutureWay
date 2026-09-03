@@ -1,7 +1,7 @@
 /* ========================================
    FutureWay - lightbox.css
    popup ดูรูปเต็มจอ — ใช้เฉพาะกล่องสไลด์รูปในหน้า main.html
-   โหลดต่อจาก main.css (ใช้ตัวแปรสีและ base ร่วมกัน)
+   โหลดต่อจาก app.css (ใช้ตัวแปรสีและ base ร่วมกัน)
    ======================================== */
 
 .lightbox {
@@ -24,7 +24,7 @@
   padding-right:  calc(12px + env(safe-area-inset-right, 0px));
   animation: lb-fade 0.18s ease;
 }
-/* main.css มีกฎ [hidden]{display:none!important} อยู่แล้ว แต่ประกาศซ้ำตรงนี้ด้วย
+/* app.css มีกฎ [hidden]{display:none!important} อยู่แล้ว แต่ประกาศซ้ำตรงนี้ด้วย
    เพราะ .lightbox ตั้ง display:flex ไว้ ถ้ากฎ [hidden] หายไปด้วยเหตุใดก็ตาม
    popup จะโผล่ค้างเต็มจอตั้งแต่เปิดหน้า ซึ่งพังหนักกว่าการที่มันไม่เปิด */
 .lightbox[hidden] { display: none !important; }
@@ -167,5 +167,5 @@
 }
 
 /* ล็อกไม่ให้หน้าข้างหลังเลื่อนตามตอนเปิด popup
-   (สไตล์ของรูปเล็กในกล่องสไลด์ รวมถึง cursor: zoom-in อยู่ใน main.css) */
+   (สไตล์ของรูปเล็กในกล่องสไลด์ รวมถึง cursor: zoom-in อยู่ใน app.css) */
 body.lightbox-open { overflow: hidden; }

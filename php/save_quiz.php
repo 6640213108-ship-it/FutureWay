@@ -1,362 +1,205 @@
 <?php
 // ========================================
-// FutureWay - save_quiz.php (แก้ไข: รับประกันว่า output เป็น JSON เสมอ)
+// FutureWay - save_quiz.php
+// รับคำตอบแบบทดสอบจาก quiz.html -> ให้ Python คำนวณ MBTI + สาขาแนะนำ
+// -> บันทึกผลทั้งหมดลงฐานข้อมูลในธุรกรรมเดียว -> ตอบ result_id
+//
+// รับ POST + body เป็น JSON:
+//   โหมดกรอกเกรด:   {"grades": {"math":3.5, ...}, "answers": [{"question_id":1,"selected":"A"}, ...]}
+//   โหมดไม่ทราบเกรด: {"interests": [id, ...],       "answers": [...]}
 // ========================================
 
-ob_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 0);
-ini_set('log_errors', 1);
+require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/decision_tree_runner.php';
 
-session_start();
+$userId = requireLoginJson();
+$input  = requireJsonPost();
 
-header('Content-Type: application/json; charset=utf-8');
+// ---- ตรวจ input ----
+$answers = $input['answers'] ?? null;
+if (!is_array($answers) || !$answers) {
+    jsonFail(400, 'ไม่พบคำตอบแบบทดสอบ');
+}
+foreach ($answers as $a) {
+    if (!is_array($a) || !isset($a['question_id'], $a['selected'])) {
+        jsonFail(400, 'รูปแบบคำตอบไม่ถูกต้อง');
+    }
+}
 
-// ========================================
-// ครอบทุกอย่างด้วย try-catch เพื่อรับประกันว่า
-// ไม่ว่าจะพังตรงไหน จะได้ JSON กลับไปเสมอ ไม่ใช่ response ว่างๆ
-// ========================================
+$grades    = null;
+$interests = null;
+if (isset($input['grades']) && is_array($input['grades'])) {
+    $inputMode = 'grade';
+    $grades    = [];
+    foreach (['math', 'sci', 'eng', 'thai', 'social', 'art'] as $subject) {
+        if (!isset($input['grades'][$subject]) || !is_numeric($input['grades'][$subject])) {
+            jsonFail(400, "ขาดเกรดวิชา: $subject");
+        }
+        $value = (float)$input['grades'][$subject];
+        if ($value < 0 || $value > 4) {
+            jsonFail(400, 'เกรดต้องอยู่ระหว่าง 0.00 ถึง 4.00');
+        }
+        $grades[$subject] = $value;
+    }
+} elseif (isset($input['interests']) && is_array($input['interests'])) {
+    $inputMode = 'interest';
+    $interests = array_values(array_map('intval', $input['interests']));
+    if (!$interests) {
+        jsonFail(400, 'กรุณาเลือกความชอบ/งานอดิเรกอย่างน้อย 1 ข้อ');
+    }
+} else {
+    jsonFail(400, 'ต้องส่ง grades หรือ interests อย่างใดอย่างหนึ่ง');
+}
+
+// ---- Step 1: ให้ Python คำนวณ MBTI จากคำตอบ + จัดอันดับสาขา ----
 try {
+    $pyResult = runDecisionTree($inputMode === 'grade'
+        ? ['grades' => $grades, 'answers' => $answers]
+        : ['interests' => $interests, 'answers' => $answers]);
+} catch (RuntimeException $e) {
+    jsonFail(500, $e->getMessage());
+}
 
-    // เช็คว่ามี output แปลกปลอมก่อนหน้านี้หรือไม่ (BOM, whitespace, warning)
-    $earlyOutput = ob_get_clean();
-    if (!empty(trim($earlyOutput))) {
-        throw new Exception('PHP output before JSON: ' . $earlyOutput);
+$mbti = $pyResult['mbti'] ?? null;
+if (!is_string($mbti) || strlen($mbti) !== 4) {
+    error_log('save_quiz: python returned invalid mbti: ' . json_encode($pyResult['mbti'] ?? null));
+    jsonFail(500, 'ไม่สามารถคำนวณผล MBTI จากคำตอบที่ส่งมาได้');
+}
+if (empty($pyResult['top_categories'][0]['branches'])) {
+    error_log('save_quiz: python returned no branches (table branches empty?)');
+    jsonFail(500, 'ไม่พบข้อมูลสาขาในระบบ');
+}
+
+// ---- Step 2: บันทึกผลลง DB ทั้ง 3 ตารางในธุรกรรมเดียว ----
+$conn = connectOrFailJson();
+
+$top1       = $pyResult['top_categories'][0]['branches'][0];
+$branchId   = $top1['id']    ?? null;
+$branchName = $top1['name']  ?? null;
+$score      = $top1['score'] ?? null;
+
+$avgGrade     = $pyResult['avg_grade'] ?? null;
+$mbtiDetail   = isset($pyResult['mbti_detail'])
+    ? json_encode($pyResult['mbti_detail'], JSON_UNESCAPED_UNICODE) : null;
+$riasecScores = isset($pyResult['riasec_detail']['scores'])
+    ? json_encode($pyResult['riasec_detail']['scores'], JSON_UNESCAPED_UNICODE) : null;
+$answersTotal = count($answers);
+
+// PHP 8+ ห้าม reference string offset ใน bind_param -> แยกเป็นตัวแปรก่อน
+$mbtiEI = $mbti[0];
+$mbtiSN = $mbti[1];
+$mbtiTF = $mbti[2];
+$mbtiJP = $mbti[3];
+
+// โหมดไม่ทราบเกรด: คอลัมน์ grade_* เป็น NULL
+$gMath   = $grades['math']   ?? null;
+$gSci    = $grades['sci']    ?? null;
+$gEng    = $grades['eng']    ?? null;
+$gThai   = $grades['thai']   ?? null;
+$gSocial = $grades['social'] ?? null;
+$gArt    = $grades['art']    ?? null;
+
+$conn->begin_transaction();
+try {
+    $stmt = $conn->prepare("
+        INSERT INTO quiz_results
+            (user_id, input_mode, grade_math, grade_sci, grade_eng, grade_thai, grade_social, grade_art,
+             avg_grade, mbti_type, mbti_e_i, mbti_s_n, mbti_t_f, mbti_j_p,
+             mbti_detail, riasec_scores, answers_total, branch_id, branch_name, score)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+    if (!$stmt) {
+        throw new Exception('prepare quiz_results: ' . $conn->error);
     }
-
-    // เช็ค login
-    if (!isset($_SESSION['username']) && !isset($_SESSION['user_id'])) {
-        echo json_encode(['success' => false, 'error' => 'กรุณาเข้าสู่ระบบก่อน']);
-        exit;
+    $stmt->bind_param(
+        'isdddddddsssssssiisd',
+        $userId, $inputMode,
+        $gMath, $gSci, $gEng, $gThai, $gSocial, $gArt,
+        $avgGrade, $mbti, $mbtiEI, $mbtiSN, $mbtiTF, $mbtiJP,
+        $mbtiDetail, $riasecScores, $answersTotal,
+        $branchId, $branchName, $score
+    );
+    if (!$stmt->execute()) {
+        throw new Exception('insert quiz_results: ' . $stmt->error);
     }
+    $resultId = $stmt->insert_id;
+    $stmt->close();
 
-    // รับ JSON จาก quiz.html
-    // โหมดกรอกเกรด: ต้องมี 'grades' (dict 6 วิชา)
-    // โหมดไม่ทราบเกรด: ต้องมี 'interests' แทน (list ของ riasec_questions.id ที่เลือก)
-    $input = json_decode(file_get_contents('php://input'), true);
-    if (!$input || !isset($input['answers']) || !is_array($input['answers'])) {
-        echo json_encode(['success' => false, 'error' => 'ข้อมูลไม่ครบ']);
-        exit;
+    // snapshot สาขาที่แนะนำของรอบนี้ (สูงสุด 3 คณะ x 5 สาขา) เพื่อให้ประวัติเก่า
+    // ไม่เปลี่ยนตามข้อมูลตาราง branches ที่แก้ทีหลัง
+    $stmtB = $conn->prepare("
+        INSERT INTO quiz_result_branches
+            (result_id, category_rank, rank_no, branch_id, branch_name, faculty, description, score, note)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+    if (!$stmtB) {
+        throw new Exception('prepare quiz_result_branches: ' . $conn->error);
     }
+    foreach ($pyResult['top_categories'] as $ci => $category) {
+        $categoryRank = $ci + 1;
+        foreach ($category['branches'] as $bi => $b) {
+            $rankNo = $bi + 1;
+            $bId    = $b['id']          ?? null;
+            $bName  = $b['name']        ?? '';
+            $bFac   = $b['faculty']     ?? ($category['faculty'] ?? null);
+            $bDesc  = $b['description'] ?? null;
+            $bScore = $b['score']       ?? 0;
+            $bNote  = $b['note']        ?? null;
 
-    $answers   = $input['answers'];
-    $grades    = null;
-    $interests = null;
-
-    if (isset($input['grades']) && is_array($input['grades'])) {
-        $grades = $input['grades'];
-        $inputMode = 'grade';
-
-        $requiredSubjects = ['math', 'sci', 'eng', 'thai', 'social', 'art'];
-        foreach ($requiredSubjects as $subj) {
-            if (!isset($grades[$subj])) {
-                echo json_encode(['success' => false, 'error' => "ขาดเกรดวิชา: $subj"]);
-                exit;
+            $stmtB->bind_param('iiiisssds', $resultId, $categoryRank, $rankNo, $bId, $bName, $bFac, $bDesc, $bScore, $bNote);
+            if (!$stmtB->execute()) {
+                throw new Exception('insert quiz_result_branches: ' . $stmtB->error);
             }
         }
-    } elseif (isset($input['interests']) && is_array($input['interests'])) {
-        $interests = $input['interests'];
-        $inputMode = 'interest';
+    }
+    $stmtB->close();
 
-        if (count($interests) === 0) {
-            echo json_encode(['success' => false, 'error' => 'กรุณาเลือกความชอบ/งานอดิเรกอย่างน้อย 1 ข้อ']);
-            exit;
+    // คำตอบรายข้อ พร้อมมิติ (EI/SN/TF/JP) และตัวอักษรที่ได้จากตัวเลือกนั้น
+    $qMeta = [];
+    if ($qRes = $conn->query('SELECT id, question_no, category, option_a_trait, option_b_trait FROM mbti_questions')) {
+        while ($qRow = $qRes->fetch_assoc()) {
+            $qMeta[(string)$qRow['id']] = $qRow;
         }
-    } else {
-        echo json_encode(['success' => false, 'error' => 'ข้อมูลไม่ครบ (ต้องมี grades หรือ interests)']);
-        exit;
+        $qRes->free();
     }
 
-    if (count($answers) === 0) {
-        echo json_encode(['success' => false, 'error' => 'ไม่พบคำตอบแบบทดสอบ']);
-        exit;
+    $stmtA = $conn->prepare("
+        INSERT INTO quiz_answers (result_id, question_id, question_no, category, selected, trait)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ");
+    if (!$stmtA) {
+        throw new Exception('prepare quiz_answers: ' . $conn->error);
     }
     foreach ($answers as $a) {
-        if (!isset($a['question_id']) || !isset($a['selected'])) {
-            echo json_encode(['success' => false, 'error' => 'รูปแบบคำตอบไม่ถูกต้อง']);
-            exit;
+        $qId  = (int)$a['question_id'];
+        $sel  = strtoupper(substr(trim((string)$a['selected']), 0, 1));
+        $meta = $qMeta[(string)$qId] ?? null;
+
+        $qNo   = $meta ? (int)$meta['question_no'] : null;
+        $cat   = $meta ? strtoupper(trim((string)$meta['category'])) : null;
+        $trait = null;
+        if ($meta) {
+            $rawTrait = ($sel === 'A') ? $meta['option_a_trait'] : $meta['option_b_trait'];
+            $trait    = strtoupper(substr(trim((string)$rawTrait), 0, 1)) ?: null;
+        }
+
+        $stmtA->bind_param('iiisss', $resultId, $qId, $qNo, $cat, $sel, $trait);
+        if (!$stmtA->execute()) {
+            throw new Exception('insert quiz_answers: ' . $stmtA->error);
         }
     }
+    $stmtA->close();
 
-    // ========================================
-    // เชื่อมต่อ Database
-    // ========================================
-    require_once __DIR__ . '/db_config.php';
-    $conn = getDbConnection(); // ถ้า connect ไม่ได้ exception จะถูกจับโดย catch (Throwable $e) ท้ายไฟล์
-
-    // ดึง user_id
-    if (isset($_SESSION['user_id'])) {
-        $userId = $_SESSION['user_id'];
-    } else {
-        $uname = $_SESSION['username'];
-        $stmtU = $conn->prepare("SELECT id FROM users WHERE username = ?");
-        if (!$stmtU) {
-            throw new Exception('Prepare (SELECT user) ล้มเหลว: ' . $conn->error);
-        }
-        $stmtU->bind_param('s', $uname);
-        $stmtU->execute();
-        $rowU = $stmtU->get_result()->fetch_assoc();
-        $stmtU->close();
-        if (!$rowU) {
-            echo json_encode(['success' => false, 'error' => 'ไม่พบข้อมูลผู้ใช้']);
-            exit;
-        }
-        $userId = $rowU['id'];
-        $_SESSION['user_id'] = $userId;
-    }
-
-    // ========================================
-    // Step 1: เรียก Python Decision Tree ก่อน
-    // (mbti ยังไม่รู้ค่า จนกว่า python จะคำนวณจาก answers ให้)
-    // ========================================
-    $pythonInput = json_encode($inputMode === 'grade'
-        ? ['grades' => $grades, 'answers' => $answers]
-        : ['interests' => $interests, 'answers' => $answers]
-    );
-
-    require_once __DIR__ . '/python_config.php';
-    $pythonPath = getPythonPath();
-    $scriptPath = dirname(__DIR__) . '/decision_tree.py';
-
-    if (!file_exists($scriptPath)) {
-        throw new Exception("ไม่พบไฟล์ Python script ที่: $scriptPath");
-    }
-
-    $descriptors = [
-        0 => ['pipe', 'r'],
-        1 => ['pipe', 'w'],
-        2 => ['pipe', 'w'],
-    ];
-
-    $cmd = '"' . $pythonPath . '" "' . $scriptPath . '"';
-    $process = proc_open($cmd, $descriptors, $pipes);
-
-    if (!is_resource($process)) {
-        throw new Exception('ไม่สามารถเรียก Python ได้');
-    }
-
-    fwrite($pipes[0], $pythonInput);
-    fclose($pipes[0]);
-
-    $pythonOutput = stream_get_contents($pipes[1]);
-    $pythonStderr = stream_get_contents($pipes[2]);
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-    proc_close($process);
-
-    $pyResult = json_decode($pythonOutput, true);
-
-    if ($pyResult === null && trim($pythonOutput) !== '') {
-        // stdout มีข้อมูล แต่ parse JSON ไม่ได้ -> python พังกลางทาง print ไม่ครบ
-        $errMsg = 'Python ส่งค่ากลับมาไม่ใช่ JSON ที่ถูกต้อง (' . json_last_error_msg() . ')';
-    } elseif (!$pyResult) {
-        // stdout ว่างเปล่าจริงๆ -> python ไม่ถูกเรียก หรือ crash ตั้งแต่ต้นไฟล์
-        $errMsg = 'ไม่ได้รับ output จาก Python เลย (ตรวจสอบ python path และว่าลง mysql-connector-python แล้วหรือยัง)';
-    } elseif (isset($pyResult['error'])) {
-        // python รันได้ แต่ error ระหว่างทาง (เช่น DB connect ไม่ได้)
-        $errMsg = 'Python error: ' . $pyResult['error'];
-    } elseif (empty($pyResult['top_categories']) || empty($pyResult['top_categories'][0]['branches'])) {
-        // python รันสำเร็จ เชื่อม DB ได้ปกติ แต่ query ตาราง branches ไม่เจอแถวที่ is_active = 1
-        $errMsg = 'ไม่พบข้อมูลสาขาในระบบ (ตาราง branches อาจว่าง หรือไม่มีแถวที่ is_active = 1)';
-    } elseif (!isset($pyResult['mbti']) || !is_string($pyResult['mbti']) || strlen($pyResult['mbti']) !== 4) {
-        // python รันได้แต่คำนวณ mbti จาก answers ไม่สำเร็จ (เช่น question_id ไม่ตรงกับ DB เลยสักข้อ)
-        $errMsg = 'ไม่สามารถคำนวณผล MBTI จากคำตอบที่ส่งมาได้';
-    } else {
-        $errMsg = null;
-    }
-
-    if ($errMsg !== null) {
-        echo json_encode([
-            'success' => false,
-            'error'   => $errMsg,
-            'debug'   => [
-                'stdout'      => $pythonOutput,
-                'stderr'      => $pythonStderr,
-                'python_path' => $pythonPath,
-                'script_path' => $scriptPath,
-            ]
-        ]);
-        exit;
-    }
-
-    // ========================================
-    // Step 2: บันทึกผลลัพธ์ทั้งหมดลง DB ในครั้งเดียว
-    // (เกรด + mbti ที่ python คำนวณได้ + คณะที่แนะนำอันดับ 1)
-    // ========================================
-    $mbti = $pyResult['mbti'];
-
-    // แยก string offset ออกมาเป็นตัวแปรก่อน เพราะ PHP 8+ ห้าม reference string offset ตรงๆ ใน bind_param
-    $mbtiEI = $mbti[0];
-    $mbtiSN = $mbti[1];
-    $mbtiTF = $mbti[2];
-    $mbtiJP = $mbti[3];
-
-    // สาขาที่แนะนำที่สุดโดยรวม = สาขาอันดับ 1 ของหมวดหมู่ (คณะ) อันดับ 1
-    $top1       = $pyResult['top_categories'][0]['branches'][0];
-    $branchId   = $top1['id']    ?? null;
-    $branchName = $top1['name']  ?? null;
-    $score      = $top1['score'] ?? null;
-
-    // ค่าสรุปของรอบนี้ที่ python คำนวณมาแล้ว เก็บไว้ด้วยจะได้ไม่ต้องคำนวณซ้ำตอนเปิดดูผล
-    $avgGrade     = $pyResult['avg_grade'] ?? null;
-    $mbtiDetail   = isset($pyResult['mbti_detail'])
-        ? json_encode($pyResult['mbti_detail'], JSON_UNESCAPED_UNICODE)
-        : null;
-    // โหมดไม่ทราบเกรด: บันทึกโปรไฟล์ RIASEC ที่คำนวณได้ไว้ด้วย (แสดงผลย้อนหลังได้)
-    $riasecScores = isset($pyResult['riasec_detail']['scores'])
-        ? json_encode($pyResult['riasec_detail']['scores'], JSON_UNESCAPED_UNICODE)
-        : null;
-    $answersTotal = count($answers);
-
-    // โหมดไม่ทราบเกรด: ไม่มีค่าเกรดเลย ส่ง NULL เข้า DB (คอลัมน์ grade_* เป็น nullable แล้ว)
-    $gMath   = $grades['math']   ?? null;
-    $gSci    = $grades['sci']    ?? null;
-    $gEng    = $grades['eng']    ?? null;
-    $gThai   = $grades['thai']   ?? null;
-    $gSocial = $grades['social'] ?? null;
-    $gArt    = $grades['art']    ?? null;
-
-    // เก็บทั้ง 3 ตารางให้เป็นก้อนเดียวกัน ถ้าพังกลางทางต้องไม่เหลือแถวค้าง
-    $conn->begin_transaction();
-
-    try {
-        $stmt = $conn->prepare("
-            INSERT INTO quiz_results
-                (user_id, input_mode, grade_math, grade_sci, grade_eng, grade_thai, grade_social, grade_art,
-                 avg_grade,
-                 mbti_type, mbti_e_i, mbti_s_n, mbti_t_f, mbti_j_p,
-                 mbti_detail, riasec_scores, answers_total,
-                 branch_id, branch_name, score)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        if (!$stmt) {
-            throw new Exception('Prepare (INSERT quiz_results) ล้มเหลว: ' . $conn->error);
-        }
-
-        // i=user_id, s=input_mode, d×7=เกรด6วิชา+avg (NULL ได้ในโหมด interest),
-        // s×7=mbti_type+4มิติ+mbti_detail+riasec_scores,
-        // i=answers_total, i=branch_id, s=branch_name, d=score  (รวม 20 ค่า)
-        $stmt->bind_param(
-            'isdddddddsssssssiisd',
-            $userId, $inputMode,
-            $gMath, $gSci, $gEng, $gThai, $gSocial, $gArt,
-            $avgGrade,
-            $mbti,
-            $mbtiEI, $mbtiSN, $mbtiTF, $mbtiJP,
-            $mbtiDetail, $riasecScores, $answersTotal,
-            $branchId, $branchName, $score
-        );
-
-        if (!$stmt->execute()) {
-            throw new Exception('บันทึกข้อมูลไม่สำเร็จ: ' . $stmt->error);
-        }
-
-        $resultId = $stmt->insert_id;
-        $stmt->close();
-
-        // ----------------------------------------
-        // เก็บสาขาที่แนะนำเป็น snapshot ของรอบนี้ จัดเป็นหมวดหมู่ (คณะ) สูงสุด 3
-        // หมวด แต่ละหมวดมีสาขาข้างในสูงสุด 5 สาขา (ดู decision_tree.py:
-        // run_decision_tree — TOP_CATEGORIES / BRANCHES_PER_CATEGORY)
-        // เก็บเป็น snapshot เหมือนเดิมเพื่อให้ประวัติเก่าไม่เปลี่ยนผลตามข้อมูล
-        // ตาราง branches ที่แก้ทีหลัง
-        // ----------------------------------------
-        $stmtB = $conn->prepare("
-            INSERT INTO quiz_result_branches
-                (result_id, category_rank, rank_no, branch_id, branch_name, faculty, description, score, note)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        if (!$stmtB) {
-            throw new Exception('Prepare (INSERT quiz_result_branches) ล้มเหลว: ' . $conn->error);
-        }
-
-        foreach ($pyResult['top_categories'] as $ci => $category) {
-            $categoryRank = $ci + 1;
-
-            foreach ($category['branches'] as $bi => $b) {
-                $rankNo  = $bi + 1;
-                $bId     = $b['id']          ?? null;
-                $bName   = $b['name']        ?? '';
-                $bFac    = $b['faculty']     ?? ($category['faculty'] ?? null);
-                $bDesc   = $b['description'] ?? null;
-                $bScore  = $b['score']       ?? 0;
-                $bNote   = $b['note']        ?? null;
-
-                $stmtB->bind_param(
-                    'iiiisssds',
-                    $resultId, $categoryRank, $rankNo, $bId, $bName, $bFac, $bDesc, $bScore, $bNote
-                );
-                if (!$stmtB->execute()) {
-                    throw new Exception('บันทึกสาขาที่แนะนำไม่สำเร็จ: ' . $stmtB->error);
-                }
-            }
-        }
-        $stmtB->close();
-
-        // ----------------------------------------
-        // เก็บคำตอบรายข้อ พร้อมมิติ (EI/SN/TF/JP) และตัวอักษรที่ได้จากตัวเลือกนั้น
-        // ดึง meta ของคำถามมาครั้งเดียวแล้ว map เอา ไม่ query ทีละข้อ
-        // ----------------------------------------
-        $qMeta = [];
-        if ($qRes = $conn->query("SELECT id, question_no, category, option_a_trait, option_b_trait FROM mbti_questions")) {
-            while ($qRow = $qRes->fetch_assoc()) {
-                $qMeta[(string)$qRow['id']] = $qRow;
-            }
-            $qRes->free();
-        }
-
-        $stmtA = $conn->prepare("
-            INSERT INTO quiz_answers
-                (result_id, question_id, question_no, category, selected, trait)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ");
-        if (!$stmtA) {
-            throw new Exception('Prepare (INSERT quiz_answers) ล้มเหลว: ' . $conn->error);
-        }
-
-        foreach ($answers as $a) {
-            $qId   = (int)$a['question_id'];
-            $sel   = strtoupper(substr(trim((string)$a['selected']), 0, 1));
-            $meta  = $qMeta[(string)$qId] ?? null;
-
-            $qNo   = $meta ? (int)$meta['question_no'] : null;
-            $cat   = $meta ? strtoupper(trim((string)$meta['category'])) : null;
-            $trait = null;
-            if ($meta) {
-                $rawTrait = ($sel === 'A') ? $meta['option_a_trait'] : $meta['option_b_trait'];
-                $trait    = strtoupper(substr(trim((string)$rawTrait), 0, 1)) ?: null;
-            }
-
-            $stmtA->bind_param('iiisss', $resultId, $qId, $qNo, $cat, $sel, $trait);
-            if (!$stmtA->execute()) {
-                throw new Exception('บันทึกคำตอบไม่สำเร็จ: ' . $stmtA->error);
-            }
-        }
-        $stmtA->close();
-
-        $conn->commit();
-
-    } catch (Throwable $e) {
-        $conn->rollback();
-        throw $e;
-    }
-
-    $conn->close();
-
-    // ========================================
-    // Step 3: ส่ง result_id และ mbti กลับให้ quiz.html
-    // ========================================
-    echo json_encode([
-        'success'   => true,
-        'result_id' => $resultId,
-        'mbti'      => $mbti
-    ]);
-
+    $conn->commit();
 } catch (Throwable $e) {
-    // ดักทุก error/exception ที่หลุดมา -> ยังไงก็ได้ JSON กลับไปแน่นอน
-    error_log('save_quiz.php error: ' . $e->getMessage());
-    echo json_encode([
-        'success' => false,
-        'error'   => 'เกิดข้อผิดพลาดที่ server: ' . $e->getMessage()
-    ]);
+    $conn->rollback();
+    $conn->close();
+    jsonServerError('save_quiz', $e->getMessage(), 'บันทึกผลไม่สำเร็จ กรุณาลองใหม่');
 }
+
+$conn->close();
+
+jsonOk([
+    'result_id' => $resultId,
+    'mbti'      => $mbti,
+]);

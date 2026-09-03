@@ -8,13 +8,9 @@
 //   {"success":true,
 //    "settings":{"notify_result":true, ... ,"allow_stats":true},
 //    "stats":{"rounds":5,"last_quiz":"2026-07-15 13:38:38","joined":"..."}}
-//
-// stats ใช้โชว์ในหน้าความเป็นส่วนตัวว่า "ข้อมูลที่ระบบเก็บของคุณมีอะไรบ้าง"
 // ========================================
 
-session_start();
-header('Content-Type: application/json; charset=utf-8');
-
+require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/user_session.php';
 
 $conn   = connectOrFailJson();
@@ -23,7 +19,7 @@ $userId = (int)$user['id'];
 
 $settings = getUserSettings($conn, $userId);
 
-// จำนวนรอบที่ทำแบบทดสอบ + รอบล่าสุด
+// จำนวนรอบที่ทำแบบทดสอบ + รอบล่าสุด (โชว์ในหน้าความเป็นส่วนตัว)
 $rounds   = 0;
 $lastQuiz = null;
 $stmt = $conn->prepare('SELECT COUNT(*) AS c, MAX(created_at) AS last_at FROM quiz_results WHERE user_id = ?');
@@ -36,7 +32,6 @@ if ($stmt) {
     }
     $stmt->close();
 }
-
 $conn->close();
 
 jsonOk([

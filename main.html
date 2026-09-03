@@ -3,322 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FutureWay</title>
+  <title>FutureWay - หน้าหลัก</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-  <!-- ?v= คือเลขรุ่นของไฟล์ CSS บังคับให้เบราว์เซอร์โหลดใหม่แทนตัวที่ cache ไว้
-       บวกเลขนี้ขึ้น 1 ทุกครั้งที่แก้ CSS แล้วอยากให้ผู้ใช้เห็นผลทันที -->
-  <link rel="stylesheet" href="css/main.css?v=5">
-  <link rel="stylesheet" href="css/lightbox.css?v=4">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/lightbox.css">
 </head>
 <body>
 
-  <!-- Header: ทักทาย + รูปโปรไฟล์ -->
   <header class="app-header">
     <span id="welcome-text" class="welcome-text">กำลังโหลด...</span>
     <img src="images/account_circle_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" alt="Profile" class="profile-pic">
   </header>
 
-  <!-- เนื้อหาหลัก -->
   <main class="app-content">
 
-    <!-- กล่องขาวหลัก -->
     <div class="white-card">
       <img src="images/futureway-logo.png" alt="FutureWay" class="card-logo">
-
       <a href="#" class="link-title">รายชื่อมหาวิทยาลัยและสถาบันต่าง ๆ ที่เปิดรับสมัคร</a>
       <div class="blue-badge">ข้อมูลการรับสมัครของมหาวิทยาลัย ปีการศึกษา 2569</div>
-
       <a href="quiz.html" class="test-btn">คลิ๊ก.. เพื่อทำแบบทดสอบ</a>
-
     </div>
 
-    <!-- เมนูบุคลิกภาพ MBTI ทั้ง 16 แบบ (กดแล้วเปิดดูรูปเต็มจอ) -->
+    <!-- เมนูบุคลิกภาพ MBTI ทั้ง 16 แบบ — render จาก js/data.js (กดแล้วเปิดดูรูปเต็มจอ) -->
     <div class="white-card">
       <h2 class="mbti-title"><i class="fas fa-brain"></i> บุคลิกภาพ MBTI ทั้ง 16 แบบ</h2>
-      <div class="mbti-grid">
-        <button type="button" class="mbti-item" data-src="images/ENFJ.jpg">
-          <span class="mbti-code">ENFJ</span>
-          <span class="mbti-desc">ผู้นำเชิงบวก</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/ENFP.jpg">
-          <span class="mbti-code">ENFP</span>
-          <span class="mbti-desc">นักสร้างแรงบันดาลใจ</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/ENTJ.jpg">
-          <span class="mbti-code">ENTJ</span>
-          <span class="mbti-desc">ผู้นำเชิงกลยุทธ์</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/ENTP.jpg">
-          <span class="mbti-code">ENTP</span>
-          <span class="mbti-desc">นักโต้วาที</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/ESFJ.jpg">
-          <span class="mbti-code">ESFJ</span>
-          <span class="mbti-desc">ผู้ประสานใจ</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/ESFP.jpg">
-          <span class="mbti-code">ESFP</span>
-          <span class="mbti-desc">ผู้สร้างสีสัน ชอบผู้คน</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/ESTJ.jpg">
-          <span class="mbti-code">ESTJ</span>
-          <span class="mbti-desc">ผู้บริหารจัดการ</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/ESTP.jpg">
-          <span class="mbti-code">ESTP</span>
-          <span class="mbti-desc">นักลุย กล้าตัดสินใจ</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/INFJ.jpg">
-          <span class="mbti-code">INFJ</span>
-          <span class="mbti-desc">ผู้ให้คำปรึกษา</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/INFP.jpg">
-          <span class="mbti-code">INFP</span>
-          <span class="mbti-desc">นักอุดมคติ จินตนาการสูง</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/INTJ.jpg">
-          <span class="mbti-code">INTJ</span>
-          <span class="mbti-desc">นักวางแผนเชิงกลยุทธ์</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/INTP.jpg">
-          <span class="mbti-code">INTP</span>
-          <span class="mbti-desc">นักคิดวิเคราะห์</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/ISFJ.jpg">
-          <span class="mbti-code">ISFJ</span>
-          <span class="mbti-desc">ผู้ดูแลที่ทุ่มเท</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/ISFP.jpg">
-          <span class="mbti-code">ISFP</span>
-          <span class="mbti-desc">ศิลปิน อ่อนโยน</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/ISTJ.jpg">
-          <span class="mbti-code">ISTJ</span>
-          <span class="mbti-desc">นักปฏิบัติผู้มีระเบียบ</span>
-        </button>
-        <button type="button" class="mbti-item" data-src="images/ISTP.jpg">
-          <span class="mbti-code">ISTP</span>
-          <span class="mbti-desc">ชอบลงมือแก้ปัญหา</span>
-        </button>
-      </div>
+      <div class="mbti-grid" id="mbti-grid"></div>
     </div>
 
-    <!-- กล่องสไลด์รูปภาพด้านล่าง (กดที่รูปเพื่อดูเต็มจอ) -->
+    <!-- กล่องสไลด์รูปภาพ (กดที่รูปเพื่อดูเต็มจอ) -->
     <div class="info-scroll">
-      <img src="images/info-quiz.png" alt="Info 1" class="info-img" tabindex="0" role="button">
-      <img src="images/info-result.png" alt="Info 2" class="info-img" tabindex="0" role="button">
+      <img src="images/info-quiz.png" alt="วิธีทำแบบทดสอบ" class="info-img" tabindex="0" role="button">
+      <img src="images/info-result.png" alt="ตัวอย่างผลลัพธ์" class="info-img" tabindex="0" role="button">
     </div>
 
   </main>
 
-  <!-- Lightbox: ดูรูปเต็มจอ -->
+  <!-- Lightbox: ดูรูปเต็มจอ (ควบคุมโดย js/lightbox.js) -->
   <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="ดูรูปภาพเต็มจอ">
-    <!-- พื้นที่วางรูป เลื่อนได้ตอนกดขยาย ส่วนปุ่มอยู่นอกกล่องนี้จึงไม่เลื่อนตาม -->
     <div class="lightbox-stage" id="lb-stage">
-      <!-- ไม่ใส่ src เปล่าไว้ตั้งแต่แรก เดี๋ยวเบราว์เซอร์ยิงโหลด URL ของหน้านี้ซ้ำ -->
       <img class="lightbox-img" id="lightbox-img" alt="">
     </div>
-
-    <button type="button" class="lightbox-btn lightbox-close" id="lb-close" aria-label="ปิด">
-      <i class="fas fa-xmark"></i>
-    </button>
-    <button type="button" class="lightbox-btn lightbox-zoom" id="lb-zoom" aria-label="ขยายรูป">
-      <i class="fas fa-magnifying-glass-plus"></i>
-    </button>
-    <button type="button" class="lightbox-btn lightbox-prev" id="lb-prev" aria-label="รูปก่อนหน้า">
-      <i class="fas fa-chevron-left"></i>
-    </button>
-    <button type="button" class="lightbox-btn lightbox-next" id="lb-next" aria-label="รูปถัดไป">
-      <i class="fas fa-chevron-right"></i>
-    </button>
-
+    <button type="button" class="lightbox-btn lightbox-close" id="lb-close" aria-label="ปิด"><i class="fas fa-xmark"></i></button>
+    <button type="button" class="lightbox-btn lightbox-zoom" id="lb-zoom" aria-label="ขยายรูป"><i class="fas fa-magnifying-glass-plus"></i></button>
+    <button type="button" class="lightbox-btn lightbox-prev" id="lb-prev" aria-label="รูปก่อนหน้า"><i class="fas fa-chevron-left"></i></button>
+    <button type="button" class="lightbox-btn lightbox-next" id="lb-next" aria-label="รูปถัดไป"><i class="fas fa-chevron-right"></i></button>
     <span class="lightbox-count" id="lb-count"></span>
   </div>
 
-  <!-- Bottom Navigation -->
-  <nav class="bottom-nav">
-    <a href="#" class="nav-item active">
-      <div class="icon-circle">
-        <i class="fas fa-home"></i>
-      </div>
-      <span>หน้าหลัก</span>
-    </a>
-    <a href="History_Results.html" class="nav-item">
-      <i class="fas fa-chart-bar"></i>
-      <span>ประวัติ/ผลลัพธ์</span>
-    </a>
-    <a href="profile.html" class="nav-item">
-      <i class="fas fa-user-cog"></i>
-      <span>การตั้งค่า</span>
-    </a>
-  </nav>
+  <nav class="bottom-nav" data-active="home"></nav>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      fetch('php/get_user.php', { cache: 'no-store' })
-        .then(r => r.json())
-        .then(data => {
-          const el = document.getElementById('welcome-text');
-          el.innerHTML = data.success ? 'สวัสดี, ' + data.fullname : 'กรุณาเข้าสู่ระบบ';
-        })
-        .catch(() => {
-          document.getElementById('welcome-text').innerHTML = 'ข้อผิดพลาด';
-        });
-    });
-  </script>
-
-  <script>
-    // ========================================
-    // Lightbox — กดที่รูปในกล่องสไลด์แล้วเปิดดูเต็มจอ
-    // เลื่อนดูรูปถัดไปได้ด้วยปุ่มลูกศร, คีย์บอร์ด, หรือสไวป์บนมือถือ
-    // ========================================
-    (function () {
-      // รูปแบ่งเป็น 2 ชุด: รูปในกล่องสไลด์ กับรูป MBTI จากเมนู
-      // เปิดจากชุดไหน ปุ่มก่อนหน้า/ถัดไปก็วนอยู่ในชุดนั้น ไม่ปนกัน
-      const infoImgs = Array.from(document.querySelectorAll('.info-scroll .info-img'))
-        .map(el => ({ el, src: el.src, alt: el.alt || '' }));
-      const mbtiItems = Array.from(document.querySelectorAll('.mbti-item'))
-        .map(el => ({
-          el,
-          src: el.dataset.src,
-          alt: el.querySelector('.mbti-code').textContent + ' — ' +
-               el.querySelector('.mbti-desc').textContent
-        }));
-      let list = infoImgs;   // ชุดที่กำลังเปิดดูอยู่
-
-      const box     = document.getElementById('lightbox');
-      const stage   = document.getElementById('lb-stage');
-      const bigImg  = document.getElementById('lightbox-img');
-      const btnPrev = document.getElementById('lb-prev');
-      const btnNext = document.getElementById('lb-next');
-      const btnClose= document.getElementById('lb-close');
-      const btnZoom = document.getElementById('lb-zoom');
-      const counter = document.getElementById('lb-count');
-
-      // ถ้าขาดชิ้นไหนไป ให้ฟ้องใน Console ไปเลย จะได้ไม่ต้องเดาว่าทำไมกดรูปแล้วเงียบ
-      if ((!infoImgs.length && !mbtiItems.length) || !box || !stage || !bigImg || !btnZoom) {
-        console.error('[lightbox] เปิดใช้งานไม่ได้ — ' +
-          'รูปสไลด์: ' + infoImgs.length + ', รูป MBTI: ' + mbtiItems.length +
-          ', กล่อง popup: ' + (box ? 'มี' : 'ไม่มี'));
-        return;
-      }
-      console.log('[lightbox] พร้อมใช้งาน — รูปสไลด์ ' + infoImgs.length +
-        ' รูป, รูป MBTI ' + mbtiItems.length + ' รูป');
-
-      let index = 0;
-      let zoomed = false;
-      let lastFocused = null;   // ปุ่ม/รูปที่กดเข้ามา ไว้คืน focus ตอนปิด
-
-      // ---- โหมดขยาย ----
-      // ปกติจะย่อรูปให้เห็นครบพอดีจอ กดขยายแล้วรูปจะเต็มความกว้างจอและเลื่อนอ่านลงมาได้
-      function setZoom(on) {
-        zoomed = on;
-        stage.classList.toggle('zoomed', on);
-        btnZoom.querySelector('i').className =
-          on ? 'fas fa-magnifying-glass-minus' : 'fas fa-magnifying-glass-plus';
-        btnZoom.setAttribute('aria-label', on ? 'ย่อรูป' : 'ขยายรูป');
-        stage.scrollTop  = 0;
-        stage.scrollLeft = 0;
-      }
-
-      function show(i) {
-        // วนกลับหัวท้าย: รูปสุดท้ายกดถัดไปแล้ววนมารูปแรก
-        index = (i + list.length) % list.length;
-        const item = list[index];
-
-        setZoom(false);          // เปลี่ยนรูปแล้วเริ่มที่โหมดพอดีจอเสมอ
-        bigImg.src = item.src;
-        bigImg.alt = item.alt;
-
-        counter.textContent = (index + 1) + ' / ' + list.length;
-
-        // มีรูปเดียวก็ไม่ต้องมีปุ่มเลื่อนกับตัวนับ
-        const many = list.length > 1;
-        btnPrev.hidden = !many;
-        btnNext.hidden = !many;
-        counter.hidden = !many;
-      }
-
-      // รูปที่เล็กกว่าพื้นที่อยู่แล้ว = เห็นเต็มขนาดจริงตั้งแต่แรก ไม่ต้องมีปุ่มขยายให้รก
-      bigImg.addEventListener('load', function () {
-        btnZoom.hidden = bigImg.naturalWidth  <= stage.clientWidth
-                      && bigImg.naturalHeight <= stage.clientHeight;
-      });
-
-      function open(itemList, i) {
-        lastFocused = document.activeElement;
-        list = itemList;
-        show(i);
-
-        box.hidden = false;
-        document.body.classList.add('lightbox-open');
-        btnClose.focus();
-      }
-
-      function close() {
-        box.hidden = true;
-        document.body.classList.remove('lightbox-open');
-        // ใช้ removeAttribute ไม่ใช่ src='' เพราะ src ว่างทำให้เบราว์เซอร์
-        // ยิงโหลด URL ของหน้านี้ซ้ำอีกรอบ
-        bigImg.removeAttribute('src');
-        if (lastFocused) lastFocused.focus();
-      }
-
-      // ---- เปิดจากรูปเล็กในกล่องสไลด์ และปุ่มเมนู MBTI ----
-      function bindOpeners(itemList) {
-        itemList.forEach((item, i) => {
-          item.el.addEventListener('click', () => open(itemList, i));
-          item.el.addEventListener('keydown', e => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();       // กัน space เลื่อนหน้าลง (และกัน click ซ้ำบนปุ่ม)
-              open(itemList, i);
-            }
-          });
-        });
-      }
-      bindOpeners(infoImgs);
-      bindOpeners(mbtiItems);
-
-      // ---- ปุ่มควบคุม ----
-      btnClose.addEventListener('click', close);
-      btnPrev.addEventListener('click', () => show(index - 1));
-      btnNext.addEventListener('click', () => show(index + 1));
-
-      // กดที่ตัวรูปก็สลับย่อ/ขยายได้ ไม่ต้องเล็งปุ่ม
-      btnZoom.addEventListener('click', () => setZoom(!zoomed));
-      bigImg.addEventListener('click', () => { if (!btnZoom.hidden) setZoom(!zoomed); });
-
-      // กดพื้นดำรอบ ๆ เพื่อปิด แต่กดที่ตัวรูปหรือปุ่มไม่ปิด
-      box.addEventListener('click', e => {
-        if (e.target === box || e.target === stage) close();
-      });
-
-      // ---- คีย์บอร์ด ----
-      document.addEventListener('keydown', e => {
-        if (box.hidden) return;
-        if (e.key === 'Escape')     close();
-        if (e.key === 'ArrowLeft')  show(index - 1);
-        if (e.key === 'ArrowRight') show(index + 1);
-      });
-
-      // ---- สไวป์ซ้าย-ขวาบนมือถือ ----
-      // ใช้ระยะ 50px กันนิ้วสั่นตอนแตะให้กลายเป็นการปัดโดยไม่ตั้งใจ
-      let touchX = null;
-      box.addEventListener('touchstart', e => {
-        touchX = e.changedTouches[0].clientX;
-      }, { passive: true });
-
-      box.addEventListener('touchend', e => {
-        // ตอนขยายอยู่ไม่ต้องเปลี่ยนรูป เพราะนิ้วกำลังลากเลื่อนดูรูปเดิม
-        if (touchX === null || list.length < 2 || zoomed) { touchX = null; return; }
-        const diff = e.changedTouches[0].clientX - touchX;
-        if (Math.abs(diff) > 50) show(diff < 0 ? index + 1 : index - 1);
-        touchX = null;
-      }, { passive: true });
-    })();
-  </script>
-
+  <script src="js/common.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/lightbox.js"></script>
 </body>
 </html>

@@ -5,35 +5,34 @@
 // ได้จากใน container เท่านั้น เลยรันจาก phpMyAdmin ในเครื่องไม่ได้)
 //
 // วิธีใช้:
-//   1) ตั้ง environment variable บน Railway:  MIGRATE_TOKEN = <ข้อความลับที่เดายาก>
-//   2) deploy แล้วเปิด:  https://<app>.up.railway.app/php/migrate.php?token=<MIGRATE_TOKEN>
-//   3) รันเสร็จแล้ว ลบไฟล์นี้ออกจาก repo (หรือลบ MIGRATE_TOKEN ทิ้ง) เพื่อความปลอดภัย
+//   ในเครื่อง / ใน container:   php php/migrate.php
+//   ผ่านเว็บ (Railway):         ตั้ง MIGRATE_TOKEN เป็นข้อความลับที่เดายาก แล้ว
+//       curl -X POST -H "Authorization: Bearer $MIGRATE_TOKEN" https://<app>/php/migrate.php
+//   (รับเฉพาะ POST + token ใน header เพื่อไม่ให้ token ไปโผล่ใน access log)
 //
 // รันซ้ำได้ปลอดภัย: ไฟล์ไหนรันไปแล้วจะถูกข้าม (ดูตาราง schema_migrations)
 // และคำสั่งที่ "ทำไปแล้ว" (ตาราง/คอลัมน์มีอยู่แล้ว) จะถูกนับเป็น skipped ไม่ใช่ error
+// รันเฉพาะไฟล์ชื่อ NNN_*.sql ในโฟลเดอร์ sql/ เรียงตามเลขหน้าไฟล์
 // ========================================
 
-header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/bootstrap.php';
 
-// ---- ตรวจ token ----
-$expected = getenv('MIGRATE_TOKEN');
-$given    = $_GET['token'] ?? '';
+if (PHP_SAPI !== 'cli') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        jsonFail(405, 'ต้องเรียกด้วยวิธี POST เท่านั้น');
+    }
 
-if (!$expected) {
-    http_response_code(503);
-    echo json_encode([
-        'success' => false,
-        'error'   => 'ยังไม่ได้ตั้ง environment variable MIGRATE_TOKEN บน Railway'
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
+    $expected = getenv('MIGRATE_TOKEN');
+    if (!$expected) {
+        jsonFail(503, 'ยังไม่ได้ตั้ง environment variable MIGRATE_TOKEN');
+    }
+
+    $auth  = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    $given = preg_match('/^Bearer\s+(.+)$/i', $auth, $m) ? trim($m[1]) : '';
+    if ($given === '' || !hash_equals($expected, $given)) {
+        jsonFail(403, 'token ไม่ถูกต้อง');
+    }
 }
-if (!is_string($given) || !hash_equals($expected, $given)) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'error' => 'token ไม่ถูกต้อง'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-require_once __DIR__ . '/db_config.php';
 
 // error code ของ MySQL ที่แปลว่า "สิ่งนี้มีอยู่แล้ว" -> ถือว่าผ่าน ไม่ใช่ error
 const ALREADY_APPLIED = [
@@ -119,7 +118,10 @@ try {
     }
 
     $sqlDir = dirname(__DIR__) . '/sql';
-    $files  = glob($sqlDir . '/*.sql') ?: [];
+    $files  = array_values(array_filter(
+        glob($sqlDir . '/*.sql') ?: [],
+        fn($f) => preg_match('/^\d{3}_.+\.sql$/', basename($f)) === 1
+    ));
     sort($files);   // รันตามลำดับเลขหน้าไฟล์: 001_, 002_, ...
 
     $report = [];
@@ -175,9 +177,5 @@ try {
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 } catch (Throwable $e) {
-    http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'error'   => $e->getMessage(),
-    ], JSON_UNESCAPED_UNICODE);
+    jsonServerError('migrate', $e->getMessage(), 'รัน migration ไม่สำเร็จ (ดูรายละเอียดใน log)');
 }

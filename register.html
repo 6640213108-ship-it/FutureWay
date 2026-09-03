@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FutureWay - สมัครสมาชิก</title>
-  <link rel="stylesheet" href="css/style.css?v=4">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
 
@@ -15,39 +16,41 @@
     <p class="desc">เรารู้สึกยินดีที่ได้คุณมาที่นี่</p>
     <small class="note">กรุณากรอกข้อมูลเพื่อเริ่มต้นการใช้งาน</small>
 
-    <form action="php/save.php" method="post">
+    <form id="register-form">
 
       <div class="input-box">
         <i class="fa-solid fa-phone icon-left"></i>
-        <input type="tel" name="user" placeholder="เบอร์มือถือ" inputmode="numeric"
+        <input type="tel" name="phone" placeholder="เบอร์มือถือ" inputmode="numeric" autocomplete="tel"
                pattern="0[0-9]{9}" maxlength="10" title="กรอกเบอร์มือถือ 10 หลัก เช่น 0812345678" required>
       </div>
 
       <div class="input-box">
         <img src="images/account_box_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" class="icon" alt="">
-        <input type="text" name="fristname" placeholder="ชื่อ" required>
+        <input type="text" name="firstname" placeholder="ชื่อ" autocomplete="given-name" maxlength="100" required>
       </div>
 
       <div class="input-box">
         <img src="images/account_box_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" class="icon" alt="">
-        <input type="text" name="lastneme" placeholder="นามสกุล" required>
+        <input type="text" name="lastname" placeholder="นามสกุล" autocomplete="family-name" maxlength="100" required>
       </div>
 
       <div class="input-box">
         <img src="images/mail_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" class="icon" alt="">
-        <input type="email" name="email" placeholder="อีเมล" required>
+        <input type="email" name="email" placeholder="อีเมล" autocomplete="email" maxlength="150" required>
       </div>
 
       <div class="input-box">
         <i class="fa-solid fa-lock icon-left"></i>
-        <input type="password" name="password1" id="password1" placeholder="รหัสผ่าน" required>
-        <i class="fa-solid fa-eye toggle" onclick="togglePassword('password1', this)"></i>
+        <input type="password" name="password" id="password" placeholder="รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)"
+               autocomplete="new-password" minlength="6" required>
+        <i class="fa-solid fa-eye toggle" data-target="password" role="button" aria-label="แสดงรหัสผ่าน"></i>
       </div>
 
       <div class="input-box">
         <i class="fa-solid fa-lock icon-left"></i>
-        <input type="password" name="password2" id="password2" placeholder="ยืนยันรหัสผ่าน" required>
-        <i class="fa-solid fa-eye toggle" onclick="togglePassword('password2', this)"></i>
+        <input type="password" name="confirm_password" id="confirm-password" placeholder="ยืนยันรหัสผ่าน"
+               autocomplete="new-password" required>
+        <i class="fa-solid fa-eye toggle" data-target="confirm-password" role="button" aria-label="แสดงรหัสผ่าน"></i>
       </div>
 
       <div class="input-box">
@@ -77,59 +80,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="js/common.js"></script>
   <script src="js/google-login.js"></script>
-  <script>
-    function togglePassword(inputId, icon) {
-      const input = document.getElementById(inputId);
-      if (input.type === "password") {
-        input.type = "text";
-        icon.classList.replace("fa-eye", "fa-eye-slash");
-      } else {
-        input.type = "password";
-        icon.classList.replace("fa-eye-slash", "fa-eye");
-      }
-    }
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const status = urlParams.get('status');
-
-    if (status === 'success') {
-      Swal.fire({
-        title: 'สมัครสมาชิกสำเร็จ!',
-        text: 'ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว',
-        icon: 'success',
-        confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
-        confirmButtonColor: '#7b2ff7',
-        allowOutsideClick: false
-      }).then((result) => {
-        if (result.isConfirmed) window.location.href = 'login.html';
-      });
-    } else if (status === 'duplicate') {
-      Swal.fire({
-        title: 'สมัครไม่สำเร็จ!',
-        text: 'เบอร์มือถือหรืออีเมลนี้มีผู้ใช้งานแล้ว กรุณาลองใหม่อีกครั้ง',
-        icon: 'error',
-        confirmButtonText: 'ตกลง',
-        confirmButtonColor: '#d63031'
-      });
-    } else if (status === 'invalid_phone') {
-      Swal.fire({
-        title: 'เบอร์มือถือไม่ถูกต้อง',
-        text: 'กรุณากรอกเบอร์มือถือ 10 หลัก เช่น 0812345678',
-        icon: 'warning',
-        confirmButtonColor: '#7b2ff7'
-      });
-    } else if (status === 'password_mismatch') {
-      Swal.fire({
-        title: 'รหัสผ่านไม่ตรงกัน',
-        text: 'กรุณากรอกรหัสผ่านให้ตรงกันทั้งสองช่อง',
-        icon: 'warning',
-        confirmButtonColor: '#7b2ff7'
-      });
-    }
-
-    window.history.replaceState({}, document.title, window.location.pathname);
-  </script>
-
+  <script src="js/register.js"></script>
 </body>
 </html>

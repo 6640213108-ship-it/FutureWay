@@ -7,21 +7,15 @@
 //   {"scope":"history", "password":"..."}   ลบประวัติผลแบบทดสอบทุกรอบ
 //   {"scope":"account", "password":"..."}   ลบบัญชีทิ้งทั้งหมด (ย้อนกลับไม่ได้)
 //
-// ต้องยืนยันด้วยรหัสผ่านทั้งสองแบบ เพราะเป็นการลบที่กู้คืนไม่ได้
-// และแตะได้เฉพาะ user_id ของ session ตัวเอง (ต่างจาก delete_result.php ที่เป็นของแอดมิน)
-//
-// quiz_result_branches / quiz_answers ผูก FK ON DELETE CASCADE ไว้กับ quiz_results
-// และ quiz_results / user_settings ผูก CASCADE ไว้กับ users -> ลบต้นทางพอ
+// ต้องยืนยันด้วยรหัสผ่านทั้งสองแบบ และแตะได้เฉพาะ user_id ของ session ตัวเอง
 // ========================================
 
-session_start();
-header('Content-Type: application/json; charset=utf-8');
-
+require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/user_session.php';
 
-$input = requireJsonPost();
-$conn  = connectOrFailJson();
-$user  = requireUserJson($conn);
+$input  = requireJsonPost();
+$conn   = connectOrFailJson();
+$user   = requireUserJson($conn);
 $userId = (int)$user['id'];
 
 $scope    = (string)($input['scope'] ?? '');
@@ -41,20 +35,19 @@ if (!password_verify($password, $user['password'])) {
 if ($scope === 'history') {
     $stmt = $conn->prepare('DELETE FROM quiz_results WHERE user_id = ?');
     if (!$stmt) {
-        jsonFail(500, 'ลบข้อมูลไม่สำเร็จ: ' . $conn->error);
+        jsonServerError('delete_my_data', $conn->error, 'ลบข้อมูลไม่สำเร็จ');
     }
     $stmt->bind_param('i', $userId);
     if (!$stmt->execute()) {
         $err = $stmt->error;
         $stmt->close();
-        jsonFail(500, 'ลบข้อมูลไม่สำเร็จ: ' . $err);
+        jsonServerError('delete_my_data', $err, 'ลบข้อมูลไม่สำเร็จ');
     }
     $deleted = $stmt->affected_rows;
     $stmt->close();
     $conn->close();
 
-    error_log(sprintf('delete_my_data.php: user "%s" (id=%d) deleted %d quiz results',
-        $user['username'], $userId, $deleted));
+    error_log(sprintf('delete_my_data: user "%s" (id=%d) deleted %d quiz results', $user['username'], $userId, $deleted));
 
     jsonOk([
         'scope'   => 'history',
@@ -64,15 +57,13 @@ if ($scope === 'history') {
 }
 
 // ---- ลบบัญชี ----
-// ถ้า DB นี้ไม่มี FK CASCADE (เช่นตารางถูกสร้างแบบ MyISAM) การลบ users แถวเดียว
-// จะทิ้งผลแบบทดสอบไว้เป็นขยะ เลยลบลูกก่อนให้ชัวร์ แล้วค่อยลบตัวผู้ใช้
+// ลบตารางลูกก่อนให้ชัวร์ (เผื่อ DB ไม่มี FK CASCADE) แล้วค่อยลบตัวผู้ใช้ ทั้งหมดในธุรกรรมเดียว
 $conn->begin_transaction();
 try {
-    foreach (['DELETE FROM quiz_results WHERE user_id = ?',
-              'DELETE FROM user_settings WHERE user_id = ?'] as $sql) {
+    foreach (['DELETE FROM quiz_results WHERE user_id = ?', 'DELETE FROM user_settings WHERE user_id = ?'] as $sql) {
         if ($stmt = $conn->prepare($sql)) {
             $stmt->bind_param('i', $userId);
-            $stmt->execute();      // ตารางอาจยังไม่มี -> prepare ไม่ผ่าน ก็ข้ามไป
+            $stmt->execute();
             $stmt->close();
         }
     }
@@ -91,19 +82,14 @@ try {
 } catch (Throwable $e) {
     $conn->rollback();
     $conn->close();
-    error_log('delete_my_data.php error: ' . $e->getMessage());
-    jsonFail(500, 'ลบบัญชีไม่สำเร็จ: ' . $e->getMessage());
+    jsonServerError('delete_my_data account', $e->getMessage(), 'ลบบัญชีไม่สำเร็จ');
 }
-
 $conn->close();
 
-error_log(sprintf('delete_my_data.php: account "%s" (id=%d) deleted by owner', $user['username'], $userId));
+error_log(sprintf('delete_my_data: account "%s" (id=%d) deleted by owner', $user['username'], $userId));
 
-// บัญชีไม่มีแล้ว session ที่ค้างอยู่ต้องหายไปด้วย ไม่งั้นหน้าอื่นจะพยายามโหลดข้อมูลของ id ที่ถูกลบ
+// บัญชีไม่มีแล้ว session ที่ค้างอยู่ต้องหายไปด้วย
 $_SESSION = [];
 session_destroy();
 
-jsonOk([
-    'scope'   => 'account',
-    'message' => 'ลบบัญชีเรียบร้อยแล้ว',
-]);
+jsonOk(['scope' => 'account', 'message' => 'ลบบัญชีเรียบร้อยแล้ว']);

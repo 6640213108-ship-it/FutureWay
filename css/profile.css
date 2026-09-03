@@ -1,7 +1,7 @@
 /* ========================================
    FutureWay - profile.css
    ใช้เฉพาะหน้า profile.html (การตั้งค่า)
-   ต้องโหลด main.css ก่อนไฟล์นี้เสมอ
+   ต้องโหลด app.css ก่อนไฟล์นี้เสมอ
    ======================================== */
 
 /* ========================================
@@ -12,7 +12,7 @@
   background: linear-gradient(160deg, #9b30f0 0%, #6a0dad 50%, #4a0080 100%);
   padding: 40px 24px 60px;
   /* จอใหญ่: ดันรูป/ชื่อเข้ามาให้ตรงแนวกับคอลัมน์เมนูด้านล่าง
-     จอเล็ก: ได้ 24px ตามเดิม (--content-max มาจาก main.css) */
+     จอเล็ก: ได้ 24px ตามเดิม (--content-max มาจาก tokens.css) */
   padding-left:  max(24px, calc(50% - var(--content-max) / 2 + 14px));
   padding-right: max(24px, calc(50% - var(--content-max) / 2 + 14px));
   display: flex;

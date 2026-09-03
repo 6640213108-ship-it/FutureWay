@@ -1,0 +1,27 @@
+# ไม่ต้องก๊อปเข้า image — ลดขนาดและกันไฟล์ที่ไม่ควรอยู่บนเซิร์ฟเวอร์
+.git
+.github
+.gitignore
+.dockerignore
+.editorconfig
+.env
+.env.*
+.claude
+.idea
+.vscode
+
+venv
+__pycache__
+*.pyc
+.pytest_cache
+tests
+
+docs
+README.md
+LICENSE
+composer.json
+
+*.log
+Thumbs.db
+desktop.ini
+.DS_Store

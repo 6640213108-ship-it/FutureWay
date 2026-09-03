@@ -6,27 +6,22 @@
   <title>FutureWay - ผลลัพธ์</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="css/main.css?v=4">
-  <link rel="stylesheet" href="css/result.css?v=8">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/result.css">
 </head>
 <body>
 
-  <!-- Header -->
-  <header class="back-header">
-    <a href="quiz.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
-    <span class="page-title">ผลลัพธ์ของคุณ</span>
-  </header>
+  <header class="back-header" data-title="ผลลัพธ์ของคุณ" data-back="quiz.html"></header>
 
-  <!-- Loading -->
   <div id="loading-wrap" class="loading-wrap">
     <div class="loading-spinner"></div>
     <p class="loading-text">กำลังวิเคราะห์ข้อมูล...</p>
   </div>
 
-  <!-- Result (ซ่อนไว้ก่อน JS จะเปิดให้เมื่อโหลดข้อมูลเสร็จ) -->
+  <!-- ผลลัพธ์ (ซ่อนไว้จน js/result.js โหลดข้อมูลเสร็จ) -->
   <div id="result-wrap" hidden>
 
-    <!-- Hero MBTI: การ์ดข้อมูลบุคลิกภาพ -->
     <div class="result-hero mbti-hero">
       <div class="mbti-hero-text">
         <div class="mbti-badge" id="mbti-display">—</div>
@@ -37,7 +32,6 @@
 
     <div class="result-content">
 
-      <!-- ลักษณะบุคลิกภาพ / จุดเด่น -->
       <div class="mbti-info-grid">
         <div class="mbti-info-box">
           <p class="mbti-info-title"><i class="fas fa-brain"></i> ลักษณะบุคลิกภาพ</p>
@@ -49,236 +43,29 @@
         </div>
       </div>
 
-      <!-- สาขาที่เหมาะสม: แสดงเป็นภาพโปสเตอร์ MBTI -->
-      <p class="result-section-title">
-        <i class="fas fa-briefcase"></i> สาขาที่เหมาะสมกับ
-      </p>
-      <!-- ภาพโปสเตอร์ MBTI (images/XXXX.jpg) เปลี่ยนตามรหัสที่คำนวณได้ -->
+      <p class="result-section-title"><i class="fas fa-briefcase"></i> สาขาที่เหมาะสมกับ</p>
+      <!-- โปสเตอร์ MBTI (images/XXXX.jpg) เปลี่ยนตามรหัสที่คำนวณได้ -->
       <img id="mbti-branch-image" class="mbti-branch-image" alt="" loading="lazy" hidden>
 
-      <!-- สรุปเกรด หรือ โปรไฟล์ความสนใจ (RIASEC) แล้วแต่โหมดที่ทำแบบทดสอบ -->
       <p class="result-hero-sub" id="avg-grade-display"></p>
       <p class="result-section-title" id="summary-title">📊 เกรดของคุณ</p>
       <div class="grade-summary" id="grade-summary"></div>
 
-      <!-- ปุ่มทำใหม่ -->
-      <a href="quiz.html" class="retry-btn">
-        <i class="fas fa-redo"></i> ทำแบบทดสอบใหม่
-      </a>
+      <a href="quiz.html" class="retry-btn"><i class="fas fa-redo"></i> ทำแบบทดสอบใหม่</a>
 
     </div>
   </div>
 
-  <!-- Error -->
   <div id="error-wrap" class="error-wrap" hidden>
     <i class="fas fa-exclamation-circle error-icon"></i>
     <p id="error-msg">เกิดข้อผิดพลาด</p>
-    <a href="quiz.html" class="error-link">
-      ← กลับไปทำใหม่
-    </a>
+    <a href="quiz.html" class="error-link">← กลับไปทำใหม่</a>
   </div>
 
-  <!-- Bottom Navigation -->
-  <nav class="bottom-nav">
-    <a href="main.html" class="nav-item">
-      <i class="fas fa-home"></i>
-      <span>หน้าหลัก</span>
-    </a>
-    <a href="#" class="nav-item active">
-      <div class="icon-circle">
-        <i class="fas fa-chart-bar"></i>
-      </div>
-      <span>ประวัติผลลัพธ์</span>
-    </a>
-    <a href="profile.html" class="nav-item">
-      <i class="fas fa-user-cog"></i>
-      <span>การตั้งค่า</span>
-    </a>
-  </nav>
+  <nav class="bottom-nav" data-active="history"></nav>
 
-  <script>
-    const GRADE_LABELS = {
-      math: 'คณิตศาสตร์', sci: 'วิทยาศาสตร์',
-      eng: 'อังกฤษ', thai: 'ไทย',
-      social: 'สังคม', art: 'ศิลปะ'
-    };
-    const RIASEC_LABELS = {
-      R: 'Realistic', I: 'Investigative', A: 'Artistic',
-      S: 'Social', E: 'Enterprising', C: 'Conventional'
-    };
-
-    // กัน HTML injection จากข้อความที่มาจาก DB (ชื่อสาขา/คณะ)
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str ?? '';
-      return div.innerHTML;
-    }
-    // ข้อมูลการ์ดบุคลิกภาพครบทั้ง 16 แบบ: ชื่อเรียก, คำโปรย, ลักษณะนิสัย, จุดเด่น
-    // ใช้แสดงผลตามรหัส MBTI ที่ backend คำนวณได้จริง ไม่ได้ fix ค่าไว้
-    const MBTI_INFO = {
-      ISTJ: {
-        title: 'นักปฏิบัติผู้มีระเบียบ', subtitle: 'ละเอียด เชื่อถือได้',
-        traits: ['จริงจัง', 'ทำงานเป็นขั้นตอน', 'เชื่อถือได้', 'ให้ความสำคัญกับกฎและความถูกต้อง'],
-        strengths: ['รอบคอบ', 'รับผิดชอบ', 'มีวินัย'],
-      },
-      ISTP: {
-        title: 'ชอบลงมือแก้ปัญหา', subtitle: 'ช่างฝีมือ ถนัดเครื่องมือ',
-        traits: ['ชอบทดลอง', 'เรียนรู้จากประสบการณ์จริง', 'รักอิสระ', 'รับมือสถานการณ์เฉพาะหน้าได้ดี'],
-        strengths: ['ลงมือทำเก่ง', 'ไหวพริบดี', 'ปรับตัวเร็ว'],
-      },
-      ENFJ: {
-        title: 'ผู้นำเชิงบวก', subtitle: 'โน้มน้าวและพัฒนาผู้อื่น',
-        traits: ['อบอุ่น', 'กระตือรือร้น', 'ชอบพัฒนาผู้อื่น', 'เก่งด้านการประสานคน'],
-        strengths: ['สื่อสารเก่ง', 'เข้าใจคน', 'มีภาวะผู้นำ'],
-      },
-      ENFP: {
-        title: 'นักสร้างแรงบันดาลใจ', subtitle: 'ครีเอทีฟ สื่อสารเก่ง',
-        traits: ['เปิดกว้าง ชอบไอเดียใหม่', 'สนใจผู้คน', 'มีพลัง', 'มองเห็นความเป็นไปได้หลากหลาย'],
-        strengths: ['สร้างสรรค์', 'กระตือรือร้น', 'สื่อสารเก่ง'],
-      },
-      ENTJ: {
-        title: 'ผู้นำเชิงกลยุทธ์', subtitle: 'ตัดสินใจฉับไว มุ่งเป้าหมาย',
-        traits: ['มั่นใจ', 'มุ่งเป้าหมาย', 'ชอบความท้าทาย', 'มองหาวิธีเพิ่มประสิทธิภาพของงาน'],
-        strengths: ['เป็นผู้นำ', 'วางกลยุทธ์เก่ง', 'กล้าตัดสินใจ'],
-      },
-      ENTP: {
-        title: '— นักโต้วาที', subtitle: 'ไอเดียแตกฉาน ชอบสิ่งใหม่',
-        traits: ['ช่างสงสัย', 'ชอบแลกเปลี่ยนความคิดเห็น', 'สนุกกับความท้าทาย', 'ไม่กลัวการเปลี่ยนแปลง'],
-        strengths: ['คิดไว', 'แก้ปัญหาเก่ง', 'ชอบไอเดียใหม่'],
-      },
-      ESFJ: {
-        title: 'ผู้ประสานใจ', subtitle: 'ชอบช่วยเหลือดูแลสังคมรอบตัว',
-        traits: ['เป็นมิตร', 'เอาใจใส่ผู้อื่น', 'ชอบทำงานร่วมกับคน', 'ให้ความสำคัญกับความสัมพันธ์'],
-        strengths: ['เข้ากับคนง่าย', 'รับผิดชอบ', 'ประสานงานดี'],
-      },
-      ESFP: {
-        title: 'ผู้สร้างสีสัน ชอบผู้คน', subtitle: 'กิจกรรม และการแสดงออก',
-        traits: ['เป็นมิตร', 'สนุกสนาน', 'ชอบกิจกรรมและประสบการณ์ใหม่ๆ', 'ใส่ใจคนรอบข้าง'],
-        strengths: ['ร่าเริง', 'เข้ากับคนง่าย', 'สร้างบรรยากาศเก่ง'],
-      },
-      ESTJ: {
-        title: 'ผู้บริหารจัดการ', subtitle: 'เด็ดขาด ยึดระบบและผลลัพธ์',
-        traits: ['เป็นระบบ', 'ตรงไปตรงมา', 'ชอบจัดการงาน', 'ผลักดันทีมให้บรรลุเป้าหมาย'],
-        strengths: ['บริหารเก่ง', 'มีวินัย', 'ตัดสินใจชัดเจน'],
-      },
-      ESTP: {
-        title: 'นักลุย กล้าตัดสินใจ', subtitle: 'ชอบความท้าทายเฉพาะหน้า',
-        traits: ['กระตือรือร้น', 'ชอบความท้าทาย', 'สนุกกับการลงมือทำ', 'ปรับตัวได้ดี'],
-        strengths: ['กล้าตัดสินใจ', 'แก้ปัญหาเร็ว', 'มีไหวพริบ'],
-      },
-      INFJ: {
-        title: 'ผู้ให้คำปรึกษา', subtitle: 'มีอุดมการณ์ เข้าใจคนลึกซึ้ง',
-        traits: ['คิดลึก', 'ช่างสังเกต', 'เห็นอกเห็นใจผู้อื่น', 'มักต้องการสร้างสิ่งที่มีความหมาย'],
-        strengths: ['เข้าใจคน', 'มีวิสัยทัศน์', 'มีอุดมการณ์'],
-      },
-      INFP: {
-        title: 'นักอุดมคติ จินตนาการสูง', subtitle: 'ถ่ายทอดผ่านภาษาและศิลปะ',
-        traits: ['อ่อนโยน', 'คิดลึก', 'มีโลกส่วนตัว', 'สนใจความหมายของชีวิตและต้องการทำสิ่งที่ตรงกับความเชื่อ'],
-        strengths: ['มีจินตนาการ', 'เข้าใจผู้อื่น', 'ยึดมั่นในคุณค่า'],
-      },
-      INTJ: {
-        title: 'นักวางแผนเชิงกลยุทธ์', subtitle: 'คิดเป็นระบบ มองการณ์ไกล',
-        traits: ['เป็นอิสระ', 'ชอบคิดเชิงเหตุผล', 'สนใจความรู้และการแก้ปัญหาที่ซับซ้อน'],
-        strengths: ['วิเคราะห์เก่ง', 'วางแผนเป็นระบบ', 'มองการณ์ไกล'],
-      },
-      INTP: {
-        title: 'นักคิดวิเคราะห์', subtitle: 'รักตรรกะและทฤษฎี',
-        traits: ['ชอบค้นคว้า', 'ตั้งคำถาม', 'สนใจแนวคิดใหม่ ๆ', 'และต้องการเข้าใจเหตุผลเบื้องหลังสิ่งต่าง ๆ'],
-        strengths: ['วิเคราะห์เก่ง', 'ช่างสงสัย', 'คิดเป็นระบบ'],
-      },
-      ISFJ: {
-        title: 'ผู้ดูแลที่ทุ่มเท', subtitle: 'ใส่ใจรายละเอียดและผู้อื่น',
-        traits: ['สุภาพ', 'อบอุ่น', 'ชอบช่วยเหลือผู้อื่น', 'ใส่ใจรายละเอียดและความรู้สึกของคนรอบตัว'],
-        strengths: ['รับผิดชอบ', 'ละเอียด', 'อดทน'],
-      },
-      ISFP: {
-        title: 'ศิลปิน อ่อนโยน', subtitle: 'รักอิสระ มีสุนทรียะ',
-        traits: ['อ่อนโยน', 'รักอิสระ', 'ชอบความสวยงาม', 'มักแสดงออกผ่านผลงาน'],
-        strengths: ['สร้างสรรค์', 'ยืดหยุ่น', 'รสนิยม', 'ใส่ใจความรู้สึก'],
-      },
-    };
-
-    // ดึง result_id จาก URL
-    const params   = new URLSearchParams(window.location.search);
-    const resultId = params.get('id');
-
-    if (!resultId) {
-      showError('ไม่พบ result_id กรุณาทำแบบทดสอบใหม่');
-    } else {
-      fetch(`php/get_result.php?id=${resultId}`)
-        .then(r => r.json())
-        .then(data => {
-          if (!data.success) {
-            showError(data.error || 'ไม่พบข้อมูล');
-            return;
-          }
-          renderResult(data);
-        })
-        .catch(() => showError('ไม่สามารถเชื่อมต่อได้'));
-    }
-
-    function renderResult(data) {
-      // MBTI — ใช้ค่าที่คำนวณได้จริงจาก backend เท่านั้น
-      const mbti = String(data.mbti || '').trim().toUpperCase();
-
-      if (mbti.length !== 4 || !MBTI_INFO[mbti]) {
-        showError('ผลบุคลิกภาพไม่ถูกต้อง (' + (mbti || 'ไม่มีค่า') + ') กรุณาทำแบบทดสอบใหม่');
-        return;
-      }
-
-      const info = MBTI_INFO[mbti];
-      document.getElementById('mbti-display').textContent  = mbti;
-      document.getElementById('mbti-title').textContent    = info.title;
-      document.getElementById('mbti-subtitle').textContent = info.subtitle;
-
-      const branchImg = document.getElementById('mbti-branch-image');
-      branchImg.hidden = false;
-      branchImg.onerror = () => { branchImg.hidden = true; };
-      branchImg.src = `images/${mbti}.jpg`;
-      branchImg.alt = `${mbti} - ${info.title} สาขาที่เหมาะสม`;
-
-      // ลักษณะบุคลิกภาพ / จุดเด่น
-      document.getElementById('mbti-traits-list').innerHTML =
-        info.traits.map(t => `<li>${escapeHtml(t)}</li>`).join('');
-      document.getElementById('mbti-strengths-list').innerHTML =
-        info.strengths.map(t => `<li>${escapeHtml(t)}</li>`).join('');
-
-      const isInterestMode = data.input_mode === 'interest';
-      document.getElementById('avg-grade-display').textContent = isInterestMode
-        ? 'วิเคราะห์จากความสนใจ/งานอดิเรก (RIASEC) แทนเกรด'
-        : `เกรดเฉลี่ย ${data.avg_grade} | วิเคราะห์จาก 6 วิชาหลัก`;
-
-      // Grade Summary (โหมดกรอกเกรด) หรือ RIASEC Profile Summary (โหมดไม่ทราบเกรด)
-      const gradeWrap = document.getElementById('grade-summary');
-      if (isInterestMode && data.riasec_scores) {
-        document.getElementById('summary-title').textContent = '💡 โปรไฟล์ความสนใจของคุณ (RIASEC)';
-        Object.entries(data.riasec_scores).forEach(([letter, val]) => {
-          const chip = document.createElement('div');
-          chip.className = 'grade-chip';
-          chip.innerHTML = `${RIASEC_LABELS[letter] || letter}: <span>${Math.round(val * 100)}%</span>`;
-          gradeWrap.appendChild(chip);
-        });
-      } else if (data.grades) {
-        Object.entries(data.grades).forEach(([key, val]) => {
-          const chip = document.createElement('div');
-          chip.className = 'grade-chip';
-          chip.innerHTML = `${GRADE_LABELS[key]}: <span>${parseFloat(val).toFixed(2)}</span>`;
-          gradeWrap.appendChild(chip);
-        });
-      }
-
-      // แสดงผล — ใช้ attribute hidden แทนการสั่ง style.display จาก JS
-      // สไตล์ทั้งหมดจึงอยู่ในไฟล์ CSS ที่เดียว ไม่กระจายอยู่ใน JS
-      document.getElementById('loading-wrap').hidden = true;
-      document.getElementById('result-wrap').hidden  = false;
-    }
-
-    function showError(msg) {
-      document.getElementById('loading-wrap').hidden   = true;
-      document.getElementById('error-wrap').hidden     = false;
-      document.getElementById('error-msg').textContent = msg;
-    }
-  </script>
-
+  <script src="js/common.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/result.js"></script>
 </body>
 </html>

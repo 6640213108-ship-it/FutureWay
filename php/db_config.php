@@ -1,54 +1,45 @@
 <?php
 // ========================================
 // FutureWay - db_config.php
-// ไฟล์เดียวสำหรับตั้งค่าและเชื่อมต่อ Database
-// ให้ทุกไฟล์ require ตัวนี้แทนการ hardcode ค่าเชื่อมต่อซ้ำๆ
+// ค่าเชื่อมต่อฐานข้อมูล + ฟังก์ชันเปิด connection (ที่เดียวของทั้งโปรเจกต์)
+//
+// อ่านจาก environment variable เท่านั้น — Railway จะ inject ให้อัตโนมัติเมื่อ
+// เชื่อม service MySQL ไว้ในโปรเจกต์เดียวกัน ส่วนเครื่อง dev ใช้ไฟล์ .env
+// (ดูตัวอย่างใน .env.example) ห้าม hardcode รหัสผ่านจริงไว้ในไฟล์นี้เด็ดขาด
+// เพราะไฟล์นี้อยู่ใน git repo สาธารณะ
+//
+// decision_tree.py อ่านตัวแปรชุดเดียวกันนี้ (get_db_config) — แก้ชื่อตัวแปรที่ไหน
+// ต้องแก้ทั้งสองที่
 // ========================================
 
-// ฟังก์ชันเวลาฝั่ง PHP (date() ฯลฯ เช่น วันที่ในไฟล์ export) ให้ใช้เวลาไทยด้วย
-// ไม่งั้นบนเซิร์ฟเวอร์ที่เดินเวลาเป็น UTC จะได้เวลาช้ากว่าจริง 7 ชม.
-date_default_timezone_set('Asia/Bangkok');
-
-// อ่านจาก environment variable เท่านั้น (Railway จะ inject ให้อัตโนมัติ
-// ถ้า service เชื่อมกันในโปรเจกต์เดียวกัน)
-//
-// ห้าม hardcode รหัสผ่านจริงไว้เป็นค่า fallback ในไฟล์นี้เด็ดขาด — ไฟล์นี้อยู่ใน
-// git repo (public) รหัสผ่านที่ hardcode ไว้เท่ากับเปิดเผยสู่สาธารณะทันที
-// ต้องตั้ง MYSQLHOST/MYSQLUSER/MYSQLPASSWORD/MYSQLDATABASE เป็น environment
-// variable บน Railway (หรือ .env ในเครื่อง dev ที่ไม่ commit เข้า repo) เสมอ
-define('DB_HOST', getenv('MYSQLHOST') ?: 'mysql.railway.internal');
+define('DB_HOST', getenv('MYSQLHOST') ?: '127.0.0.1');
 define('DB_USER', getenv('MYSQLUSER') ?: 'root');
 define('DB_PASS', getenv('MYSQLPASSWORD') ?: '');
-define('DB_NAME', getenv('MYSQLDATABASE') ?: 'railway');
+define('DB_NAME', getenv('MYSQLDATABASE') ?: 'futureway');
 define('DB_PORT', (int)(getenv('MYSQLPORT') ?: 3306));
 
-if (DB_PASS === '') {
-    throw new Exception('MYSQLPASSWORD environment variable ยังไม่ได้ตั้งค่า');
-}
-
 /**
- * เปิดการเชื่อมต่อ Database ใหม่ 1 connection
- * ใช้ mysqli_report(MYSQLI_REPORT_OFF) เพื่อไม่ให้ throw exception ตอน connect ไม่ได้
- * (ให้ตรวจสอบ $conn->connect_error เองแทน เหมือนที่ไฟล์เดิมทำอยู่)
+ * เปิดการเชื่อมต่อฐานข้อมูลใหม่ 1 connection (charset utf8mb4, time zone ไทย)
  *
- * @return mysqli
- * @throws Exception ถ้าเชื่อมต่อไม่สำเร็จ
+ * @throws Exception ถ้ายังไม่ได้ตั้งรหัสผ่าน หรือเชื่อมต่อไม่สำเร็จ
  */
 function getDbConnection(): mysqli {
+    if (DB_PASS === '') {
+        throw new Exception('MYSQLPASSWORD environment variable is not set');
+    }
+
+    // ตรวจ connect_error เองแทนการโยน exception จาก mysqli
     mysqli_report(MYSQLI_REPORT_OFF);
 
     $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
-
     if ($conn->connect_error) {
         throw new Exception('DB connection failed: ' . $conn->connect_error);
     }
 
     $conn->set_charset('utf8mb4');
 
-    // เซิร์ฟเวอร์ MySQL (Railway) เดินเวลาเป็น UTC ทำให้เวลาที่บันทึก/อ่านจาก
-    // คอลัมน์ TIMESTAMP (เช่น created_at ของผลแบบทดสอบ) ช้ากว่าเวลาไทย 7 ชม.
-    // ตั้ง time zone ของ session เป็นเวลาไทยที่จุดเดียวตรงนี้ ทุกไฟล์ที่
-    // require db_config.php จะได้เวลาไทยตรงกับตอนที่ผู้ใช้ทำแบบทดสอบเสร็จจริง
+    // เซิร์ฟเวอร์ MySQL บน Railway เดินเวลาเป็น UTC ทำให้ค่าในคอลัมน์ TIMESTAMP
+    // (เช่น created_at ของผลแบบทดสอบ) ช้ากว่าเวลาไทย 7 ชม. ตั้งที่จุดเดียวตรงนี้
     $conn->query("SET time_zone = '+07:00'");
 
     return $conn;

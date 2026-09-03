@@ -1,21 +1,29 @@
-# ไฟล์ที่ไม่ควรเข้า repo — กันไม่ให้ของที่ลบไปแล้วกลับมาอีก
+# ---- ความลับ / ค่าเฉพาะเครื่อง ----
+.env
+.env.*
+!.env.example
 
-# ไฟล์คอมไพล์อัตโนมัติของ Python (เกิดใหม่ทุกครั้งที่รัน decision_tree.py)
+# ---- Python ----
 __pycache__/
 *.pyc
-
-# virtual environment ของ Python ในเครื่อง dev
-# (บน Railway ใช้ python3 ที่ติดตั้งจาก Dockerfile ไม่ได้ใช้โฟลเดอร์นี้)
 venv/
+.venv/
+.pytest_cache/
 
-# ไฟล์ขยะของระบบปฏิบัติการ / editor
+# ---- PHP ----
+vendor/
+
+# ---- ฐานข้อมูล: ห้าม commit dump ที่มีข้อมูลผู้ใช้จริง (ใช้ sql/*.sql แทน) ----
+*.sql.bak
+/project1.sql
+
+# ---- log ----
+*.log
+
+# ---- editor / OS ----
+.idea/
+.vscode/
+.claude/
 Thumbs.db
 desktop.ini
 .DS_Store
-
-# ห้าม commit database dump — มีข้อมูลผู้ใช้จริง (อีเมล/ชื่อ/password hash)
-# ใช้ sql/*.sql (migration) แทนถ้าต้องแชร์โครงสร้างตาราง
-project1.sql
-*.sql.bak
-python_libs/
-.claude/

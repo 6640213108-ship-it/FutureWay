@@ -16,27 +16,17 @@
 // ต้องได้ครบทุกแถวในไฟล์เดียว
 // ========================================
 
-session_start();
-
-// ไฟล์นี้ส่งข้อมูล binary ออกไป ห้ามมีอะไรอื่นปนเด็ดขาด
-//
-// image php:8.3-apache ไม่ได้ใส่ php.ini มาให้ display_errors จึงเป็น On ตาม default ของ PHP
-// ถ้ามี notice/warning หลุดมาก่อน echo ตัวไฟล์ ผลคือ header() ใช้ไม่ได้ (header ถูกส่งไปแล้ว)
-// และไฟล์ที่ผู้ใช้ได้จะมีข้อความ PHP อยู่ต้นไฟล์ -> Excel เปิดไม่ขึ้น
-// อาการที่เห็นคือ "ดาวน์โหลดได้แต่เปิดไม่ออก" ซึ่งไล่หาสาเหตุยากมาก
-ini_set('display_errors', '0');
-ob_start();
-
-require_once __DIR__ . '/admin_config.php';
-
-// ตรวจสิทธิ์ก่อนทำอะไรทั้งสิ้น — ไม่ผ่านจะตอบ JSON 401/403 แล้วจบ
-// (หน้าเว็บอ่าน JSON ก้อนนี้ไปขึ้นข้อความบอกผู้ใช้ได้เลย)
-header('Content-Type: application/json; charset=utf-8');
-requireAdminJson();
-
-require_once __DIR__ . '/db_config.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/admin_auth.php';
 require_once __DIR__ . '/admin_filter.php';
 require_once __DIR__ . '/xlsx_writer.php';
+
+// ตรวจสิทธิ์ก่อนทำอะไรทั้งสิ้น — ไม่ผ่านจะตอบ JSON 401/403 แล้วจบ
+requireAdminJson();
+
+// ไฟล์นี้ส่งข้อมูล binary ออกไป — buffer ไว้ก่อน ถ้ามีอะไรหลุดออกมาก่อนตัวไฟล์
+// (notice/warning) จะถูกทิ้งด้วย ob_clean ไม่ให้ปนเข้าไปจน Excel เปิดไม่ขึ้น
+ob_start();
 
 /** ชื่อหัวคอลัมน์ของเกรดแต่ละวิชา */
 const GRADE_LABELS = [
@@ -48,9 +38,9 @@ const GRADE_LABELS = [
     'grade_art'    => 'ศิลปะ',
 ];
 
-try {
-    $conn = getDbConnection();
+$conn = connectOrFailJson();
 
+try {
     $scope = ($_GET['scope'] ?? 'all') === 'filtered' ? 'filtered' : 'all';
 
     // scope=all แปลว่าไม่กรองอะไรเลย ต่อให้หน้าเว็บส่ง q/gender/mbti ติดมาก็ไม่สน
@@ -287,10 +277,5 @@ try {
 
 } catch (Throwable $e) {
     ob_clean();   // เคลียร์ output ที่ค้างอยู่ ให้เหลือแต่ JSON ที่หน้าเว็บอ่านได้
-    http_response_code(500);
-    error_log('export_admin_results.php error: ' . $e->getMessage());
-    echo json_encode([
-        'success' => false,
-        'error'   => 'สร้างไฟล์ Excel ไม่สำเร็จ: ' . $e->getMessage(),
-    ], JSON_UNESCAPED_UNICODE);
+    jsonServerError('export_admin_results', $e->getMessage(), 'สร้างไฟล์ Excel ไม่สำเร็จ');
 }

@@ -6,12 +6,12 @@
   <title>FutureWay - การตั้งค่า</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="css/main.css?v=4">
-  <link rel="stylesheet" href="css/profile.css?v=4">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/profile.css">
 </head>
 <body>
 
-  <!-- Hero Section: พื้นหลังม่วง + รูปโปรไฟล์ + ชื่อ -->
   <div class="hero">
     <div class="hero-bg"></div>
     <div class="profile-wrap">
@@ -23,7 +23,6 @@
     </div>
   </div>
 
-  <!-- เมนูรายการ -->
   <div class="menu-list">
 
     <a href="edit_profile.html" class="menu-item">
@@ -62,11 +61,9 @@
       <i class="fas fa-chevron-right menu-arrow"></i>
     </a>
 
-    <!-- เมนูผู้ดูแลระบบจะถูก "สร้างขึ้นมาแทรกตรงนี้" ด้วย JS เฉพาะตอนที่เป็นแอดมินจริงเท่านั้น
-         ไม่วางไว้ใน HTML แล้วซ่อนด้วย CSS เพราะกฎ display ของ .menu-item ทับ attribute hidden
-         และถ้า CSS ถูก cache ไว้ เมนูจะโผล่ให้ทุกคนเห็นทันที -->
+    <!-- เมนูผู้ดูแลระบบถูกแทรกตรงนี้ด้วย js/profile.js เฉพาะตอนเป็นแอดมิน -->
 
-    <a href="php/logout.php" class="menu-item logout" id="logout-item">
+    <a href="#" class="menu-item logout" id="logout-item">
       <div class="menu-icon red"><i class="fas fa-sign-out-alt"></i></div>
       <div class="menu-text">
         <span class="menu-title logout-text">ออกจากระบบ</span>
@@ -76,59 +73,11 @@
 
   </div>
 
-  <!-- Copyright -->
-  <p class="copyright">ลิขสิทธิ์ (Copyright © 2025), ส่งใต้โดย "นโยบายความเป็นส่วนตัว" หรือ "เกี่ยวกับเรา"</p>
+  <p class="copyright">Copyright © 2025 FutureWay</p>
 
-  <!-- Bottom Navigation -->
-  <nav class="bottom-nav">
-    <a href="main.html" class="nav-item">
-      <i class="fas fa-home"></i>
-      <span>หน้าหลัก</span>
-    </a>
-    <a href="History_Results.html" class="nav-item">
-      <i class="fas fa-chart-bar"></i>
-      <span>ประวัติผลลัพธ์</span>
-    </a>
-    <a href="profile.html" class="nav-item active">
-      <div class="icon-circle">
-        <i class="fas fa-user-cog"></i>
-      </div>
-      <span>การตั้งค่า</span>
-    </a>
-  </nav>
+  <nav class="bottom-nav" data-active="settings"></nav>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      fetch('php/get_user.php', { cache: 'no-store' })
-        .then(r => r.json())
-        .then(data => {
-          if (data.success) {
-            document.getElementById('profile-name').textContent = data.fullname;
-
-            // ซ่อนอีเมลได้จากหน้า "ความเป็นส่วนตัว" (settings.show_email)
-            // ผู้ใช้เก่าที่ยังไม่เคยตั้งค่าจะได้ค่าเริ่มต้นเป็น true จาก get_user.php
-            const showEmail = !data.settings || data.settings.show_email !== false;
-            document.getElementById('profile-email').textContent = showEmail ? (data.email || '') : '';
-            // สร้างเมนูผู้ดูแลระบบเฉพาะตอนเป็นแอดมิน แล้วแทรกไว้เหนือปุ่ม Logout
-            // ถ้าไม่ใช่แอดมิน element นี้จะไม่มีอยู่ใน DOM เลย ไม่ว่า CSS จะเป็นยังไง
-            if (data.is_admin === true) {
-              document.getElementById('logout-item').insertAdjacentHTML('beforebegin', `
-                <a href="admin.html" class="menu-item">
-                  <div class="menu-icon purple"><i class="fas fa-user-shield"></i></div>
-                  <div class="menu-text">
-                    <span class="menu-title">ผู้ดูแลระบบ</span>
-                    <span class="menu-sub">ดูผลการทำแบบทดสอบของผู้ใช้ทุกคน</span>
-                  </div>
-                  <i class="fas fa-chevron-right menu-arrow"></i>
-                </a>`);
-            }
-          } else {
-            window.location.href = 'login.html';
-          }
-        })
-        .catch(() => {});
-    });
-  </script>
-
+  <script src="js/common.js"></script>
+  <script src="js/profile.js"></script>
 </body>
 </html>

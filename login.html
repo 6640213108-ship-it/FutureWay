@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FutureWay - เข้าสู่ระบบ</title>
-  <link rel="stylesheet" href="css/style.css?v=4">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
 
@@ -15,17 +16,17 @@
     <p class="desc">เรารู้สึกยินดีที่ได้คุณมาที่นี่</p>
     <small class="note">กรุณากรอกข้อมูลเพื่อเริ่มต้นการใช้งาน</small>
 
-    <form action="php/login.php" method="post">
+    <form id="login-form" novalidate>
 
       <div class="input-box">
         <img src="images/account_circle_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" class="icon" alt="">
-        <input type="text" name="user" placeholder="ชื่อผู้ใช้" required>
+        <input type="text" name="username" placeholder="ชื่อผู้ใช้ (เบอร์มือถือ)" autocomplete="username" required>
       </div>
 
       <div class="input-box">
         <i class="fa-solid fa-lock icon-left"></i>
-        <input type="password" name="password" id="password1" placeholder="รหัสผ่าน" required>
-        <i class="fa-solid fa-eye toggle" onclick="togglePassword('password1', this)"></i>
+        <input type="password" name="password" id="password" placeholder="รหัสผ่าน" autocomplete="current-password" required>
+        <i class="fa-solid fa-eye toggle" data-target="password" role="button" aria-label="แสดงรหัสผ่าน"></i>
       </div>
 
       <div class="form-footer">
@@ -48,62 +49,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="js/common.js"></script>
   <script src="js/google-login.js"></script>
-  <script>
-    function togglePassword(inputId, icon) {
-      const input = document.getElementById(inputId);
-      if (input.type === "password") {
-        input.type = "text";
-        icon.classList.replace("fa-eye", "fa-eye-slash");
-      } else {
-        input.type = "password";
-        icon.classList.replace("fa-eye-slash", "fa-eye");
-      }
-    }
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const status = urlParams.get('status');
-
-if (status === 'success') {
-  Swal.fire({
-    title: 'เข้าสู่ระบบสำเร็จ!',
-    text: 'กำลังเข้าสู่หน้าหลัก...',
-    icon: 'success',
-    timer: 1500,
-    showConfirmButton: false,
-    willClose: () => { window.location.href = 'main.html'; }
-  });
-
-} else if (status === 'wrong_password') {
-  Swal.fire({
-    title: 'เข้าสู่ระบบไม่สำเร็จ',
-    text: 'รหัสผ่านไม่ถูกต้อง',
-    icon: 'error',
-    confirmButtonColor: '#d63031'
-  });
-} else if (status === 'user_not_found') {
-  Swal.fire({
-    title: 'เข้าสู่ระบบไม่สำเร็จ',
-    text: 'ไม่พบชื่อผู้ใช้นี้ในระบบ',
-    icon: 'error',
-    confirmButtonColor: '#d63031'
-  });
-} else if (status === 'empty') {
-  Swal.fire({
-    title: 'กรุณากรอกข้อมูลให้ครบ',
-    icon: 'warning',
-    confirmButtonColor: '#7b2ff7'
-  });
-}
-
-
-    window.history.replaceState({}, document.title, window.location.pathname);
-
-    
-  </script>
- 
-  
-  
-
+  <script src="js/login.js"></script>
 </body>
 </html>

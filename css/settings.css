@@ -3,10 +3,10 @@
    ใช้ร่วมกัน 4 หน้าที่เปิดจากเมนูใน profile.html
      edit_profile.html, change_password.html,
      notifications.html, privacy.html
-   โหลดต่อจาก main.css (ใช้ตัวแปรสีและ base ร่วมกัน)
+   โหลดต่อจาก app.css (ใช้ตัวแปรสีและ base ร่วมกัน)
    ======================================== */
 
-/* หัวเพจ .back-header ย้ายไปอยู่ใน main.css แล้ว (ทุกหน้าโหลด main.css อยู่แล้ว) */
+/* หัวเพจ .back-header ย้ายไปอยู่ใน app.css แล้ว (ทุกหน้าโหลด app.css อยู่แล้ว) */
 
 /* ========================================
    โครงหน้า
@@ -349,32 +349,6 @@
 .alert.warn { background: rgba(243,156,18,0.12); color: #b9770e; }
 .alert[hidden] { display: none; }
 
-/* แถบเด้งมุมล่างเวลาบันทึกสำเร็จ */
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: 24px;
-  transform: translate(-50%, 20px);
-  background: #2c2c34;
-  color: var(--white);
-  font-size: 0.85rem;
-  padding: 11px 18px;
-  border-radius: 999px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--transition), transform var(--transition);
-  z-index: 200;
-  max-width: 90vw;
-}
-.toast.show {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-.toast.err { background: #c0392b; }
 
 /* ========================================
    กล่องยืนยันก่อนลบ

@@ -10,19 +10,17 @@
 //   page    = หน้าที่เท่าไร (เริ่มที่ 1)
 // ========================================
 
-session_start();
-header('Content-Type: application/json; charset=utf-8');
-
-require_once __DIR__ . '/admin_config.php';
-requireAdminJson();
-
-require_once __DIR__ . '/db_config.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/admin_auth.php';
 require_once __DIR__ . '/admin_filter.php';
+
+requireAdminJson();
 
 const PER_PAGE = 20;
 
+$conn = connectOrFailJson();
+
 try {
-    $conn = getDbConnection();
 
     $page   = max(1, (int)($_GET['page'] ?? 1));
     $offset = ($page - 1) * PER_PAGE;
@@ -227,22 +225,16 @@ try {
 
     $conn->close();
 
-    echo json_encode([
-        'success'   => true,
-        'results'   => $rows,
-        'stats'     => $stats,
-        'filters'   => $filters,
-        'page'      => $page,
-        'per_page'  => PER_PAGE,
-        'total'     => $total,
+    jsonOk([
+        'results'     => $rows,
+        'stats'       => $stats,
+        'filters'     => $filters,
+        'page'        => $page,
+        'per_page'    => PER_PAGE,
+        'total'       => $total,
         'total_pages' => (int)ceil($total / PER_PAGE),
-    ], JSON_UNESCAPED_UNICODE);
+    ]);
 
 } catch (Throwable $e) {
-    http_response_code(500);
-    error_log('get_admin_results.php error: ' . $e->getMessage());
-    echo json_encode([
-        'success' => false,
-        'error'   => 'เกิดข้อผิดพลาดที่ server: ' . $e->getMessage()
-    ], JSON_UNESCAPED_UNICODE);
+    jsonServerError('get_admin_results', $e->getMessage());
 }

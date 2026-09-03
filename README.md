@@ -1,62 +1,142 @@
 # FutureWay
 
-ระบบแนะนำสาขาวิชาและมหาวิทยาลัยที่เหมาะสมกับผู้เรียน โดยวิเคราะห์จากผลแบบทดสอบบุคลิกภาพ MBTI (28 ข้อ) ร่วมกับเกรดเฉลี่ยรายวิชา แล้วจับคู่กับข้อมูลสาขาจริงของมหาวิทยาลัยราชภัฏนครราชสีมา (NRRU)
+[![CI](https://github.com/6640213108-ship-it/FutureWay/actions/workflows/ci.yml/badge.svg)](https://github.com/6640213108-ship-it/FutureWay/actions/workflows/ci.yml)
+![PHP 8.3](https://img.shields.io/badge/PHP-8.3-777BB4?logo=php&logoColor=white)
+![Python 3](https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+
+ระบบแนะนำสาขาวิชาที่เหมาะสมกับผู้เรียน โดยวิเคราะห์จากแบบทดสอบบุคลิกภาพ **MBTI (28 ข้อ)**
+ร่วมกับ **เกรดเฉลี่ยรายวิชา** หรือ **ความสนใจ/งานอดิเรกแบบ RIASEC** (สำหรับผู้ที่ยังไม่ทราบเกรด)
+แล้วจับคู่กับข้อมูลสาขาปริญญาตรีจริงของมหาวิทยาลัยราชภัฏนครราชสีมา (NRRU) ปีการศึกษา 2569
 
 ## ฟีเจอร์หลัก
 
-- **สมัคร/เข้าสู่ระบบ** ด้วยบัญชีในระบบ หรือ Google OAuth (Google Identity Services)
-- **แบบทดสอบ MBTI** 28 ข้อ พร้อมกรอกเกรดเฉลี่ยรายวิชา
-- **เครื่องมือแนะนำสาขา (decision tree)** เขียนด้วย Python วิเคราะห์จากบุคลิกภาพ + เกรด แล้วให้คะแนนเทียบกับเกณฑ์ของแต่ละสาขา คืนผล 3 อันดับแรกที่เหมาะสมที่สุด
-- **ประวัติผลการทดสอบ** ย้อนหลังของผู้ใช้แต่ละคน พร้อมส่งออกเป็นไฟล์ Excel
-- **หน้าแอดมิน** ดูภาพรวมผลลัพธ์ผู้ใช้ทั้งหมด กรอง/ส่งออกข้อมูล
-- **จัดการโปรไฟล์** แก้ไขข้อมูลส่วนตัว เปลี่ยนรหัสผ่าน ตั้งค่าบัญชี
+- **สมัคร / เข้าสู่ระบบ** ด้วยเบอร์มือถือ + รหัสผ่าน หรือบัญชี Google (Google Identity Services)
+- **แบบทดสอบ 2 ขั้น** กรอกเกรด 6 วิชา (หรือเลือกความชอบแบบ RIASEC แทน) แล้วตอบคำถาม MBTI 28 ข้อ
+- **Decision tree** ฝั่ง Python คำนวณรหัส MBTI จากคำตอบดิบ ให้คะแนนทุกสาขา แล้วจัดกลุ่มเป็น 3 คณะที่เหมาะสมที่สุด
+- **หน้าผลลัพธ์** การ์ดบุคลิกภาพ + โปสเตอร์สาขาที่เหมาะสมของแต่ละ MBTI + สรุปเกรด/โปรไฟล์ความสนใจ
+- **ประวัติผลลัพธ์** ย้อนหลังของผู้ใช้แต่ละคน (เก็บเป็น snapshot ไม่เปลี่ยนตามข้อมูลสาขาที่แก้ทีหลัง)
+- **หน้าผู้ดูแลระบบ** สถิติรวม ค้นหา/กรอง ลบผลรายรอบ และส่งออกเป็น Excel (.xlsx)
+- **จัดการบัญชี** แก้ไขโปรไฟล์ เปลี่ยนรหัสผ่าน ตั้งค่าการแจ้งเตือน ดาวน์โหลด/ลบข้อมูลของตัวเอง (PDPA-friendly)
 
-## สถาปัตยกรรม / เทคโนโลยีที่ใช้
+## สถาปัตยกรรม
+
+```
+Browser (HTML + CSS + Vanilla JS)
+   │  fetch JSON
+   ▼
+PHP 8.3 API  (php/*.php)  ──── mysqli ────►  MySQL
+   │  proc_open (JSON ผ่าน stdin/stdout)
+   ▼
+Python decision_tree.py  ──── mysql-connector ────►  MySQL
+```
 
 | ส่วน | เทคโนโลยี |
 |---|---|
-| Frontend | HTML, CSS, Vanilla JavaScript |
-| Backend | PHP 8.3 (mysqli, prepared statements) |
-| Decision engine | Python (`decision_tree.py`) เรียกผ่าน `proc_open` จากฝั่ง PHP |
-| Database | MySQL |
-| Deploy | Docker (Apache + PHP) บน Railway |
-
-โครงสร้างเว็บเป็นแบบ multi-page (server-rendered ผ่าน static HTML + fetch เรียก PHP API เป็น JSON) ไม่ได้ใช้ framework ฝั่งหน้าบ้าน เพื่อให้ deploy และแก้ไขได้ง่ายบน shared hosting/Railway
+| Front-end | HTML, CSS (design tokens), Vanilla JavaScript — ไม่มี build step |
+| Back-end API | PHP 8.3, mysqli + prepared statements, session-based auth |
+| Decision engine | Python 3 (`decision_tree.py`) มี unit test 55 เคส |
+| ฐานข้อมูล | MySQL 8 (migration ใน `sql/`) |
+| Deploy | Docker (php:8.3-apache + python3) บน Railway |
+| CI | GitHub Actions: `php -l` ทุกไฟล์ + `python -m unittest` |
 
 ## โครงสร้างโปรเจกต์
 
 ```
-├── *.html            หน้าเว็บแต่ละหน้า (index, login, quiz, result, admin, ...)
-├── css/               สไตล์แยกตามหน้า
-├── js/                สคริปต์ฝั่งหน้าบ้าน (เช่น Google login)
-├── php/               REST-like API endpoints + การเชื่อมต่อฐานข้อมูล
-├── decision_tree.py   ตรรกะแนะนำสาขาจาก MBTI + เกรด
-├── sql/               ไฟล์ schema/migration ตามลำดับ (001 = โครงสร้างเริ่มต้น)
-├── Dockerfile / entrypoint.sh   ตั้งค่า container สำหรับ deploy
+├── *.html                  หน้าเว็บ (มาร์กอัปล้วน ไม่มี inline script/style)
+├── css/
+│   ├── tokens.css          design tokens (สี ระยะ มุมโค้ง) ที่เดียวของทั้งโปรเจกต์
+│   ├── auth.css            หน้าก่อนล็อกอิน (index / login / register)
+│   ├── app.css             ฐานของหน้าหลังล็อกอิน (header, bottom nav, toast)
+│   └── <page>.css          สไตล์เฉพาะหน้า
+├── js/
+│   ├── common.js           FW.* helpers: api, requireLogin, showToast, bottom nav, back header
+│   ├── data.js             MBTI_TYPES, GRADE_SUBJECTS, RIASEC_DIMENSIONS (แหล่งเดียว)
+│   └── <page>.js           สคริปต์ของแต่ละหน้า
+├── php/
+│   ├── bootstrap.php       error config, session, JSON helpers — require เป็นบรรทัดแรกทุก endpoint
+│   ├── db_config.php       เชื่อมต่อ MySQL จาก environment variable
+│   ├── user_session.php    ผู้ใช้ที่ล็อกอิน + user_settings
+│   ├── admin_auth.php      ตรวจสิทธิ์ผู้ดูแลระบบ
+│   ├── decision_tree_runner.php  เรียก decision_tree.py ผ่าน proc_open
+│   ├── migrate.php         ตัวรัน migration (CLI หรือเว็บ + token)
+│   └── *.php               API endpoints (JSON ทั้งหมด)
+├── decision_tree.py        ตรรกะคำนวณ MBTI + ให้คะแนนสาขา
+├── tests/                  unit tests ของ decision_tree.py (unittest, ไม่ต้องมี DB)
+├── sql/                    migration ตามลำดับ (ดู sql/README.md)
+├── docs/                   ข้อมูลอ้างอิงสาขา NRRU และตาราง MBTI → สาขา
+├── Dockerfile / entrypoint.sh
+└── .github/workflows/ci.yml
 ```
 
-## เริ่มใช้งานในเครื่อง (Local setup)
+## เริ่มใช้งานในเครื่อง
 
-1. ติดตั้ง MySQL แล้วรัน migration ตามลำดับ: `sql/001_schema.sql`, `002_...`, `003_...` ไปเรื่อยๆ
-2. ติดตั้ง Python dependency: `pip install -r requirements.txt`
-3. ตั้ง environment variable (ดูรายละเอียดด้านล่าง) แล้วรันผ่าน Apache/PHP built-in server:
-   ```bash
-   php -S localhost:8000
-   ```
-4. เปิด `http://localhost:8000`
+ต้องมี PHP 8.1+, Python 3.10+, MySQL 8
+
+```bash
+git clone https://github.com/6640213108-ship-it/FutureWay.git
+cd FutureWay
+
+# 1) ตั้งค่า environment
+cp .env.example .env            # แล้วเติม MYSQLPASSWORD ฯลฯ
+
+# 2) Python dependency
+python -m venv venv
+venv/bin/pip install -r requirements.txt      # Windows: venv\Scripts\pip
+
+# 3) สร้างฐานข้อมูลแล้วรัน migration
+mysql -u root -p -e "CREATE DATABASE futureway CHARACTER SET utf8mb4"
+set -a; source .env; set +a                   # โหลด .env เข้า shell (Windows: ตั้งใน System Properties)
+php php/migrate.php
+
+# 4) รันเว็บ
+php -S localhost:8000
+```
+
+เปิด <http://localhost:8000>
 
 หรือรันด้วย Docker ทั้งชุด:
+
 ```bash
 docker build -t futureway .
 docker run -p 8080:80 --env-file .env futureway
 ```
 
-### Environment variables ที่ต้องตั้ง
+### Environment variables
 
-| ตัวแปร | คำอธิบาย |
+| ตัวแปร | จำเป็น | คำอธิบาย |
+|---|---|---|
+| `MYSQLHOST` `MYSQLPORT` `MYSQLUSER` `MYSQLPASSWORD` `MYSQLDATABASE` | ✅ | การเชื่อมต่อฐานข้อมูล (Railway inject ให้อัตโนมัติ) |
+| `GOOGLE_CLIENT_ID` | สำหรับปุ่ม Google | OAuth Client ID จาก Google Cloud Console |
+| `ADMIN_USERS` | สำหรับหน้าแอดมิน | username ที่เป็นผู้ดูแลระบบ คั่นด้วยลูกน้ำ |
+| `MIGRATE_TOKEN` | ถ้ารัน migrate ผ่านเว็บ | `curl -X POST -H "Authorization: Bearer $MIGRATE_TOKEN" https://<app>/php/migrate.php` |
+| `PYTHON_BIN` | ไม่บังคับ | path ของ Python ถ้าไม่ได้อยู่ใน `venv/` หรือ PATH |
+
+ไม่มีความลับใด ๆ hardcode อยู่ในโค้ด ทุกค่าอ่านจาก environment เท่านั้น
+
+## การทดสอบ
+
+```bash
+python -m unittest discover -s tests -v      # 55 tests, ไม่ต้องต่อฐานข้อมูล
+composer lint                                 # php -l ทุกไฟล์ใน php/
+```
+
+CI บน GitHub Actions รันทั้งสองอย่างนี้ทุกครั้งที่ push
+
+## API (สรุป)
+
+ทุก endpoint ตอบ JSON รูปแบบ `{"success": true, ...}` หรือ `{"success": false, "error": "..."}`
+พร้อม HTTP status ที่สอดคล้อง (400 / 401 / 403 / 404 / 409 / 500) endpoint ที่แก้ไขข้อมูลรับเฉพาะ `POST` + `Content-Type: application/json`
+
+| Endpoint | หน้าที่ |
 |---|---|
-| `MYSQLHOST`, `MYSQLUSER`, `MYSQLPASSWORD`, `MYSQLDATABASE`, `MYSQLPORT` | การเชื่อมต่อฐานข้อมูล |
-| `GOOGLE_CLIENT_ID` | Google OAuth Client ID (สมัครที่ [Google Cloud Console](https://console.cloud.google.com)) |
-| `ADMIN_USERS` | รายชื่อ username ที่เป็นแอดมิน คั่นด้วยลูกน้ำ เช่น `topza,hee` |
+| `login.php` `register.php` `logout.php` `google_login.php` | ยืนยันตัวตน |
+| `get_user.php` `update_profile.php` `change_password.php` `set_gender.php` | บัญชีผู้ใช้ |
+| `get_settings.php` `update_settings.php` `export_my_data.php` `delete_my_data.php` | การตั้งค่าและข้อมูลส่วนตัว |
+| `get_questions.php` `get_riasec_questions.php` `save_quiz.php` `get_result.php` `get_history.php` | แบบทดสอบและผลลัพธ์ |
+| `get_admin_results.php` `export_admin_results.php` `delete_result.php` | ผู้ดูแลระบบ |
 
-ไม่มีค่า default ที่เป็นความลับ (secret) hardcode อยู่ในโค้ด — ต้องตั้งค่าตัวแปรเหล่านี้เองเสมอ
+## License
+
+[MIT](LICENSE)

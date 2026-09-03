@@ -2,39 +2,100 @@
 # -*- coding: utf-8 -*-
 """
 FutureWay - Decision Tree
-รับ input: เกรด 6 วิชา + MBTI type
-ส่ง output: JSON สาขาที่แนะนำ 3 อันดับ
+
+สคริปต์นี้ถูกเรียกจาก PHP (php/save_quiz.php, php/get_result.php) ผ่าน proc_open
+รับ JSON ทาง stdin แล้วพิมพ์ผลลัพธ์เป็น JSON บรรทัดเดียวทาง stdout
+
+รูปแบบ input (stdin) รองรับ 3 แบบ ต้องมี "grades" หรือ "interests" อย่างใดอย่างหนึ่ง:
+
+1. โหมดกรอกเกรด (คำนวณ MBTI จากคำตอบดิบ)
+    {
+        "grades":  {"math": 3.5, "sci": 4.0, "eng": 3.0, "thai": 3.5, "social": 3.0, "art": 2.5},
+        "answers": [{"question_id": 1, "selected": "A"}, {"question_id": 2, "selected": "B"}, ...]
+    }
+
+2. โหมดไม่ทราบเกรด (ใช้ความสนใจ/งานอดิเรกแบบ RIASEC แทนเกรด)
+    {
+        "interests": [1, 4, 9, ...],          # id ในตาราง riasec_questions ที่ผู้ใช้ติ๊กว่า "ใช่/ชอบ"
+        "answers":   [{"question_id": 1, "selected": "A"}, ...]
+    }
+
+3. โหมดเดิม (legacy) ส่งรหัส MBTI ที่คำนวณมาแล้ว
+    {"grades": {...}, "mbti": "INTJ"}
+
+รูปแบบ output (stdout) เมื่อสำเร็จ (exit code 0):
+    {
+        "mbti":                "INTJ",
+        "avg_grade":           3.42,                    # null ในโหมดไม่ทราบเกรด
+        "branches_considered": 120,                     # จำนวนสาขา is_active = 1 ที่ถูกให้คะแนน
+        "top_categories": [                             # สูงสุด 3 คณะ เรียงตาม best_score
+            {
+                "faculty":    "วิศวกรรมศาสตร์",
+                "best_score": 92.5,
+                "branches": [                           # สูงสุด 5 สาขาต่อคณะ เรียงตาม score
+                    {"id": 1, "name": "...", "faculty": "...", "description": "...",
+                     "score": 92.5, "note": "⭐ เกรดดีและบุคลิกเหมาะมาก"}   # note มีเฉพาะสาขาที่ได้ boost
+                ]
+            }
+        ],
+        "mbti_detail":   {"EI": {"E": 1, "I": 2}, ...}, # มีเฉพาะเมื่อส่ง "answers" มา
+        "riasec_detail": {"scores": {...}, "matched": 5, "total_questions": 30}  # มีเฉพาะโหมดไม่ทราบเกรด
+    }
+
+เมื่อเกิดข้อผิดพลาด (exit code 1) จะพิมพ์ {"error": "..."} ทาง stdout (PHP อ่าน stdout)
+และเขียนข้อความเดียวกันไปที่ stderr ด้วย
 """
 
-import sys
-import os
-
-# บังคับให้ stdout/stderr เป็น UTF-8 เสมอ ไม่ว่า console/PHP proc_open
-# จะรันด้วย encoding อะไรก็ตาม (แก้ปัญหา 'charmap' codec can't encode
-# ตอน print ตัวอักษรไทยหรืออีโมจิ เช่น ⭐ ออกไปให้ PHP อ่าน)
-sys.stdout.reconfigure(encoding='utf-8')
-sys.stderr.reconfigure(encoding='utf-8')
-
 import json
-import mysql.connector
+import os
+import sys
 
 # ========================================
 # ตั้งค่าเชื่อมต่อ Database
 #
 # อ่านจาก environment variable เท่านั้น (ตรงกับที่ php/db_config.php ใช้)
 # ห้าม hardcode รหัสผ่านจริงไว้ในไฟล์นี้เด็ดขาด — ไฟล์นี้อยู่ใน git repo (public)
+#
+# อ่านค่าตอนถูกเรียกใช้เท่านั้น (ไม่ใช่ตอน import) เพื่อให้ import โมดูลนี้ไปทดสอบ
+# ได้โดยไม่ต้องมีฐานข้อมูลหรือตั้ง MYSQLPASSWORD ไว้ก่อน
 # ========================================
-_db_password = os.environ.get('MYSQLPASSWORD', '')
-if not _db_password:
-    raise RuntimeError('MYSQLPASSWORD environment variable ยังไม่ได้ตั้งค่า')
+def get_db_config() -> dict:
+    """
+    อ่านค่าเชื่อมต่อ MySQL จาก environment variable
 
-DB_CONFIG = {
-    'host':     os.environ.get('MYSQLHOST', 'mysql.railway.internal'),
-    'port':     int(os.environ.get('MYSQLPORT', 3306)),
-    'user':     os.environ.get('MYSQLUSER', 'root'),
-    'password': _db_password,
-    'database': os.environ.get('MYSQLDATABASE', 'railway'),  # ต้องตรงกับ DB ที่ไฟล์ PHP ทุกไฟล์ใช้ (railway)
-}
+    ค่า default ของ host/database ต้องตรงกับ php/db_config.php (127.0.0.1 / futureway)
+    ยกเว้น MYSQLPASSWORD ที่ไม่มี default — ถ้าไม่ได้ตั้งไว้จะ raise RuntimeError
+    """
+    password = os.environ.get('MYSQLPASSWORD', '')
+    if not password:
+        raise RuntimeError('MYSQLPASSWORD environment variable ยังไม่ได้ตั้งค่า')
+
+    return {
+        'host':     os.environ.get('MYSQLHOST', '127.0.0.1'),
+        'port':     int(os.environ.get('MYSQLPORT', 3306)),
+        'user':     os.environ.get('MYSQLUSER', 'root'),
+        'password': password,
+        'database': os.environ.get('MYSQLDATABASE', 'futureway'),
+    }
+
+
+def get_connection():
+    """เปิด connection ใหม่ไปยัง MySQL (import mysql.connector แบบ lazy ตอนใช้งานจริงเท่านั้น)"""
+    import mysql.connector
+    return mysql.connector.connect(**get_db_config())
+
+
+def _fetch_all(query: str) -> list:
+    """รัน SELECT แล้วคืนทุกแถวเป็น list ของ dict จากนั้นปิด connection ทันที"""
+    conn   = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(query)
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
 
 # ========================================
 # MBTI Decision Tree (หัวข้อที่ 3)
@@ -45,16 +106,10 @@ def get_mbti_questions():
     โครงสร้างตาราง: id, category (EI/SN/TF/JP), question_no, question_text,
                     option_a_text, option_a_trait, option_b_text, option_b_trait
     """
-    conn   = mysql.connector.connect(**DB_CONFIG)
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM mbti_questions ORDER BY category, question_no")
-    questions = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return questions
+    return _fetch_all("SELECT * FROM mbti_questions ORDER BY category, question_no")
 
 
-def resolve_mbti_from_answers(answers):
+def resolve_mbti_from_answers(answers, questions=None):
     """
     รับคำตอบของผู้ใช้ แล้วคำนวณรหัส MBTI 4 ตัวอักษร
     ตามหลัก Decision Tree (นับคะแนนเสียงข้างมากในแต่ละมิติ EI / SN / TF / JP)
@@ -63,13 +118,17 @@ def resolve_mbti_from_answers(answers):
         [{'question_id': 1, 'selected': 'A'}, {'question_id': 2, 'selected': 'B'}, ...]
         - question_id ต้องตรงกับ id ในตาราง mbti_questions
         - selected คือ 'A' หรือ 'B' (ข้อที่ผู้ใช้เลือก)
+    questions: list ของแถวจากตาราง mbti_questions (ถ้าเป็น None จะดึงจากฐานข้อมูลให้)
 
     คืนค่า: {
-        'mbti': 'INTJ',
-        'detail': {'EI': {'E': 1, 'I': 2}, 'SN': {...}, 'TF': {...}, 'JP': {...}}
+        'mbti':    'INTJ',
+        'detail':  {'EI': {'E': 1, 'I': 2}, 'SN': {...}, 'TF': {...}, 'JP': {...}},
+        'matched': จำนวนคำตอบที่นับเข้าคะแนนได้จริง,
+        'total':   จำนวนคำตอบทั้งหมดที่ส่งมา
     }
     """
-    questions = get_mbti_questions()
+    if questions is None:
+        questions = get_mbti_questions()
 
     # key ของ map ต้องเป็น str เสมอ เพราะ id ที่ส่งมาจากหน้าเว็บอาจเป็น "1" (string)
     # ได้ ถ้า PHP ดึงด้วย $conn->query() ซึ่งคืนทุกคอลัมน์เป็น string
@@ -148,20 +207,15 @@ RIASEC_LETTERS = ['R', 'I', 'A', 'S', 'E', 'C']
 
 def get_riasec_questions():
     """ดึงคำถามความสนใจ/งานอดิเรกทั้งหมดจากตาราง riasec_questions"""
-    conn   = mysql.connector.connect(**DB_CONFIG)
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM riasec_questions ORDER BY letter, question_no")
-    questions = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return questions
+    return _fetch_all("SELECT * FROM riasec_questions ORDER BY letter, question_no")
 
 
-def resolve_riasec_from_selection(selected_ids):
+def resolve_riasec_from_selection(selected_ids, questions=None):
     """
     รับ id ของข้อที่ผู้ใช้ติ๊กว่า "ใช่/ชอบ" แล้วคำนวณโปรไฟล์ RIASEC
 
     selected_ids: list ของ id ในตาราง riasec_questions ที่ผู้ใช้เลือก
+    questions:    list ของแถวจากตาราง riasec_questions (ถ้าเป็น None จะดึงจากฐานข้อมูลให้)
 
     คืนค่า: {
         'scores':  {'R': 0.83, 'I': 0.17, ...}  # สัดส่วนที่เลือกในแต่ละมิติ 0-1
@@ -169,7 +223,8 @@ def resolve_riasec_from_selection(selected_ids):
         'total_questions': จำนวนคำถามทั้งหมด
     }
     """
-    questions = get_riasec_questions()
+    if questions is None:
+        questions = get_riasec_questions()
 
     selected_set = {str(i).strip() for i in selected_ids}
 
@@ -296,28 +351,42 @@ def calculate_score(branch, grades, mbti, riasec=None):
 TOP_CATEGORIES        = 3   # จำนวนหมวดหมู่ (คณะ) ที่แนะนำ
 BRANCHES_PER_CATEGORY = 5   # จำนวนสาขาสูงสุดที่โชว์ต่อหมวดหมู่
 
+# คณะสายวิทย์ที่จะได้ boost เมื่อเกรดเฉลี่ยสูงและ MBTI เป็นสาย T
+# รวมชื่อคณะสายวิทย์ของข้อมูลชุด NRRU (004_nrru_branches.sql) ด้วย
+# ไม่งั้นสาขาใหม่จะไม่เคยเข้าเงื่อนไขนี้เลย
+SCIENCE_FACULTIES = [
+    'วิศวกรรมศาสตร์', 'แพทยศาสตร์', 'วิทยาศาสตร์',
+    'วิทยาศาสตร์และเทคโนโลยี', 'เทคโนโลยีอุตสาหกรรม',
+    'สาธารณสุขศาสตร์', 'พยาบาลศาสตร์',
+]
+SCIENCE_BOOST_MIN_AVG = 3.5
+SCIENCE_BOOST_POINTS  = 5
+SCIENCE_BOOST_NOTE    = '⭐ เกรดดีและบุคลิกเหมาะมาก'
 
-def run_decision_tree(grades, mbti, riasec=None):
+
+def get_branches():
+    """ดึงสาขาที่เปิดใช้งานทั้งหมด (is_active = 1) จากตาราง branches"""
+    return _fetch_all("SELECT * FROM branches WHERE is_active = 1")
+
+
+def run_decision_tree(grades, mbti, riasec=None, branches=None):
     """
     รัน Decision Tree หลัก
     ส่งคืน top 3 "หมวดหมู่" (คณะ) ที่เหมาะสมที่สุด แต่ละหมวดมีสาขาข้างในสูงสุด 5 สาขา
     (แทนที่จะส่งแค่ 3 สาขาเดี่ยวๆ ที่อาจกระจุกอยู่คณะเดียวกันหมด — คณะหนึ่งมีได้
     หลายสิบสาขา การจัดเป็นหมวดหมู่ช่วยให้เห็นตัวเลือกที่หลากหลายกว่า)
 
-    grades: dict เกรด 6 วิชา (โหมดกรอกเกรด) หรือ None (โหมดไม่ทราบเกรด)
-    riasec: dict โปรไฟล์ RIASEC 0-1 ต่อมิติ (ใช้เมื่อ grades เป็น None) หรือ None
+    grades:   dict เกรด 6 วิชา (โหมดกรอกเกรด) หรือ None (โหมดไม่ทราบเกรด)
+    riasec:   dict โปรไฟล์ RIASEC 0-1 ต่อมิติ (ใช้เมื่อ grades เป็น None) หรือ None
+    branches: list ของแถวจากตาราง branches (ถ้าเป็น None จะดึงจากฐานข้อมูลให้)
+
+    ถ้าดึงข้อมูลจากฐานข้อมูลไม่สำเร็จ จะคืน {'error': '...'} แทนการ raise
     """
-    try:
-        conn   = mysql.connector.connect(**DB_CONFIG)
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute("SELECT * FROM branches WHERE is_active = 1")
-        branches = cursor.fetchall()
-        cursor.close()
-        conn.close()
-
-    except Exception as e:
-        return {"error": str(e)}
+    if branches is None:
+        try:
+            branches = get_branches()
+        except Exception as e:
+            return {"error": str(e)}
 
     if not branches:
         return {"error": "ไม่พบสาขาในตาราง branches (ตารางว่าง หรือไม่มีแถวที่ is_active = 1)"}
@@ -339,22 +408,15 @@ def run_decision_tree(grades, mbti, riasec=None):
         avg_grade = sum(float(grades[k]) for k in grades) / len(grades)
 
         # ถ้าเกรดเฉลี่ยสูงมาก (≥ 3.5) และ MBTI เป็นสาย T → boost สายวิทย์
-        # รวมชื่อคณะสายวิทย์ของข้อมูลชุด NRRU (004_nrru_branches.sql) ด้วย
-        # ไม่งั้นสาขาใหม่จะไม่เคยเข้าเงื่อนไขนี้เลย (โหมดไม่ทราบเกรดไม่มี avg_grade
-        # จึงข้ามกฎนี้ไปเสมอ — ไม่มีเกรดให้ boost)
+        # (โหมดไม่ทราบเกรดไม่มี avg_grade จึงข้ามกฎนี้ไปเสมอ — ไม่มีเกรดให้ boost)
         #
         # ใช้กับ results ทั้งหมดก่อนจัดหมวดหมู่ ไม่ใช่แค่ตัวที่ติด top เดิม
         # ไม่งั้นสาขาที่ควรได้ boost แต่ยังไม่ติดอันดับจะไม่มีสิทธิ์ถูกพิจารณาใหม่เลย
-        science_faculties = [
-            'วิศวกรรมศาสตร์', 'แพทยศาสตร์', 'วิทยาศาสตร์',
-            'วิทยาศาสตร์และเทคโนโลยี', 'เทคโนโลยีอุตสาหกรรม',
-            'สาธารณสุขศาสตร์', 'พยาบาลศาสตร์',
-        ]
-        if avg_grade >= 3.5 and mbti[2] == 'T':
+        if avg_grade >= SCIENCE_BOOST_MIN_AVG and mbti[2] == 'T':
             for r in results:
-                if r['faculty'] in science_faculties:
-                    r['score'] = min(100, r['score'] + 5)
-                    r['note']  = '⭐ เกรดดีและบุคลิกเหมาะมาก'
+                if r['faculty'] in SCIENCE_FACULTIES:
+                    r['score'] = min(100, r['score'] + SCIENCE_BOOST_POINTS)
+                    r['note']  = SCIENCE_BOOST_NOTE
 
     # ---- จัดกลุ่มตามคณะ (หมวดหมู่) ----
     by_faculty = {}
@@ -385,34 +447,52 @@ def run_decision_tree(grades, mbti, riasec=None):
 
 
 # ========================================
-# Main — รับ argument จาก PHP
+# Main — รับ JSON จาก PHP ทาง stdin
 # ========================================
-if __name__ == '__main__':
+def _fail(message: str) -> int:
+    """
+    พิมพ์ {"error": ...} ทาง stdout (PHP อ่านผลจาก stdout) และเขียนข้อความเดียวกัน
+    ไปที่ stderr เพื่อให้เห็นใน log แล้วคืน exit code 1
+    """
+    print(json.dumps({'error': message}, ensure_ascii=False))
+    print(message, file=sys.stderr)
+    return 1
+
+
+def main(argv=None) -> int:
+    """
+    จุดเริ่มต้นของสคริปต์: อ่าน JSON จาก stdin -> คำนวณ -> พิมพ์ JSON ทาง stdout
+    คืน 0 เมื่อสำเร็จ, 1 เมื่อเกิดข้อผิดพลาด (ดูรูปแบบ input/output ที่ module docstring)
+
+    argv รับไว้เพื่อความเข้ากันได้กับรูปแบบ entry point ทั่วไป ปัจจุบันยังไม่ใช้
+    """
+    # บังคับให้ stdout/stderr เป็น UTF-8 เสมอ ไม่ว่า console/PHP proc_open
+    # จะรันด้วย encoding อะไรก็ตาม (แก้ปัญหา 'charmap' codec can't encode
+    # ตอน print ตัวอักษรไทยหรืออีโมจิ เช่น ⭐ ออกไปให้ PHP อ่าน)
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, 'reconfigure'):
+            stream.reconfigure(encoding='utf-8')
+
     try:
         # รับ JSON จาก PHP ผ่าน stdin
-        input_data = sys.stdin.read()
-        data       = json.loads(input_data)
+        data = json.loads(sys.stdin.read())
+        if not isinstance(data, dict):
+            return _fail('input ต้องเป็น JSON object')
 
         # โหมดกรอกเกรด: มี key 'grades' (dict 6 วิชา)
         # โหมดไม่ทราบเกรด: มี key 'interests' แทน (list ของ riasec_questions.id ที่เลือก)
-        grades  = data.get('grades')
-        riasec  = None
+        grades        = data.get('grades')
+        riasec        = None
         riasec_detail = None
 
         if grades is None:
             if 'interests' not in data:
-                print(json.dumps({
-                    'error': 'ไม่พบทั้งข้อมูลเกรดและความสนใจ (ต้องมี grades หรือ interests อย่างใดอย่างหนึ่ง)'
-                }, ensure_ascii=False))
-                sys.exit(0)
+                return _fail('ไม่พบทั้งข้อมูลเกรดและความสนใจ (ต้องมี grades หรือ interests อย่างใดอย่างหนึ่ง)')
 
             riasec_result = resolve_riasec_from_selection(data['interests'])
             if riasec_result['matched'] == 0:
-                print(json.dumps({
-                    'error': 'ไม่สามารถจับคู่ความสนใจที่เลือกกับคำถามในฐานข้อมูลได้ '
-                             '(id ที่ส่งมาไม่ตรงกับตาราง riasec_questions)',
-                }, ensure_ascii=False))
-                sys.exit(0)
+                return _fail('ไม่สามารถจับคู่ความสนใจที่เลือกกับคำถามในฐานข้อมูลได้ '
+                             '(id ที่ส่งมาไม่ตรงกับตาราง riasec_questions)')
 
             riasec        = riasec_result['scores']
             riasec_detail = riasec_result
@@ -428,20 +508,20 @@ if __name__ == '__main__':
             # ไม่ตรงกับตาราง mbti_questions -> ต้องแจ้ง error ไม่ใช่ปล่อยให้ tie-break
             # คืนค่า INFP ออกไปเงียบๆ เหมือนเป็นผลลัพธ์จริง
             if mbti_result['matched'] == 0:
-                print(json.dumps({
-                    'error': 'ไม่สามารถจับคู่คำตอบกับคำถามในฐานข้อมูลได้ '
-                             '(question_id ที่ส่งมาไม่ตรงกับตาราง mbti_questions)',
-                    'sent_ids': [a.get('question_id') for a in data['answers']]
-                }, ensure_ascii=False))
-                sys.exit(0)
+                return _fail('ไม่สามารถจับคู่คำตอบกับคำถามในฐานข้อมูลได้ '
+                             '(question_id ที่ส่งมาไม่ตรงกับตาราง mbti_questions)')
 
             mbti        = mbti_result['mbti']
             mbti_detail = mbti_result['detail']
-        else:
+        elif 'mbti' in data:
             # โหมดเดิม: รับรหัส MBTI ที่คำนวณมาแล้ว เช่น 'INTJ'
             mbti = data['mbti']
+        else:
+            return _fail('ไม่พบทั้ง answers และ mbti (ต้องมีอย่างใดอย่างหนึ่งเพื่อระบุบุคลิกภาพ)')
 
         result = run_decision_tree(grades, mbti, riasec)
+        if 'error' in result:
+            return _fail(result['error'])
 
         if mbti_detail is not None:
             result['mbti_detail'] = mbti_detail
@@ -450,6 +530,11 @@ if __name__ == '__main__':
 
         # ส่ง JSON กลับไปให้ PHP
         print(json.dumps(result, ensure_ascii=False))
-        
+        return 0
+
     except Exception as e:
-        print(json.dumps({'error': str(e)}, ensure_ascii=False))
+        return _fail(str(e))
+
+
+if __name__ == '__main__':
+    sys.exit(main())

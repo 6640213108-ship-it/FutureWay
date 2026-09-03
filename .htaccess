@@ -1,25 +1,31 @@
-# ไฟล์ migration ใน sql/ ไม่ควรถูกเปิดดูผ่านเว็บ (เผยโครงสร้างฐานข้อมูล)
-<FilesMatch "\.(sql)$">
+# ========================================
+# FutureWay - .htaccess
+# มีผลก็ต่อเมื่อ AllowOverride All (entrypoint.sh ตั้งให้) และเปิด mod_headers (Dockerfile)
+# ========================================
+
+# ไฟล์ที่ไม่ควรเปิดดูผ่านเว็บ: migration SQL, เอกสาร, ไฟล์ config/ทดสอบ
+<FilesMatch "\.(sql|md|py|json|lock|env|example|sh|txt|editorconfig|dockerignore|gitignore)$">
+  Require all denied
+</FilesMatch>
+<FilesMatch "^(Dockerfile|LICENSE)$">
   Require all denied
 </FilesMatch>
 
 <IfModule mod_headers.c>
+  # HTML ต้องได้ตัวใหม่เสมอหลัง deploy
   <FilesMatch "\.(html)$">
     Header set Cache-Control "no-cache, no-store, must-revalidate"
     Header set Pragma "no-cache"
     Header set Expires "0"
   </FilesMatch>
 
-  # CSS/JS ต้องบังคับให้ถามเซิร์ฟเวอร์ก่อนใช้ทุกครั้งด้วย
-  #
-  # เดิมกฎข้างบนคุมแค่ .html ทำให้ deploy แล้วเบราว์เซอร์ได้ HTML ใหม่
-  # แต่ยังใช้ CSS ตัวเก่าที่ cache ไว้ (ไม่มี Cache-Control เบราว์เซอร์จะเดาอายุเอง
-  # จาก Last-Modified ซึ่งอาจเก็บไว้เป็นวัน) ผลคือของใหม่ที่ต้องใช้ CSS ใหม่จะเสียหมด
-  # เช่น popup ดูรูปในหน้า main ที่เปิดขึ้นจริงแต่ไม่มีสไตล์ เลยมองไม่เห็นอะไรเลย
-  #
-  # ใช้ "no-cache" ไม่ใช่ "no-store": ไฟล์ยังถูกเก็บไว้ในเครื่อง แต่ต้องถาม
-  # เซิร์ฟเวอร์ก่อนใช้ทุกครั้ง ถ้าไม่มีอะไรเปลี่ยนจะได้ 304 กลับมา ซึ่งเบามาก
+  # CSS/JS: เก็บไว้ในเครื่องได้ แต่ต้องถามเซิร์ฟเวอร์ก่อนใช้ทุกครั้ง (ได้ 304 ถ้าไม่เปลี่ยน)
+  # จึงไม่ต้องใช้ ?v= ต่อท้ายชื่อไฟล์เพื่อล้าง cache
   <FilesMatch "\.(css|js)$">
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
+
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>

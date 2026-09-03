@@ -17,3 +17,5 @@ desktop.ini
 # ใช้ sql/*.sql (migration) แทนถ้าต้องแชร์โครงสร้างตาราง
 project1.sql
 *.sql.bak
+python_libs/
+.claude/

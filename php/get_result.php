@@ -61,23 +61,33 @@ $riasecScores = isset($result['riasec_scores']) ? json_decode($result['riasec_sc
 $mbti = $result['mbti_type'];
 
 // ========================================
-// อ่านสาขาที่แนะนำจาก snapshot ที่บันทึกไว้ตอนทำแบบทดสอบรอบนั้น
+// อ่านสาขาที่แนะนำ (จัดเป็นหมวดหมู่/คณะ) จาก snapshot ที่บันทึกไว้ตอนทำแบบทดสอบรอบนั้น
 // -> ผลที่ผู้ใช้เห็นย้อนหลังตรงกับตอนทำจริงเสมอ ถึงจะแก้ข้อมูล branches ทีหลัง
 //    และไม่ต้องรัน python ซ้ำทุกครั้งที่เปิดหน้านี้
 // ========================================
-$top3  = [];
+$categoriesById = [];   // category_rank => ['faculty' => ..., 'best_score' => ..., 'branches' => [...]]
 $stmtB = $conn->prepare("
-    SELECT rank_no, branch_id, branch_name, faculty, description, score, note
+    SELECT category_rank, rank_no, branch_id, branch_name, faculty, description, score, note
     FROM quiz_result_branches
     WHERE result_id = ?
-    ORDER BY rank_no ASC
+    ORDER BY category_rank ASC, rank_no ASC
 ");
 if ($stmtB) {
     $stmtB->bind_param('i', $resultId);
     $stmtB->execute();
     $resB = $stmtB->get_result();
     while ($row = $resB->fetch_assoc()) {
-        $top3[] = [
+        $catRank = (int)($row['category_rank'] ?? 1);
+
+        if (!isset($categoriesById[$catRank])) {
+            $categoriesById[$catRank] = [
+                'faculty'    => $row['faculty'],
+                'best_score' => (float)$row['score'],
+                'branches'   => [],
+            ];
+        }
+
+        $categoriesById[$catRank]['branches'][] = [
             'id'          => $row['branch_id'] !== null ? (int)$row['branch_id'] : null,
             'name'        => $row['branch_name'],
             'faculty'     => $row['faculty'],
@@ -88,12 +98,14 @@ if ($stmtB) {
     }
     $stmtB->close();
 }
+ksort($categoriesById);
+$topCategories = array_values($categoriesById);
 
 // ========================================
-// Fallback: ผลลัพธ์เก่าที่บันทึกไว้ก่อน migration 002 ยังไม่มี snapshot
-// จึงต้องคำนวณใหม่ด้วย python เหมือนเดิม
+// Fallback: ผลลัพธ์เก่าที่บันทึกไว้ก่อน migration 002/009 ยังไม่มี snapshot
+// (หรือยังเป็นรูปแบบ flat แบบเก่า) จึงต้องคำนวณใหม่ด้วย python เหมือนเดิม
 // ========================================
-if (!$top3) {
+if (!$topCategories) {
     $pythonInput = json_encode(['grades' => $grades, 'mbti' => $mbti]);
     require_once __DIR__ . '/python_config.php';
     try {
@@ -118,8 +130,8 @@ if (!$top3) {
     fclose($pipes[2]);
     proc_close($process);
 
-    $pyResult = json_decode($pythonOutput, true);
-    $top3     = $pyResult['top3'] ?? [];
+    $pyResult      = json_decode($pythonOutput, true);
+    $topCategories = $pyResult['top_categories'] ?? [];
 }
 
 // ดึงคำตอบรายข้อของรอบนี้ (ถ้ามีบันทึกไว้)
@@ -153,16 +165,16 @@ if (isset($result['avg_grade']) && $result['avg_grade'] !== null) {
 }
 
 echo json_encode([
-    'success'       => true,
-    'result_id'     => $resultId,
-    'mbti'          => $mbti,
-    'mbti_detail'   => isset($result['mbti_detail']) ? json_decode($result['mbti_detail'], true) : null,
-    'input_mode'    => $inputMode,
-    'avg_grade'     => $avgGrade,
-    'grades'        => $grades,
-    'riasec_scores' => $riasecScores,
-    'top3'          => $top3,
-    'answers'       => $answers,
-    'created_at'    => $result['created_at'],
+    'success'        => true,
+    'result_id'      => $resultId,
+    'mbti'           => $mbti,
+    'mbti_detail'    => isset($result['mbti_detail']) ? json_decode($result['mbti_detail'], true) : null,
+    'input_mode'     => $inputMode,
+    'avg_grade'      => $avgGrade,
+    'grades'         => $grades,
+    'riasec_scores'  => $riasecScores,
+    'top_categories' => $topCategories,
+    'answers'        => $answers,
+    'created_at'     => $result['created_at'],
 ], JSON_UNESCAPED_UNICODE);
 ?>

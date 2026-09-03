@@ -133,6 +133,25 @@
   text-align: right;
 }
 
+/* รายชื่อสาขาข้างในแต่ละหมวดหมู่ (คณะ) */
+.category-branch-list {
+  margin-top: 10px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.category-branch-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+.cb-name { color: #333; }
+.cb-score { color: var(--primary); font-weight: 700; flex-shrink: 0; }
+
 /* grade summary */
 .grade-summary {
   background: #fff;

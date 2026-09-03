@@ -155,7 +155,7 @@ try {
     } elseif (isset($pyResult['error'])) {
         // python รันได้ แต่ error ระหว่างทาง (เช่น DB connect ไม่ได้)
         $errMsg = 'Python error: ' . $pyResult['error'];
-    } elseif (empty($pyResult['top3'])) {
+    } elseif (empty($pyResult['top_categories']) || empty($pyResult['top_categories'][0]['branches'])) {
         // python รันสำเร็จ เชื่อม DB ได้ปกติ แต่ query ตาราง branches ไม่เจอแถวที่ is_active = 1
         $errMsg = 'ไม่พบข้อมูลสาขาในระบบ (ตาราง branches อาจว่าง หรือไม่มีแถวที่ is_active = 1)';
     } elseif (!isset($pyResult['mbti']) || !is_string($pyResult['mbti']) || strlen($pyResult['mbti']) !== 4) {
@@ -191,7 +191,8 @@ try {
     $mbtiTF = $mbti[2];
     $mbtiJP = $mbti[3];
 
-    $top1       = $pyResult['top3'][0];
+    // สาขาที่แนะนำที่สุดโดยรวม = สาขาอันดับ 1 ของหมวดหมู่ (คณะ) อันดับ 1
+    $top1       = $pyResult['top_categories'][0]['branches'][0];
     $branchId   = $top1['id']    ?? null;
     $branchName = $top1['name']  ?? null;
     $score      = $top1['score'] ?? null;
@@ -254,31 +255,40 @@ try {
         $stmt->close();
 
         // ----------------------------------------
-        // เก็บสาขาที่แนะนำครบทั้ง 3 อันดับเป็น snapshot ของรอบนี้
-        // (เดิมเก็บแค่อันดับ 1 แล้วไปคำนวณอันดับ 2-3 ใหม่ตอนเปิดหน้า result
-        //  ทำให้ประวัติเก่าเปลี่ยนผลตามข้อมูลตาราง branches ที่แก้ทีหลัง)
+        // เก็บสาขาที่แนะนำเป็น snapshot ของรอบนี้ จัดเป็นหมวดหมู่ (คณะ) สูงสุด 3
+        // หมวด แต่ละหมวดมีสาขาข้างในสูงสุด 5 สาขา (ดู decision_tree.py:
+        // run_decision_tree — TOP_CATEGORIES / BRANCHES_PER_CATEGORY)
+        // เก็บเป็น snapshot เหมือนเดิมเพื่อให้ประวัติเก่าไม่เปลี่ยนผลตามข้อมูล
+        // ตาราง branches ที่แก้ทีหลัง
         // ----------------------------------------
         $stmtB = $conn->prepare("
             INSERT INTO quiz_result_branches
-                (result_id, rank_no, branch_id, branch_name, faculty, description, score, note)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (result_id, category_rank, rank_no, branch_id, branch_name, faculty, description, score, note)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         if (!$stmtB) {
             throw new Exception('Prepare (INSERT quiz_result_branches) ล้มเหลว: ' . $conn->error);
         }
 
-        foreach (array_slice($pyResult['top3'], 0, 3) as $i => $b) {
-            $rankNo  = $i + 1;
-            $bId     = $b['id']          ?? null;
-            $bName   = $b['name']        ?? '';
-            $bFac    = $b['faculty']     ?? null;
-            $bDesc   = $b['description'] ?? null;
-            $bScore  = $b['score']       ?? 0;
-            $bNote   = $b['note']        ?? null;
+        foreach ($pyResult['top_categories'] as $ci => $category) {
+            $categoryRank = $ci + 1;
 
-            $stmtB->bind_param('iiisssds', $resultId, $rankNo, $bId, $bName, $bFac, $bDesc, $bScore, $bNote);
-            if (!$stmtB->execute()) {
-                throw new Exception('บันทึกสาขาที่แนะนำไม่สำเร็จ: ' . $stmtB->error);
+            foreach ($category['branches'] as $bi => $b) {
+                $rankNo  = $bi + 1;
+                $bId     = $b['id']          ?? null;
+                $bName   = $b['name']        ?? '';
+                $bFac    = $b['faculty']     ?? ($category['faculty'] ?? null);
+                $bDesc   = $b['description'] ?? null;
+                $bScore  = $b['score']       ?? 0;
+                $bNote   = $b['note']        ?? null;
+
+                $stmtB->bind_param(
+                    'iiiisssds',
+                    $resultId, $categoryRank, $rankNo, $bId, $bName, $bFac, $bDesc, $bScore, $bNote
+                );
+                if (!$stmtB->execute()) {
+                    throw new Exception('บันทึกสาขาที่แนะนำไม่สำเร็จ: ' . $stmtB->error);
+                }
             }
         }
         $stmtB->close();

@@ -90,6 +90,13 @@
       R: 'Realistic', I: 'Investigative', A: 'Artistic',
       S: 'Social', E: 'Enterprising', C: 'Conventional'
     };
+
+    // กัน HTML injection จากข้อความที่มาจาก DB (ชื่อสาขา/คณะ)
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str ?? '';
+      return div.innerHTML;
+    }
     const RANK_STYLES = [
       { cls: 'gold',   label: '🥇' },
       { cls: 'silver', label: '🥈' },
@@ -160,22 +167,31 @@
         ? 'วิเคราะห์จากความสนใจ/งานอดิเรก (RIASEC) แทนเกรด'
         : `เกรดเฉลี่ย ${data.avg_grade} | วิเคราะห์จาก 6 วิชาหลัก`;
 
-      // Top 3 สาขา
+      // Top 3 หมวดหมู่ (คณะ) แต่ละหมวดมีหลายสาขาข้างใน — เพิ่มโอกาสเห็นตัวเลือกที่หลากหลาย
+      // แทนที่จะเห็นแค่ 3 สาขาเดี่ยวๆ ที่อาจกระจุกอยู่คณะเดียวกันหมด
       const rankList = document.getElementById('rank-list');
-      data.top3.forEach((branch, i) => {
-        const style = RANK_STYLES[i];
-        const card  = document.createElement('div');
-        card.className = 'rank-card';
+      (data.top_categories || []).forEach((cat, i) => {
+        const style  = RANK_STYLES[i] || RANK_STYLES[RANK_STYLES.length - 1];
+        const best   = cat.branches[0];
+        const card   = document.createElement('div');
+        card.className = 'rank-card category-card';
         card.innerHTML = `
           <div class="rank-badge ${style.cls}">${style.label}</div>
           <div class="rank-info">
-            <p class="rank-name">${branch.name}</p>
-            <p class="rank-faculty">${branch.faculty}</p>
+            <p class="rank-name">${escapeHtml(cat.faculty)}</p>
+            <p class="rank-faculty">สาขาที่เข้ากันที่สุดในหมวดนี้: ${escapeHtml(best.name)}</p>
             <div class="score-bar-wrap">
               <div class="score-bar-bg">
-                <div class="score-bar-fill" data-score="${branch.score}"></div>
+                <div class="score-bar-fill" data-score="${cat.best_score}"></div>
               </div>
-              <p class="score-text">ความเหมาะสม ${branch.score}%</p>
+              <p class="score-text">ความเหมาะสม ${cat.best_score}%</p>
+            </div>
+            <div class="category-branch-list">
+              ${cat.branches.map(b => `
+                <div class="category-branch-row">
+                  <span class="cb-name">${escapeHtml(b.name)}</span>
+                  <span class="cb-score">${b.score}%</span>
+                </div>`).join('')}
             </div>
           </div>`;
         rankList.appendChild(card);

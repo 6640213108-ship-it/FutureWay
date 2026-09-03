@@ -116,20 +116,20 @@ try {
             'top_branch' => $row['branch_name'],
             'top_score'  => $row['score'] !== null ? (float)$row['score'] : null,
             'created_at' => $row['created_at'],
-            'top3'       => [],   // เติมด้านล่าง
+            'top_categories' => [],   // เติมด้านล่าง
         ];
     }
     $stmt->close();
 
-    // ---- ดึงสาขาที่แนะนำครบ 3 อันดับของทุกแถวในหน้านี้ ด้วย query เดียว ----
+    // ---- ดึงสาขาที่แนะนำ (จัดเป็นหมวดหมู่/คณะ) ของทุกแถวในหน้านี้ ด้วย query เดียว ----
     // (ไม่ยิงทีละแถว เพราะหน้าเดียวมีได้ถึง 20 แถว)
     if ($ids) {
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmtB = $conn->prepare("
-            SELECT result_id, rank_no, branch_name, faculty, score
+            SELECT result_id, category_rank, rank_no, branch_name, faculty, score
             FROM quiz_result_branches
             WHERE result_id IN ($placeholders)
-            ORDER BY result_id, rank_no
+            ORDER BY result_id, category_rank, rank_no
         ");
         // ถ้าตารางยังไม่ถูกสร้าง prepare จะคืน false -> ข้ามไป หน้าเว็บยังใช้ได้
         if ($stmtB) {
@@ -139,8 +139,17 @@ try {
 
             $byResult = [];
             while ($b = $resB->fetch_assoc()) {
-                $byResult[(int)$b['result_id']][] = [
-                    'rank'    => (int)$b['rank_no'],
+                $rid     = (int)$b['result_id'];
+                $catRank = (int)($b['category_rank'] ?? 1);
+
+                if (!isset($byResult[$rid][$catRank])) {
+                    $byResult[$rid][$catRank] = [
+                        'faculty'    => $b['faculty'],
+                        'best_score' => (float)$b['score'],
+                        'branches'   => [],
+                    ];
+                }
+                $byResult[$rid][$catRank]['branches'][] = [
                     'name'    => $b['branch_name'],
                     'faculty' => $b['faculty'],
                     'score'   => (float)$b['score'],
@@ -149,7 +158,9 @@ try {
             $stmtB->close();
 
             foreach ($rows as &$r) {
-                $r['top3'] = $byResult[$r['result_id']] ?? [];
+                $cats = $byResult[$r['result_id']] ?? [];
+                ksort($cats);
+                $r['top_categories'] = array_values($cats);
             }
             unset($r);
         }

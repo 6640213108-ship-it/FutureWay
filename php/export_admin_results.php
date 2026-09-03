@@ -9,7 +9,7 @@
 //   q, gender, mbti   ตัวกรอง — ใช้เมื่อ scope=filtered (ชุดเดียวกับ get_admin_results.php)
 //
 // ไฟล์ที่ได้มี 2 ชีต
-//   1) ผลการทำแบบทดสอบ — 1 แถวต่อ 1 รอบ พร้อมเกรดรายวิชาและสาขาที่แนะนำครบ 3 อันดับ
+//   1) ผลการทำแบบทดสอบ — 1 แถวต่อ 1 รอบ พร้อมเกรดรายวิชาและหมวดหมู่ (คณะ) ที่แนะนำสูงสุด 3 หมวด
 //   2) สรุปสถิติ        — ยอดรวม + แยกตามเพศ / MBTI / สาขา
 //
 // ไม่แบ่งหน้าเหมือน get_admin_results.php เพราะจุดประสงค์คือเอาข้อมูลไปทำต่อ
@@ -89,22 +89,31 @@ try {
     }
     $stmt->close();
 
-    // ---- สาขาที่แนะนำครบ 3 อันดับ ดึงทีเดียวทุกแถว ไม่ยิงทีละรอบ ----
-    $branches = [];
+    // ---- สาขาที่แนะนำ จัดเป็นหมวดหมู่ (คณะ) สูงสุด 3 หมวด ดึงทีเดียวทุกแถว ไม่ยิงทีละรอบ ----
+    $categoriesByResult = [];
     if ($ids) {
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmtB = $conn->prepare("
-            SELECT result_id, rank_no, branch_name, faculty, score
+            SELECT result_id, category_rank, rank_no, branch_name, faculty, score
             FROM quiz_result_branches
             WHERE result_id IN ($placeholders)
-            ORDER BY result_id, rank_no
+            ORDER BY result_id, category_rank, rank_no
         ");
         if ($stmtB) {
             $stmtB->bind_param(str_repeat('i', count($ids)), ...$ids);
             $stmtB->execute();
             $resB = $stmtB->get_result();
             while ($b = $resB->fetch_assoc()) {
-                $branches[(int)$b['result_id']][(int)$b['rank_no']] = $b;
+                $rid     = (int)$b['result_id'];
+                $catRank = (int)($b['category_rank'] ?? 1);
+
+                if (!isset($categoriesByResult[$rid][$catRank])) {
+                    $categoriesByResult[$rid][$catRank] = [
+                        'faculty' => $b['faculty'],
+                        'names'   => [],
+                    ];
+                }
+                $categoriesByResult[$rid][$catRank]['names'][] = $b['branch_name'] . ' (' . (float)$b['score'] . '%)';
             }
             $stmtB->close();
         }
@@ -116,9 +125,9 @@ try {
     $header = array_merge(
         ['ลำดับ', 'วันที่ทำ', 'ชื่อผู้ใช้', 'ชื่อ-นามสกุล', 'เพศ', 'อีเมล', 'ผล MBTI', 'ประเภทข้อมูล', 'เกรดเฉลี่ย'],
         array_values(GRADE_LABELS),
-        ['สาขาอันดับ 1', 'คณะอันดับ 1', 'คะแนน 1 (%)',
-         'สาขาอันดับ 2', 'คณะอันดับ 2', 'คะแนน 2 (%)',
-         'สาขาอันดับ 3', 'คณะอันดับ 3', 'คะแนน 3 (%)']
+        ['หมวดหมู่ 1 (คณะ)', 'สาขาแนะนำในหมวดหมู่ 1',
+         'หมวดหมู่ 2 (คณะ)', 'สาขาแนะนำในหมวดหมู่ 2',
+         'หมวดหมู่ 3 (คณะ)', 'สาขาแนะนำในหมวดหมู่ 3']
     );
 
     $sheet1 = [$header];
@@ -147,23 +156,24 @@ try {
             $avg = round($sum / count(GRADE_LABELS), 2);
         }
 
-        $rankCells = [];
-        for ($rank = 1; $rank <= 3; $rank++) {
-            $b = $branches[(int)$r['id']][$rank] ?? null;
+        $categoryCells = [];
+        $cats = $categoriesByResult[(int)$r['id']] ?? [];
+        ksort($cats);
+        $cats = array_values($cats);
 
-            if ($b) {
-                $rankCells[] = (string)$b['branch_name'];
-                $rankCells[] = (string)($b['faculty'] ?? '');
-                $rankCells[] = (float)$b['score'];
-            } elseif ($rank === 1 && $r['branch_name'] !== null) {
-                // ผลรอบเก่าที่เก็บไว้แค่อันดับ 1
-                $rankCells[] = (string)$r['branch_name'];
-                $rankCells[] = '';
-                $rankCells[] = $r['score'] !== null ? (float)$r['score'] : '';
+        for ($catIdx = 0; $catIdx < 3; $catIdx++) {
+            $cat = $cats[$catIdx] ?? null;
+
+            if ($cat) {
+                $categoryCells[] = (string)($cat['faculty'] ?? '');
+                $categoryCells[] = implode('; ', $cat['names']);
+            } elseif ($catIdx === 0 && $r['branch_name'] !== null) {
+                // ผลรอบเก่าที่เก็บไว้แค่อันดับ 1 เดี่ยวๆ (ก่อน migration 009)
+                $categoryCells[] = '';
+                $categoryCells[] = (string)$r['branch_name'] . ($r['score'] !== null ? ' (' . (float)$r['score'] . '%)' : '');
             } else {
-                $rankCells[] = '';
-                $rankCells[] = '';
-                $rankCells[] = '';
+                $categoryCells[] = '';
+                $categoryCells[] = '';
             }
         }
 
@@ -181,7 +191,7 @@ try {
                 $avg,
             ],
             $grades,
-            $rankCells
+            $categoryCells
         );
     }
 
@@ -250,7 +260,7 @@ try {
             'rows'   => $sheet1,
             'widths' => [7, 17, 14, 24, 8, 26, 10, 16, 11,
                          12, 12, 12, 11, 12, 9,
-                         24, 22, 12, 24, 22, 12, 24, 22, 12],
+                         22, 42, 22, 42, 22, 42],
         ],
         [
             'name'   => 'สรุปสถิติ',

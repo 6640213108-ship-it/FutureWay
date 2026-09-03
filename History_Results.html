@@ -101,12 +101,13 @@
           : `ทำมาแล้ว ${total} รอบ`;
 
       document.getElementById('history-list').innerHTML = data.history.map((h, i) => {
-        // ถ้าเป็นผลรอบเก่าที่บันทึกไว้ก่อนระบบเก็บครบ 3 อันดับ
+        // ถ้าเป็นผลรอบเก่าที่บันทึกไว้ก่อนระบบเก็บเป็นหมวดหมู่ (migration 009)
         // ยังพอแสดงอันดับ 1 จาก branch_name/score ที่เก็บไว้ใน quiz_results ได้
-        const ranks = h.top3.length
-          ? h.top3
-          : (h.branch_name ? [{ rank: 1, name: h.branch_name, faculty: h.faculty, score: h.score ?? 0 }] : []);
+        const categories = h.top_categories.length
+          ? h.top_categories
+          : (h.branch_name ? [{ faculty: h.faculty, best_score: h.score ?? 0, branches: [{ name: h.branch_name, score: h.score ?? 0 }] }] : []);
 
+        const bestBranchName = categories.length ? categories[0].branches[0].name : null;
         const roundNo = total - i;   // นับจากรอบล่าสุดถอยหลัง
 
         return `
@@ -127,25 +128,31 @@
                   ${h.input_mode === 'interest'
                     ? 'วิเคราะห์จาก <strong>ความสนใจ/งานอดิเรก</strong> (ไม่ได้กรอกเกรด)'
                     : `เกรดเฉลี่ยที่กรอก <strong>${Number(h.avg_grade).toFixed(2)}</strong>`}<br>
-                  ${ranks.length
-                    ? `สาขาที่เหมาะที่สุดคือ <strong>${esc(ranks[0].name)}</strong>`
+                  ${bestBranchName
+                    ? `สาขาที่เหมาะที่สุดคือ <strong>${esc(bestBranchName)}</strong>`
                     : '<span class="no-data">ไม่มีข้อมูลสาขาที่แนะนำ</span>'}
                 </div>
               </div>
 
-              ${ranks.length ? `
-                <h4>สาขาที่แนะนำ${h.top3.length ? ' 3 อันดับ' : ''}</h4>
-                ${ranks.map(b => `
-                  <div class="rank-item">
-                    <span class="rank-num n${b.rank}">${b.rank}</span>
-                    <div class="rank-body">
-                      <div class="rname">${esc(b.name)}</div>
-                      <div class="rfac">${esc(b.faculty) || ''}</div>
-                      <div class="bar-bg"><div class="bar-fill" data-score="${b.score}"></div></div>
+              ${categories.length ? `
+                <h4>หมวดหมู่ที่แนะนำ${h.top_categories.length ? ` ${categories.length} หมวด` : ''}</h4>
+                ${categories.map(cat => `
+                  <div class="category-block">
+                    <div class="category-head">
+                      <span class="cat-faculty">${esc(cat.faculty) || 'ไม่ระบุคณะ'}</span>
+                      <span class="cat-best-score">${cat.best_score}%</span>
                     </div>
-                    <span class="rank-score">${b.score}%</span>
+                    ${cat.branches.map((b, bi) => `
+                      <div class="rank-item">
+                        <span class="rank-num n${bi + 1}">${bi + 1}</span>
+                        <div class="rank-body">
+                          <div class="rname">${esc(b.name)}</div>
+                          <div class="bar-bg"><div class="bar-fill" data-score="${b.score}"></div></div>
+                        </div>
+                        <span class="rank-score">${b.score}%</span>
+                      </div>`).join('')}
                   </div>`).join('')}
-                ${!h.top3.length ? '<p class="rfac note-old">ผลรอบนี้บันทึกไว้ก่อนระบบเก็บครบ 3 อันดับ</p>' : ''}
+                ${!h.top_categories.length ? '<p class="rfac note-old">ผลรอบนี้บันทึกไว้ก่อนระบบเก็บเป็นหมวดหมู่</p>' : ''}
               ` : ''}
 
               <a href="result.html?id=${h.id}" class="full-link">

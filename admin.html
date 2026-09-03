@@ -63,9 +63,9 @@
               <th>ผู้ใช้</th>
               <th>เพศ</th>
               <th>MBTI</th>
-              <th>อันดับ 1</th>
-              <th>อันดับ 2</th>
-              <th>อันดับ 3</th>
+              <th>หมวดหมู่ 1</th>
+              <th>หมวดหมู่ 2</th>
+              <th>หมวดหมู่ 3</th>
               <th>เกรดเฉลี่ย</th>
               <th>วันที่ทำ</th>
               <th></th>
@@ -120,14 +120,14 @@
     };
 
     /**
-     * ช่องแสดงสาขาที่แนะนำอันดับที่ n พร้อมคะแนน
-     * แถวเก่าก่อน migration 002 ไม่มี snapshot ครบ 3 อันดับ -> ยังพอแสดงอันดับ 1
+     * ช่องแสดงหมวดหมู่ (คณะ) ที่แนะนำอันดับที่ n พร้อมสาขาเด่นในหมวดนั้น
+     * แถวเก่าก่อน migration 009 ยังไม่ได้จัดเป็นหมวดหมู่ -> ยังพอแสดงอันดับ 1
      * จาก branch_name/score ที่เก็บไว้ในตาราง quiz_results ได้
      */
     const rankCell = (r, n) => {
-      const b = r.top3.find(x => x.rank === n);
-      if (b) {
-        return `<div class="branch-cell">${esc(b.name)}<small>${b.score}%</small></div>`;
+      const cat = (r.top_categories || [])[n - 1];
+      if (cat && cat.branches && cat.branches[0]) {
+        return `<div class="branch-cell">${esc(cat.faculty) || 'ไม่ระบุคณะ'}<small>${esc(cat.branches[0].name)} · ${cat.best_score}%</small></div>`;
       }
       if (n === 1 && r.top_branch) {
         return `<div class="branch-cell">${esc(r.top_branch)}<small>${r.top_score !== null ? r.top_score + '%' : ''}</small></div>`;
@@ -222,14 +222,16 @@
           <td colspan="${COLS}">
             <div class="detail-grid">
               <div class="detail-block">
-                <h4>สาขาที่แนะนำ (พร้อมคณะ)</h4>
-                ${r.top3.length ? r.top3.map(b => `
-                  <div class="rank-line">
-                    <span class="rank-no n${b.rank}">${b.rank}</span>
-                    <span class="grow">${esc(b.name)}<br><span class="fac">${esc(b.faculty) || ''}</span></span>
-                    <span class="score-pill">${b.score}%</span>
-                  </div>`).join('')
-                : '<p class="muted note-old">ผลลัพธ์รอบนี้บันทึกไว้ก่อนระบบเก็บครบ 3 อันดับ</p>'}
+                <h4>หมวดหมู่ (คณะ) ที่แนะนำ</h4>
+                ${(r.top_categories || []).length ? r.top_categories.map((cat, ci) => `
+                  <p class="cat-heading"><strong>${esc(cat.faculty) || 'ไม่ระบุคณะ'}</strong> (${cat.best_score}%)</p>
+                  ${cat.branches.map((b, bi) => `
+                    <div class="rank-line">
+                      <span class="rank-no n${bi + 1}">${bi + 1}</span>
+                      <span class="grow">${esc(b.name)}</span>
+                      <span class="score-pill">${b.score}%</span>
+                    </div>`).join('')}`).join('')
+                : '<p class="muted note-old">ผลลัพธ์รอบนี้บันทึกไว้ก่อนระบบเก็บเป็นหมวดหมู่</p>'}
               </div>
               <div class="detail-block">
                 <h4>${r.grades ? 'เกรดที่กรอก' : 'โปรไฟล์ความสนใจ (RIASEC)'}</h4>

@@ -293,10 +293,16 @@ def calculate_score(branch, grades, mbti, riasec=None):
     return round(max(0, min(100, score)), 2)
 
 
+TOP_CATEGORIES        = 3   # จำนวนหมวดหมู่ (คณะ) ที่แนะนำ
+BRANCHES_PER_CATEGORY = 5   # จำนวนสาขาสูงสุดที่โชว์ต่อหมวดหมู่
+
+
 def run_decision_tree(grades, mbti, riasec=None):
     """
     รัน Decision Tree หลัก
-    ส่งคืน top 3 สาขาที่เหมาะสมที่สุด
+    ส่งคืน top 3 "หมวดหมู่" (คณะ) ที่เหมาะสมที่สุด แต่ละหมวดมีสาขาข้างในสูงสุด 5 สาขา
+    (แทนที่จะส่งแค่ 3 สาขาเดี่ยวๆ ที่อาจกระจุกอยู่คณะเดียวกันหมด — คณะหนึ่งมีได้
+    หลายสิบสาขา การจัดเป็นหมวดหมู่ช่วยให้เห็นตัวเลือกที่หลากหลายกว่า)
 
     grades: dict เกรด 6 วิชา (โหมดกรอกเกรด) หรือ None (โหมดไม่ทราบเกรด)
     riasec: dict โปรไฟล์ RIASEC 0-1 ต่อมิติ (ใช้เมื่อ grades เป็น None) หรือ None
@@ -328,10 +334,6 @@ def run_decision_tree(grades, mbti, riasec=None):
             'score':       score
         })
 
-    # เรียงคะแนนจากมากไปน้อย เอา top 3
-    results.sort(key=lambda x: x['score'], reverse=True)
-    top3 = results[:3]
-
     avg_grade = None
     if grades is not None:
         avg_grade = sum(float(grades[k]) for k in grades) / len(grades)
@@ -340,16 +342,37 @@ def run_decision_tree(grades, mbti, riasec=None):
         # รวมชื่อคณะสายวิทย์ของข้อมูลชุด NRRU (004_nrru_branches.sql) ด้วย
         # ไม่งั้นสาขาใหม่จะไม่เคยเข้าเงื่อนไขนี้เลย (โหมดไม่ทราบเกรดไม่มี avg_grade
         # จึงข้ามกฎนี้ไปเสมอ — ไม่มีเกรดให้ boost)
+        #
+        # ใช้กับ results ทั้งหมดก่อนจัดหมวดหมู่ ไม่ใช่แค่ตัวที่ติด top เดิม
+        # ไม่งั้นสาขาที่ควรได้ boost แต่ยังไม่ติดอันดับจะไม่มีสิทธิ์ถูกพิจารณาใหม่เลย
         science_faculties = [
             'วิศวกรรมศาสตร์', 'แพทยศาสตร์', 'วิทยาศาสตร์',
             'วิทยาศาสตร์และเทคโนโลยี', 'เทคโนโลยีอุตสาหกรรม',
             'สาธารณสุขศาสตร์', 'พยาบาลศาสตร์',
         ]
         if avg_grade >= 3.5 and mbti[2] == 'T':
-            for r in top3:
+            for r in results:
                 if r['faculty'] in science_faculties:
                     r['score'] = min(100, r['score'] + 5)
                     r['note']  = '⭐ เกรดดีและบุคลิกเหมาะมาก'
+
+    # ---- จัดกลุ่มตามคณะ (หมวดหมู่) ----
+    by_faculty = {}
+    for r in results:
+        by_faculty.setdefault(r['faculty'] or 'ไม่ระบุคณะ', []).append(r)
+
+    categories = []
+    for faculty, branch_list in by_faculty.items():
+        branch_list.sort(key=lambda x: x['score'], reverse=True)
+        categories.append({
+            'faculty':     faculty,
+            'best_score':  branch_list[0]['score'],
+            'branches':    branch_list[:BRANCHES_PER_CATEGORY],
+        })
+
+    # เรียงหมวดหมู่ตามคะแนนสาขาที่ดีที่สุดในหมวดนั้น เอา top 3 หมวด
+    categories.sort(key=lambda x: x['best_score'], reverse=True)
+    top_categories = categories[:TOP_CATEGORIES]
 
     return {
         'mbti':      mbti,
@@ -357,7 +380,7 @@ def run_decision_tree(grades, mbti, riasec=None):
         # จำนวนสาขาทั้งหมดที่ถูกคำนวณคะแนนในรอบนี้ (ทุกแถว is_active = 1)
         # ไว้เช็คได้ว่าข้อมูลสาขาชุดใหม่ถูกนำมาคิดครบจริง
         'branches_considered': len(results),
-        'top3':      top3
+        'top_categories':      top_categories,
     }
 
 

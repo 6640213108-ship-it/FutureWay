@@ -100,12 +100,36 @@
 .summary-text { flex: 1; font-size: 0.84rem; color: #555; line-height: 1.55; }
 .summary-text strong { color: var(--primary-dark); }
 
-/* ---- 3 อันดับ ---- */
+/* ---- หมวดหมู่ (คณะ) ที่แนะนำ ---- */
 .round-body h4 {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--gray);
   margin-bottom: 9px;
+}
+
+.category-block {
+  margin-bottom: 12px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.category-block:last-child { border-bottom: none; }
+
+.category-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.cat-faculty {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+.cat-best-score {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary);
 }
 
 .rank-item {

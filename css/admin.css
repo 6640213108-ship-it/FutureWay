@@ -338,6 +338,14 @@ table.admin-table {
   margin-bottom: 8px;
 }
 
+.cat-heading {
+  font-size: 0.82rem;
+  color: var(--gray);
+  margin: 10px 0 2px;
+}
+.cat-heading:first-child { margin-top: 0; }
+.cat-heading strong { color: var(--primary-dark); }
+
 .rank-line {
   display: flex;
   align-items: center;
